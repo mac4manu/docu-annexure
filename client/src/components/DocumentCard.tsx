@@ -75,11 +75,11 @@ export function DocumentCard({ document }: DocumentCardProps) {
     : "";
 
   return (
-    <Link href={`/document/${document.id}`}>
-      <Card
-        className="group relative flex flex-col p-0 cursor-pointer transition-shadow duration-200 hover:shadow-md"
-        data-testid={`card-document-${document.id}`}
-      >
+    <Card
+      className="group relative flex flex-col p-0 cursor-pointer transition-shadow duration-200 hover:shadow-md"
+      data-testid={`card-document-${document.id}`}
+    >
+      <Link href={`/document/${document.id}`} className="flex flex-col flex-1">
         <div className="flex items-start gap-3 p-4 pb-2">
           <div className={`p-2.5 rounded-md shrink-0 ${accentClass}`}>
             {getFileIcon(document.fileType)}
@@ -108,46 +108,45 @@ export function DocumentCard({ document }: DocumentCardProps) {
             {contentPreview}...
           </p>
         )}
+      </Link>
 
-        <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MessageSquare className="w-3 h-3" />
-            <span>View & Chat</span>
-          </div>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={isDeleting}
-                className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => e.preventDefault()}
-                data-testid={`button-delete-${document.id}`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Document?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete "{document.title}" and remove it from your library.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => deleteDoc(document.id)}
-                  className="bg-destructive text-destructive-foreground"
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2.5">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MessageSquare className="w-3 h-3" />
+          <span>View & Chat</span>
         </div>
-      </Card>
-    </Link>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isDeleting}
+              className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+              data-testid={`button-delete-${document.id}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Document?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete "{document.title}" and remove it from your library.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteDoc(document.id)}
+                className="bg-destructive text-destructive-foreground"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </Card>
   );
 }
