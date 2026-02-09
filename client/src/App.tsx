@@ -106,8 +106,8 @@ function UserMenu() {
 
 function AuthenticatedApp() {
   return (
-    <div className="flex flex-col h-screen w-full">
-      <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50 sticky top-0">
+    <div className="flex flex-col h-full w-full">
+      <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50">
         <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
           <img src={logoImg} alt="DocuAnnexure" className="w-10 h-10 rounded-md shrink-0" />
           <div className="flex flex-col leading-none" data-testid="text-header-app-name">
@@ -131,7 +131,7 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen w-full">
+      <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );

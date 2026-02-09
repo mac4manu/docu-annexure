@@ -227,7 +227,7 @@ export default function MultiDocChat() {
   const historyConversations = conversationsList || [];
 
   return (
-    <div className="h-full flex overflow-hidden" style={{ maxHeight: "100%" }}>
+    <div className="h-full flex overflow-hidden">
       <div className="w-64 flex-none border-r border-border bg-muted/10 flex flex-col overflow-hidden min-h-0">
         <div className="p-3 border-b border-border flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">

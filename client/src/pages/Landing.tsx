@@ -32,7 +32,7 @@ const trustItems = [
 
 export default function Landing() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col h-full bg-background overflow-y-auto">
       <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2.5">
