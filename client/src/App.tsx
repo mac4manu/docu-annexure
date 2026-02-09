@@ -62,16 +62,18 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="flex flex-col h-screen w-full">
-          <header className="flex-none h-12 border-b border-border bg-background px-4 flex items-center gap-3 z-50 sticky top-0">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-                <FileText className="w-3.5 h-3.5 text-primary-foreground" />
+          <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50 sticky top-0">
+            <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
+              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-semibold text-sm tracking-tight" data-testid="text-header-app-name">DocuMind</span>
-            </div>
-            <div className="h-5 w-px bg-border shrink-0" />
+              <div className="flex flex-col leading-none" data-testid="text-header-app-name">
+                <span className="font-bold text-base tracking-tight">DocuMind</span>
+                <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">Document inference & knowledge chat</span>
+              </div>
+            </Link>
+            <div className="h-6 w-px bg-border shrink-0" />
             <HeaderNav />
-            <span className="text-[10px] text-muted-foreground hidden lg:inline ml-auto shrink-0">Document inference & knowledge chat</span>
           </header>
           <main className="flex-1 overflow-hidden">
             <Router />
