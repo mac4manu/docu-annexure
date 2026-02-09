@@ -50,9 +50,21 @@ export async function registerRoutes(
 
       if (fileType === "application/pdf") {
         const dataBuffer = fs.readFileSync(filePath);
-        // Standard pdf-parse usually works like this with require
-        const parse = require("pdf-parse");
-        const data = await parse(dataBuffer);
+        // pdf-parse exports the function directly. When using createRequire/require in ESM,
+        // it might be under .default depending on the build system.
+        const pdf = require("pdf-parse");
+        const parseFn = typeof pdf === 'function' ? pdf : pdf.default;
+        
+        if (typeof parseFn !== 'function') {
+          console.error("pdf-parse exported structure:", {
+            type: typeof pdf,
+            isDefaultFunction: typeof pdf.default === 'function',
+            keys: Object.keys(pdf)
+          });
+          throw new Error("Could not find parse function in pdf-parse module");
+        }
+        
+        const data = await parseFn(dataBuffer);
         content = data.text;
       } else if (
         fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || 
