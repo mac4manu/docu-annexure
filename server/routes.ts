@@ -50,7 +50,12 @@ export async function registerRoutes(
 
       if (fileType === "application/pdf") {
         const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdfParse(dataBuffer);
+        // pdf-parse exported as a function, but sometimes needs .default depending on environment
+        const parse = typeof pdfParse === 'function' ? pdfParse : pdfParse.default;
+        if (typeof parse !== 'function') {
+          throw new Error("pdf-parse is not a function");
+        }
+        const data = await parse(dataBuffer);
         content = data.text;
       } else if (
         fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || 
