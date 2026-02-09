@@ -50,22 +50,25 @@ export async function registerRoutes(
 
       if (fileType === "application/pdf") {
         const dataBuffer = fs.readFileSync(filePath);
-        // pdf-parse exports the function directly. When using createRequire/require in ESM,
-        // it might be under .default depending on the build system.
-        const pdf = require("pdf-parse");
-        const parseFn = typeof pdf === 'function' ? pdf : pdf.default;
-        
-        if (typeof parseFn !== 'function') {
-          console.error("pdf-parse exported structure:", {
-            type: typeof pdf,
-            isDefaultFunction: typeof pdf.default === 'function',
-            keys: Object.keys(pdf)
-          });
-          throw new Error("Could not find parse function in pdf-parse module");
+        // Fallback to officeparser for PDF if pdf-parse is being difficult
+        // or try to find the PDFParse constructor
+        let contentText = "";
+        try {
+          const pdf = require("pdf-parse");
+          const parseFn = typeof pdf === 'function' ? pdf : (pdf.default || pdf.PDFParse);
+          
+          if (typeof parseFn === 'function') {
+            const data = await (parseFn.prototype && parseFn.prototype.constructor === parseFn ? new (parseFn as any)(dataBuffer) : (parseFn as any)(dataBuffer));
+            contentText = data.text;
+          } else {
+            // Fallback to officeparser which often handles PDFs too
+            contentText = await officeParser.parseOfficeAsync(filePath);
+          }
+        } catch (e) {
+          console.log("PDF parse primary failed, trying officeparser fallback");
+          contentText = await officeParser.parseOfficeAsync(filePath);
         }
-        
-        const data = await parseFn(dataBuffer);
-        content = data.text;
+        content = contentText;
       } else if (
         fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || 
         fileType === "application/vnd.ms-powerpoint" ||
