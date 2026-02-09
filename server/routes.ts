@@ -183,13 +183,14 @@ export async function registerRoutes(
     const filePath = req.file.path;
     const fileType = req.file.mimetype;
     const originalFilename = req.file.originalname;
+    const mode = req.body?.mode === "advanced" ? "advanced" : "basic";
     const cleanupList: string[] = [filePath];
 
     try {
       let content = "";
-      console.log(`Processing file: ${originalFilename} (${fileType})`);
+      console.log(`Processing file: ${originalFilename} (${fileType}) [mode: ${mode}]`);
 
-      if (fileType === "application/pdf") {
+      if (mode === "advanced" && fileType === "application/pdf") {
         const imagePaths = await convertPdfToImages(filePath);
         const imageDir = path.dirname(imagePaths[0] || "");
         if (imageDir) cleanupList.push(imageDir);
@@ -199,12 +200,7 @@ export async function registerRoutes(
         } else {
           content = "No pages found in PDF.";
         }
-      } else if (
-        fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
-        fileType === "application/vnd.ms-powerpoint" ||
-        fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        fileType === "application/msword"
-      ) {
+      } else if (ALLOWED_MIMETYPES.has(fileType)) {
         let rawText = "";
         try {
           rawText = await officeParser.parseOfficeAsync(filePath);
@@ -213,28 +209,7 @@ export async function registerRoutes(
         }
 
         if (rawText && rawText.trim().length > 0) {
-          const response = await openai.chat.completions.create({
-            model: "gpt-5.2",
-            max_completion_tokens: 8192,
-            messages: [
-              {
-                role: "system",
-                content: `You are a document formatting expert. Convert the following extracted document text into well-structured Markdown.
-
-Rules:
-- Structure the content with proper headings, lists, and paragraphs
-- If you detect table-like data, format it as a proper Markdown table
-- If you detect mathematical expressions, format them with LaTeX ($ inline, $$ block)
-- Preserve the document's logical structure
-- Do NOT add commentary - just output the formatted markdown`,
-              },
-              {
-                role: "user",
-                content: `Format this extracted document content into clean Markdown:\n\n${rawText}`,
-              },
-            ],
-          });
-          content = response.choices[0]?.message?.content || rawText;
+          content = rawText;
         } else {
           content = "No text content could be extracted from this file.";
         }
