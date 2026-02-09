@@ -6,6 +6,7 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 ## Architecture
 - **Frontend**: React + Vite, Tailwind CSS, shadcn/ui, wouter routing
 - **Backend**: Express.js, PostgreSQL + Drizzle ORM
+- **Auth**: Replit Auth (OpenID Connect) via passport, session-based with PostgreSQL session store
 - **AI**: OpenAI GPT-5.2 via Replit AI Integrations (vision for PDF extraction, chat for Q&A)
 - **Document Processing**: 
   - PDF: pdftoppm (poppler-utils) converts pages to PNG images -> GPT vision extracts markdown
@@ -13,18 +14,26 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
   - Output includes proper markdown tables, LaTeX math formulas, and image descriptions
 
 ## Key Files
-- `server/routes.ts` - API routes including file upload, vision-based extraction, streaming chat, and metrics
-- `shared/schema.ts` - Database schema (documents, conversations, messages)
+- `server/routes.ts` - API routes (all protected with isAuthenticated middleware)
+- `server/index.ts` - Server setup, auth wired before routes via setupAuth + registerAuthRoutes
+- `server/replit_integrations/auth/` - Auth module (replitAuth.ts, storage.ts, routes.ts)
+- `shared/schema.ts` - Database schema (documents, conversations, messages, users, sessions)
+- `shared/models/auth.ts` - Auth schema (users, sessions tables)
 - `shared/models/chat.ts` - Chat schema with documentIds array for multi-doc conversations
 - `shared/routes.ts` - Shared API route definitions
 - `server/storage.ts` - Database storage interface with metrics aggregation
+- `client/src/App.tsx` - Root app with auth guard: Landing for logged-out, AuthenticatedApp for logged-in
+- `client/src/pages/Landing.tsx` - Landing page with hero, features, login CTA
+- `client/src/pages/Home.tsx` - Document library (authenticated)
 - `client/src/pages/DocumentView.tsx` - Document viewer with markdown rendering and chat panel
 - `client/src/pages/MultiDocChat.tsx` - Multi-document chat with document selection, chat history sidebar
 - `client/src/pages/Metrics.tsx` - Analytics dashboard with stats, charts, and activity tracking
+- `client/src/hooks/use-auth.ts` - React hook for authentication state
 - `client/src/components/ChatInterface.tsx` - AI chat with streaming responses
 - `client/src/components/UploadZone.tsx` - Drag-and-drop file upload
 
 ## Recent Changes
+- 2026-02-09: Added Replit Auth with landing page, user profile/logout in header, protected API routes
 - 2026-02-09: Added Metrics page at /metrics with stat cards, bar chart, pie chart, and recent activity
 - 2026-02-09: Added chat history to multi-doc chat (load, delete past conversations)
 - 2026-02-09: Removed sidebar, switched to header-based navigation (Documents, Chat, Metrics tabs)

@@ -13,6 +13,7 @@ import fs from "fs";
 import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { isAuthenticated } from "./replit_integrations/auth";
 
 const execFileAsync = promisify(execFile);
 
@@ -166,18 +167,18 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  app.get(api.documents.list.path, async (req, res) => {
+  app.get(api.documents.list.path, isAuthenticated, async (req, res) => {
     const docs = await storage.getDocuments();
     res.json(docs);
   });
 
-  app.get(api.documents.get.path, async (req, res) => {
+  app.get(api.documents.get.path, isAuthenticated, async (req, res) => {
     const doc = await storage.getDocument(Number(req.params.id));
     if (!doc) return res.status(404).json({ message: "Document not found" });
     res.json(doc);
   });
 
-  app.post(api.documents.upload.path, upload.single("file"), async (req, res) => {
+  app.post(api.documents.upload.path, isAuthenticated, upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
     const filePath = req.file.path;
@@ -306,13 +307,13 @@ Rules:
     }
   });
 
-  app.delete(api.documents.delete.path, async (req, res) => {
+  app.delete(api.documents.delete.path, isAuthenticated, async (req, res) => {
     await storage.deleteDocument(Number(req.params.id));
     res.status(204).send();
   });
 
   // Metrics
-  app.get("/api/metrics", async (_req, res) => {
+  app.get("/api/metrics", isAuthenticated, async (_req, res) => {
     try {
       const metrics = await storage.getMetrics();
       res.json(metrics);
@@ -323,18 +324,18 @@ Rules:
   });
 
   // Chat
-  app.get(api.conversations.list.path, async (req, res) => {
+  app.get(api.conversations.list.path, isAuthenticated, async (req, res) => {
     const convs = await storage.getAllConversations();
     res.json(convs);
   });
 
-  app.get(api.conversations.get.path, async (req, res) => {
+  app.get(api.conversations.get.path, isAuthenticated, async (req, res) => {
     const conv = await storage.getConversation(Number(req.params.id));
     if (!conv) return res.status(404).json({ message: "Conversation not found" });
     res.json({ conversation: conv, messages: conv.messages });
   });
 
-  app.post(api.conversations.create.path, async (req, res) => {
+  app.post(api.conversations.create.path, isAuthenticated, async (req, res) => {
     const input = api.conversations.create.input.parse(req.body);
     const conv = await storage.createConversation({
       title: input.title || "New Conversation",
@@ -344,12 +345,12 @@ Rules:
     res.status(201).json(conv);
   });
 
-  app.delete(api.conversations.delete.path, async (req, res) => {
+  app.delete(api.conversations.delete.path, isAuthenticated, async (req, res) => {
     await storage.deleteConversation(Number(req.params.id));
     res.status(204).send();
   });
 
-  app.post(api.messages.create.path, async (req, res) => {
+  app.post(api.messages.create.path, isAuthenticated, async (req, res) => {
     const conversationId = Number(req.params.id);
     const { content } = req.body;
 

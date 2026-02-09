@@ -3,13 +3,17 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3 } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, LogOut, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import DocumentView from "@/pages/DocumentView";
 import MultiDocChat from "@/pages/MultiDocChat";
 import Metrics from "@/pages/Metrics";
+import Landing from "@/pages/Landing";
+import { useAuth } from "@/hooks/use-auth";
 
 function Router() {
   return (
@@ -74,26 +78,79 @@ function HeaderNav() {
   );
 }
 
+function UserMenu() {
+  const { user } = useAuth();
+  if (!user) return null;
+
+  const initials = [user.firstName, user.lastName]
+    .filter(Boolean)
+    .map((n) => n!.charAt(0).toUpperCase())
+    .join("");
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "User";
+
+  return (
+    <div className="flex items-center gap-2 ml-auto shrink-0">
+      <Avatar className="w-7 h-7" data-testid="avatar-user">
+        <AvatarImage src={user.profileImageUrl ?? undefined} alt={displayName} />
+        <AvatarFallback className="text-[10px]">{initials || "U"}</AvatarFallback>
+      </Avatar>
+      <span className="text-xs text-muted-foreground hidden sm:inline max-w-[120px] truncate" data-testid="text-user-name">
+        {displayName}
+      </span>
+      <a href="/api/logout">
+        <Button variant="ghost" size="icon" title="Log out" data-testid="button-logout">
+          <LogOut className="w-4 h-4" />
+        </Button>
+      </a>
+    </div>
+  );
+}
+
+function AuthenticatedApp() {
+  return (
+    <div className="flex flex-col h-screen w-full">
+      <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50 sticky top-0">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
+          <img src={logoImg} alt="DocuAnnexure" className="w-10 h-10 rounded-md shrink-0" />
+          <div className="flex flex-col leading-none" data-testid="text-header-app-name">
+            <span className="font-bold text-base tracking-tight">DocuAnnexure</span>
+            <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">Document inference & knowledge chat</span>
+          </div>
+        </Link>
+        <div className="h-6 w-px bg-border shrink-0" />
+        <HeaderNav />
+        <UserMenu />
+      </header>
+      <main className="flex-1 overflow-hidden">
+        <Router />
+      </main>
+    </div>
+  );
+}
+
+function AppContent() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-full">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Landing />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex flex-col h-screen w-full">
-          <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50 sticky top-0">
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
-              <img src={logoImg} alt="DocuAnnexure" className="w-10 h-10 rounded-md shrink-0" />
-              <div className="flex flex-col leading-none" data-testid="text-header-app-name">
-                <span className="font-bold text-base tracking-tight">DocuAnnexure</span>
-                <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">Document inference & knowledge chat</span>
-              </div>
-            </Link>
-            <div className="h-6 w-px bg-border shrink-0" />
-            <HeaderNav />
-          </header>
-          <main className="flex-1 overflow-hidden">
-            <Router />
-          </main>
-        </div>
+        <AppContent />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
