@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
@@ -7,8 +7,9 @@ export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   originalFilename: text("original_filename").notNull(),
-  content: text("content").notNull(), // The extracted markdown
-  fileType: text("file_type").notNull(), // 'pdf' or 'ppt'
+  content: text("content").notNull(),
+  fileType: text("file_type").notNull(),
+  userId: varchar("user_id"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

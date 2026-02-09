@@ -5,7 +5,7 @@ import {
   type Conversation, type InsertConversation,
   type Message, type InsertMessage
 } from "@shared/schema";
-import { eq, desc, sql, count } from "drizzle-orm";
+import { eq, desc, sql, count, and } from "drizzle-orm";
 
 export interface MetricsData {
   totalDocuments: number;
@@ -20,28 +20,31 @@ export interface MetricsData {
 }
 
 export interface IStorage {
-  getDocuments(): Promise<Document[]>;
-  getDocument(id: number): Promise<Document | undefined>;
+  getDocuments(userId: string): Promise<Document[]>;
+  getDocument(id: number, userId: string): Promise<Document | undefined>;
   createDocument(doc: InsertDocument): Promise<Document>;
-  deleteDocument(id: number): Promise<void>;
+  deleteDocument(id: number, userId: string): Promise<void>;
 
-  getAllConversations(): Promise<Conversation[]>;
-  getConversation(id: number): Promise<(Conversation & { messages: Message[] }) | undefined>;
+  getAllConversations(userId: string): Promise<Conversation[]>;
+  getConversation(id: number, userId: string): Promise<(Conversation & { messages: Message[] }) | undefined>;
   createConversation(conv: InsertConversation): Promise<Conversation>;
-  deleteConversation(id: number): Promise<void>;
+  deleteConversation(id: number, userId: string): Promise<void>;
   createMessage(msg: InsertMessage): Promise<Message>;
   getMessages(conversationId: number): Promise<Message[]>;
 
-  getMetrics(): Promise<MetricsData>;
+  getMetrics(userId: string): Promise<MetricsData>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getDocuments(): Promise<Document[]> {
-    return db.select().from(documents).orderBy(desc(documents.createdAt));
+  async getDocuments(userId: string): Promise<Document[]> {
+    return db.select().from(documents)
+      .where(eq(documents.userId, userId))
+      .orderBy(desc(documents.createdAt));
   }
 
-  async getDocument(id: number): Promise<Document | undefined> {
-    const [doc] = await db.select().from(documents).where(eq(documents.id, id));
+  async getDocument(id: number, userId: string): Promise<Document | undefined> {
+    const [doc] = await db.select().from(documents)
+      .where(and(eq(documents.id, id), eq(documents.userId, userId)));
     return doc;
   }
 
@@ -50,16 +53,19 @@ export class DatabaseStorage implements IStorage {
     return newDoc;
   }
 
-  async deleteDocument(id: number): Promise<void> {
-    await db.delete(documents).where(eq(documents.id, id));
+  async deleteDocument(id: number, userId: string): Promise<void> {
+    await db.delete(documents).where(and(eq(documents.id, id), eq(documents.userId, userId)));
   }
 
-  async getAllConversations(): Promise<Conversation[]> {
-    return db.select().from(conversations).orderBy(desc(conversations.createdAt));
+  async getAllConversations(userId: string): Promise<Conversation[]> {
+    return db.select().from(conversations)
+      .where(eq(conversations.userId, userId))
+      .orderBy(desc(conversations.createdAt));
   }
 
-  async getConversation(id: number): Promise<(Conversation & { messages: Message[] }) | undefined> {
-    const [conv] = await db.select().from(conversations).where(eq(conversations.id, id));
+  async getConversation(id: number, userId: string): Promise<(Conversation & { messages: Message[] }) | undefined> {
+    const [conv] = await db.select().from(conversations)
+      .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
     if (!conv) return undefined;
     
     const msgs = await db.select().from(messages)
@@ -74,8 +80,8 @@ export class DatabaseStorage implements IStorage {
     return newConv;
   }
 
-  async deleteConversation(id: number): Promise<void> {
-    await db.delete(conversations).where(eq(conversations.id, id));
+  async deleteConversation(id: number, userId: string): Promise<void> {
+    await db.delete(conversations).where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
   }
 
   async createMessage(msg: InsertMessage): Promise<Message> {
@@ -89,16 +95,32 @@ export class DatabaseStorage implements IStorage {
       .orderBy(messages.createdAt);
   }
 
-  async getMetrics(): Promise<MetricsData> {
-    const [docCount] = await db.select({ count: count() }).from(documents);
-    const [convCount] = await db.select({ count: count() }).from(conversations);
-    const [msgCount] = await db.select({ count: count() }).from(messages);
-    const [userMsgCount] = await db.select({ count: count() }).from(messages).where(eq(messages.role, "user"));
-    const [aiMsgCount] = await db.select({ count: count() }).from(messages).where(eq(messages.role, "assistant"));
+  async getMetrics(userId: string): Promise<MetricsData> {
+    const userFilter = eq(documents.userId, userId);
+    const convFilter = eq(conversations.userId, userId);
+
+    const [docCount] = await db.select({ count: count() }).from(documents).where(userFilter);
+    const [convCount] = await db.select({ count: count() }).from(conversations).where(convFilter);
+
+    const userConvIds = await db.select({ id: conversations.id }).from(conversations).where(convFilter);
+    const convIdList = userConvIds.map(c => c.id);
+
+    let totalMsgs = 0;
+    let userMsgs = 0;
+    let aiMsgs = 0;
+    if (convIdList.length > 0) {
+      const msgResult = await db.execute(sql`SELECT COUNT(*) as count FROM messages WHERE conversation_id = ANY(${convIdList})`);
+      totalMsgs = Number((msgResult.rows[0] as any)?.count ?? 0);
+      const uMsgResult = await db.execute(sql`SELECT COUNT(*) as count FROM messages WHERE conversation_id = ANY(${convIdList}) AND role = 'user'`);
+      userMsgs = Number((uMsgResult.rows[0] as any)?.count ?? 0);
+      const aMsgResult = await db.execute(sql`SELECT COUNT(*) as count FROM messages WHERE conversation_id = ANY(${convIdList}) AND role = 'assistant'`);
+      aiMsgs = Number((aMsgResult.rows[0] as any)?.count ?? 0);
+    }
 
     const docsByType = await db
       .select({ type: documents.fileType, count: count() })
       .from(documents)
+      .where(userFilter)
       .groupBy(documents.fileType);
 
     const recentDocs = await db
@@ -109,6 +131,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: documents.createdAt,
       })
       .from(documents)
+      .where(userFilter)
       .orderBy(desc(documents.createdAt))
       .limit(5);
 
@@ -119,6 +142,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: conversations.createdAt,
       })
       .from(conversations)
+      .where(convFilter)
       .orderBy(desc(conversations.createdAt))
       .limit(5);
 
@@ -132,9 +156,9 @@ export class DatabaseStorage implements IStorage {
     const activityRows = await db.execute(sql`
       SELECT 
         d::date as date,
-        COALESCE((SELECT COUNT(*) FROM documents WHERE created_at::date = d::date), 0) as documents,
-        COALESCE((SELECT COUNT(*) FROM conversations WHERE created_at::date = d::date), 0) as conversations,
-        COALESCE((SELECT COUNT(*) FROM messages WHERE created_at::date = d::date), 0) as messages
+        COALESCE((SELECT COUNT(*) FROM documents WHERE created_at::date = d::date AND user_id = ${userId}), 0) as documents,
+        COALESCE((SELECT COUNT(*) FROM conversations WHERE created_at::date = d::date AND user_id = ${userId}), 0) as conversations,
+        COALESCE((SELECT COUNT(*) FROM messages WHERE created_at::date = d::date AND conversation_id IN (SELECT id FROM conversations WHERE user_id = ${userId})), 0) as messages
       FROM generate_series(
         CURRENT_DATE - INTERVAL '6 days',
         CURRENT_DATE,
@@ -153,9 +177,9 @@ export class DatabaseStorage implements IStorage {
     return {
       totalDocuments: Number(docCount.count),
       totalConversations: Number(convCount.count),
-      totalMessages: Number(msgCount.count),
-      userMessages: Number(userMsgCount.count),
-      aiMessages: Number(aiMsgCount.count),
+      totalMessages: totalMsgs,
+      userMessages: userMsgs,
+      aiMessages: aiMsgs,
       documentsByType: docsByType.map(r => ({ type: r.type, count: Number(r.count) })),
       recentDocuments: recentDocs,
       recentConversations: recentConvsWithCounts,

@@ -162,18 +162,22 @@ function cleanupFiles(paths: string[]) {
   }
 }
 
+function getUserId(req: any): string {
+  return req.user?.claims?.sub;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
   app.get(api.documents.list.path, isAuthenticated, async (req, res) => {
-    const docs = await storage.getDocuments();
+    const docs = await storage.getDocuments(getUserId(req));
     res.json(docs);
   });
 
   app.get(api.documents.get.path, isAuthenticated, async (req, res) => {
-    const doc = await storage.getDocument(Number(req.params.id));
+    const doc = await storage.getDocument(Number(req.params.id), getUserId(req));
     if (!doc) return res.status(404).json({ message: "Document not found" });
     res.json(doc);
   });
@@ -297,6 +301,7 @@ Rules:
         originalFilename,
         content: content || "No content extracted.",
         fileType: getFileType(fileType),
+        userId: getUserId(req),
       });
 
       res.status(201).json(doc);
@@ -308,14 +313,14 @@ Rules:
   });
 
   app.delete(api.documents.delete.path, isAuthenticated, async (req, res) => {
-    await storage.deleteDocument(Number(req.params.id));
+    await storage.deleteDocument(Number(req.params.id), getUserId(req));
     res.status(204).send();
   });
 
   // Metrics
-  app.get("/api/metrics", isAuthenticated, async (_req, res) => {
+  app.get("/api/metrics", isAuthenticated, async (req, res) => {
     try {
-      const metrics = await storage.getMetrics();
+      const metrics = await storage.getMetrics(getUserId(req));
       res.json(metrics);
     } catch (error) {
       console.error("Metrics error:", error);
@@ -325,12 +330,12 @@ Rules:
 
   // Chat
   app.get(api.conversations.list.path, isAuthenticated, async (req, res) => {
-    const convs = await storage.getAllConversations();
+    const convs = await storage.getAllConversations(getUserId(req));
     res.json(convs);
   });
 
   app.get(api.conversations.get.path, isAuthenticated, async (req, res) => {
-    const conv = await storage.getConversation(Number(req.params.id));
+    const conv = await storage.getConversation(Number(req.params.id), getUserId(req));
     if (!conv) return res.status(404).json({ message: "Conversation not found" });
     res.json({ conversation: conv, messages: conv.messages });
   });
@@ -341,16 +346,18 @@ Rules:
       title: input.title || "New Conversation",
       documentId: input.documentId,
       documentIds: input.documentIds || (input.documentId ? [input.documentId] : null),
+      userId: getUserId(req),
     });
     res.status(201).json(conv);
   });
 
   app.delete(api.conversations.delete.path, isAuthenticated, async (req, res) => {
-    await storage.deleteConversation(Number(req.params.id));
+    await storage.deleteConversation(Number(req.params.id), getUserId(req));
     res.status(204).send();
   });
 
   app.post(api.messages.create.path, isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
     const conversationId = Number(req.params.id);
     const { content } = req.body;
 
@@ -360,7 +367,7 @@ Rules:
       content
     });
 
-    const conversation = await storage.getConversation(conversationId);
+    const conversation = await storage.getConversation(conversationId, userId);
     if (!conversation) return res.status(404).json({ message: "Conversation not found" });
 
     let systemContext = "You are a helpful AI assistant that answers questions about documents. Use Markdown formatting in your responses including tables and LaTeX formulas when relevant.";
@@ -368,7 +375,7 @@ Rules:
     const docIds = conversation.documentIds || (conversation.documentId ? [conversation.documentId] : []);
 
     if (docIds.length > 0) {
-      const docs = await Promise.all(docIds.map(id => storage.getDocument(id)));
+      const docs = await Promise.all(docIds.map(id => storage.getDocument(id, userId)));
       const validDocs = docs.filter((d): d is NonNullable<typeof d> => !!d);
 
       if (validDocs.length === 1) {
