@@ -48,7 +48,7 @@ export default function Landing() {
           <img src={heroBg} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
         </div>
-        <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24">
+        <div className="relative max-w-6xl mx-auto px-6 py-10 md:py-14">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="space-y-5">
               <h1
