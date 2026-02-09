@@ -59,7 +59,7 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   const outputPrefix = path.join(outputDir, "page");
 
   try {
-    await execFileAsync("pdftoppm", ["-png", "-r", "200", resolvedPath, outputPrefix], {
+    await execFileAsync("pdftoppm", ["-png", "-r", "150", resolvedPath, outputPrefix], {
       timeout: 120000,
     });
   } catch (err) {
@@ -75,33 +75,27 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   return files;
 }
 
-async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> {
-  const batchSize = 5;
-  const allMarkdown: string[] = [];
+async function extractBatch(imagePaths: string[], startIndex: number): Promise<string> {
+  const imageContents: OpenAI.Chat.Completions.ChatCompletionContentPart[] = imagePaths.map((imgPath) => {
+    const base64 = fs.readFileSync(imgPath).toString("base64");
+    return {
+      type: "image_url" as const,
+      image_url: {
+        url: `data:image/png;base64,${base64}`,
+        detail: "auto" as const,
+      },
+    };
+  });
 
-  for (let i = 0; i < imagePaths.length; i += batchSize) {
-    const batch = imagePaths.slice(i, i + batchSize);
+  const pageNumbers = imagePaths.map((_, idx) => startIndex + idx + 1).join(", ");
 
-    const imageContents: OpenAI.Chat.Completions.ChatCompletionContentPart[] = batch.map((imgPath, idx) => {
-      const base64 = fs.readFileSync(imgPath).toString("base64");
-      return {
-        type: "image_url" as const,
-        image_url: {
-          url: `data:image/png;base64,${base64}`,
-          detail: "high" as const,
-        },
-      };
-    });
-
-    const pageNumbers = batch.map((_, idx) => i + idx + 1).join(", ");
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-5.2",
-      max_completion_tokens: 8192,
-      messages: [
-        {
-          role: "system",
-          content: `You are a document content extraction expert. Convert the provided document page images into well-structured Markdown.
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: 8192,
+    messages: [
+      {
+        role: "system",
+        content: `You are a document content extraction expert. Convert the provided document page images into well-structured Markdown.
 
 Rules:
 - Extract ALL text content faithfully
@@ -110,27 +104,44 @@ Rules:
 - For images/charts/diagrams, describe them in detail within an image block like: ![Description of image/chart](image)
 - Preserve headings, bullet points, numbered lists
 - Keep the document structure and hierarchy intact
-- For each page, add a horizontal rule (---) between pages
+- Separate pages with a horizontal rule (---)
 - Do NOT add any commentary - just output the extracted markdown`,
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Extract the content from these document pages (pages ${pageNumbers}) into Markdown format. Include all tables, formulas, and describe any images or charts.`,
-            },
-            ...imageContents,
-          ],
-        },
-      ],
-    });
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Extract the content from these document pages (pages ${pageNumbers}) into Markdown format.`,
+          },
+          ...imageContents,
+        ],
+      },
+    ],
+  });
 
-    const markdown = response.choices[0]?.message?.content || "";
-    allMarkdown.push(markdown);
+  return response.choices[0]?.message?.content || "";
+}
+
+async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> {
+  const maxPages = 30;
+  const pages = imagePaths.slice(0, maxPages);
+
+  if (pages.length <= 5) {
+    return await extractBatch(pages, 0);
   }
 
-  return allMarkdown.join("\n\n---\n\n");
+  const batchSize = 5;
+  const batches: { paths: string[]; startIndex: number }[] = [];
+  for (let i = 0; i < pages.length; i += batchSize) {
+    batches.push({ paths: pages.slice(i, i + batchSize), startIndex: i });
+  }
+
+  const results = await Promise.all(
+    batches.map(b => extractBatch(b.paths, b.startIndex))
+  );
+
+  return results.join("\n\n---\n\n");
 }
 
 function cleanupFiles(paths: string[]) {

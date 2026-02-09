@@ -1,15 +1,41 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, FileText, Loader2, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { UploadCloud, FileText, Loader2, ScanSearch, Sparkles, CheckCircle } from "lucide-react";
 import { useUploadDocument } from "@/hooks/use-documents";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+
+const PROGRESS_STAGES = [
+  { label: "Uploading file...", duration: 2000 },
+  { label: "Converting pages to images...", duration: 4000 },
+  { label: "AI is extracting tables, formulas & content...", duration: 30000 },
+  { label: "Finalizing document...", duration: 10000 },
+];
 
 export function UploadZone() {
   const [isDragActive, setIsDragActive] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
   const { mutate: upload, isPending } = useUploadDocument();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isPending) {
+      setStageIndex(0);
+      return;
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const advanceStage = (idx: number) => {
+      if (idx < PROGRESS_STAGES.length - 1) {
+        timeoutId = setTimeout(() => {
+          setStageIndex(idx + 1);
+          advanceStage(idx + 1);
+        }, PROGRESS_STAGES[idx].duration);
+      }
+    };
+
+    advanceStage(0);
+    return () => clearTimeout(timeoutId);
+  }, [isPending]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -55,12 +81,13 @@ export function UploadZone() {
   });
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8">
+    <div className="w-full max-w-2xl mx-auto mb-8" data-testid="upload-zone-container">
       <div
         {...getRootProps()}
+        data-testid="dropzone"
         className={`
           relative group cursor-pointer
-          rounded-2xl border-2 border-dashed
+          rounded-md border-2 border-dashed
           transition-all duration-300 ease-out
           p-10 text-center
           bg-background/50 backdrop-blur-sm
@@ -69,43 +96,75 @@ export function UploadZone() {
               ? "border-primary bg-primary/5 scale-[1.01] shadow-xl shadow-primary/10"
               : "border-border hover:border-primary/50 hover:bg-muted/30"
           }
-          ${isPending ? "opacity-50 pointer-events-none cursor-wait" : ""}
+          ${isPending ? "pointer-events-none cursor-wait" : ""}
         `}
       >
-        <input {...getInputProps()} />
-        
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className={`
-            p-4 rounded-full transition-colors duration-300
-            ${isDragActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary"}
-          `}>
-            {isPending ? (
-              <Loader2 className="w-8 h-8 animate-spin" />
-            ) : (
-              <UploadCloud className="w-8 h-8" />
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-xl font-display font-semibold text-foreground">
-              {isPending ? "Processing Document..." : "Upload Document"}
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              {isPending 
-                ? "AI is analyzing your document pages for tables, formulas, and images. This may take a minute."
-                : "Drag & drop PDF, Word, or PowerPoint files here, or click to select."
-              }
-            </p>
-          </div>
+        <input {...getInputProps()} data-testid="input-file-upload" />
 
-          {!isPending && (
-            <div className="flex gap-2 mt-2">
+        {isPending ? (
+          <div className="flex flex-col items-center justify-center gap-5">
+            <div className="relative">
+              <div className="p-4 rounded-full bg-primary/10">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            </div>
+
+            <div className="space-y-3 w-full max-w-sm">
+              <h3 className="text-lg font-semibold text-foreground" data-testid="text-processing-title">
+                Processing Document
+              </h3>
+
+              <div className="space-y-2">
+                {PROGRESS_STAGES.map((stage, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-2 text-sm transition-all duration-300 ${
+                      idx < stageIndex
+                        ? "text-muted-foreground"
+                        : idx === stageIndex
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground/40"
+                    }`}
+                    data-testid={`text-stage-${idx}`}
+                  >
+                    {idx < stageIndex ? (
+                      <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    ) : idx === stageIndex ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full border border-border shrink-0" />
+                    )}
+                    <span>{stage.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className={`
+              p-4 rounded-full transition-colors duration-300
+              ${isDragActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary"}
+            `}>
+              <UploadCloud className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-foreground" data-testid="text-upload-title">
+                Upload Document
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto" data-testid="text-upload-description">
+                Drag & drop PDF, Word, or PowerPoint files here, or click to select.
+              </p>
+            </div>
+
+            <div className="flex gap-2 mt-2 flex-wrap">
               <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">PDF</span>
               <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">Word</span>
               <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">PPTX</span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
