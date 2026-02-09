@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "wouter";
-import { ArrowLeft, Send, User, Bot, Loader2, Sparkles, FileText, Check } from "lucide-react";
+import { Send, Bot, Loader2, Sparkles, FileText, User } from "lucide-react";
 import { useDocuments } from "@/hooks/use-documents";
 import { useCreateConversation } from "@/hooks/use-conversations";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import ReactMarkdown from "react-markdown";
@@ -146,187 +144,174 @@ export default function MultiDocChat() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <header className="flex-none h-14 border-b border-border bg-card/80 backdrop-blur-md px-6 flex items-center gap-4 z-10">
-        <Link href="/">
-          <Button variant="ghost" size="icon" data-testid="button-back">
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-          </Button>
-        </Link>
-        <Sparkles className="w-5 h-5 text-primary" />
-        <h1 className="font-bold text-lg" data-testid="text-page-title">Multi-Document Chat</h1>
-        {chatStarted && (
-          <Badge variant="secondary" className="ml-2" data-testid="badge-doc-count">
-            {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""}
-          </Badge>
-        )}
-      </header>
-
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-72 lg:w-80 flex-none border-r border-border bg-muted/20 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between gap-2">
-            <h2 className="font-semibold text-sm" data-testid="text-select-heading">Select Documents</h2>
-            {documents && documents.length > 0 && !chatStarted && (
-              <Button variant="ghost" size="sm" onClick={selectAll} data-testid="button-select-all">
-                {selectedDocIds.length === documents.length ? "Deselect All" : "Select All"}
-              </Button>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {docsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : documents && documents.length > 0 ? (
-              documents.map(doc => {
-                const isSelected = selectedDocIds.includes(doc.id);
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => toggleDoc(doc.id)}
-                    className={`
-                      flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors
-                      ${isSelected ? "bg-primary/10 border border-primary/30" : "hover-elevate border border-transparent"}
-                      ${chatStarted ? "cursor-default" : ""}
-                    `}
-                    data-testid={`card-document-${doc.id}`}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      disabled={chatStarted}
-                      className="mt-0.5"
-                      data-testid={`checkbox-document-${doc.id}`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate" data-testid={`text-doc-title-${doc.id}`}>{doc.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {doc.fileType.toUpperCase()}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                No documents uploaded yet
-              </div>
-            )}
-          </div>
-
-          {!chatStarted && (
-            <div className="p-3 border-t border-border">
-              <Button
-                className="w-full"
-                disabled={selectedDocIds.length === 0}
-                onClick={startChat}
-                data-testid="button-start-chat"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Start Chat ({selectedDocIds.length} selected)
-              </Button>
-            </div>
+    <div className="h-full flex overflow-hidden">
+      <div className="w-64 flex-none border-r border-border bg-muted/10 flex flex-col overflow-hidden">
+        <div className="p-3 border-b border-border flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground" data-testid="text-select-heading">Documents</h2>
+          {documents && documents.length > 0 && !chatStarted && (
+            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={selectAll} data-testid="button-select-all">
+              {selectedDocIds.length === documents.length ? "None" : "All"}
+            </Button>
           )}
         </div>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {!chatStarted ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <Bot className="w-16 h-16 text-primary/15 mb-4" />
-              <h2 className="text-xl font-semibold mb-2" data-testid="text-empty-state-title">Chat across your documents</h2>
-              <p className="text-muted-foreground max-w-md">
-                Select one or more documents from the sidebar, then start a chat. The AI will have access to all selected documents and can answer questions referencing any of them.
-              </p>
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {docsLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             </div>
-          ) : (
-            <>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
-                {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground/80">
-                    <Bot className="w-12 h-12 mb-4 text-primary/20" />
-                    <p className="font-medium">Ask me anything about your selected documents!</p>
-                    <p className="text-sm mt-1 opacity-70">
-                      I can compare, summarize, or find details across {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""}.
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                      data-testid={`message-${msg.role}-${i}`}
-                    >
-                      {msg.role === "assistant" && (
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                          <Bot className="w-4 h-4 text-primary" />
-                        </div>
-                      )}
-
-                      <div className={`
-                        max-w-[80%] rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm
-                        ${msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-none"
-                          : "bg-white dark:bg-zinc-900 border border-border/50 rounded-bl-none text-foreground"}
-                      `}>
-                        {msg.role === "assistant" ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm, remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                            >{msg.content}</ReactMarkdown>
-                          </div>
-                        ) : (
-                          msg.content
-                        )}
-                      </div>
-
-                      {msg.role === "user" && (
-                        <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center shrink-0">
-                          <User className="w-4 h-4 text-background" />
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-                {isLoading && messages[messages.length - 1]?.role === "user" && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="bg-muted rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 bg-background border-t border-border">
-                <form onSubmit={handleSubmit} className="relative">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask a question across your documents..."
-                    className="pr-12 py-6 rounded-md bg-muted/50 border-border focus:bg-background transition-all shadow-inner"
-                    disabled={isLoading}
-                    data-testid="input-chat-message"
+          ) : documents && documents.length > 0 ? (
+            documents.map(doc => {
+              const isSelected = selectedDocIds.includes(doc.id);
+              return (
+                <div
+                  key={doc.id}
+                  onClick={() => toggleDoc(doc.id)}
+                  className={`
+                    flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors text-sm
+                    ${isSelected ? "bg-primary/10" : "hover-elevate"}
+                    ${chatStarted ? "cursor-default opacity-70" : ""}
+                  `}
+                  data-testid={`card-document-${doc.id}`}
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    disabled={chatStarted}
+                    className="shrink-0"
+                    data-testid={`checkbox-document-${doc.id}`}
                   />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    disabled={isLoading || !input.trim()}
-                    className="absolute right-1.5 top-1.5 h-9 w-9 rounded-md shadow-sm"
-                    data-testid="button-send-message"
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </Button>
-                </form>
-              </div>
-            </>
+                  <span className="truncate" data-testid={`text-doc-title-${doc.id}`}>{doc.title}</span>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-6 text-xs text-muted-foreground">
+              <FileText className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+              No documents yet
+            </div>
           )}
         </div>
+
+        {!chatStarted && (
+          <div className="p-2 border-t border-border">
+            <Button
+              className="w-full"
+              size="sm"
+              disabled={selectedDocIds.length === 0}
+              onClick={startChat}
+              data-testid="button-start-chat"
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              Chat ({selectedDocIds.length})
+            </Button>
+          </div>
+        )}
+
+        {chatStarted && (
+          <div className="p-2 border-t border-border">
+            <Badge variant="secondary" className="w-full justify-center text-xs" data-testid="badge-doc-count">
+              {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""} selected
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {!chatStarted ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+            <Bot className="w-14 h-14 text-primary/10 mb-3" />
+            <h2 className="text-lg font-semibold mb-1.5" data-testid="text-empty-state-title">Chat across your documents</h2>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Select documents from the left, then start a chat. The AI can answer questions referencing all selected files.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+              {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground/80">
+                  <Bot className="w-10 h-10 mb-3 text-primary/20" />
+                  <p className="font-medium text-sm">Ask me anything about your selected documents</p>
+                  <p className="text-xs mt-1 opacity-70">
+                    I can compare, summarize, or find details across {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""}.
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    data-testid={`message-${msg.role}-${i}`}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                        <Bot className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+
+                    <div className={`
+                      max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed
+                      ${msg.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-card border border-border/50 rounded-bl-none text-foreground"}
+                    `}>
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                          >{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
+
+                    {msg.role === "user" && (
+                      <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                        <User className="w-3.5 h-3.5 text-background" />
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+              {isLoading && messages[messages.length - 1]?.role === "user" && (
+                <div className="flex gap-3 justify-start">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div className="bg-muted rounded-2xl rounded-bl-none p-3 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 bg-background border-t border-border">
+              <form onSubmit={handleSubmit} className="relative">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask a question across your documents..."
+                  className="pr-10 bg-muted/30 border-border"
+                  disabled={isLoading}
+                  data-testid="input-chat-message"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isLoading || !input.trim()}
+                  className="absolute right-1 top-1/2 -translate-y-1/2"
+                  data-testid="button-send-message"
+                >
+                  {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                </Button>
+              </form>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

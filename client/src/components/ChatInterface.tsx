@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, User, Bot, Loader2, Sparkles } from "lucide-react";
 import { useConversation, useCreateConversation } from "@/hooks/use-conversations";
-import { buildUrl } from "@shared/routes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -25,17 +23,16 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
-  
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { mutateAsync: createConv } = useCreateConversation();
 
-  // Initialize conversation
   useEffect(() => {
     if (!conversationId) {
-      createConv({ 
-        title: `Chat about Document ${documentId}`, 
-        documentId 
+      createConv({
+        title: `Chat about Document ${documentId}`,
+        documentId
       }).then((conv) => {
         setConversationId(conv.id);
       }).catch(() => {
@@ -48,15 +45,13 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
     }
   }, [documentId, conversationId, createConv, toast]);
 
-  // Fetch history if we return to existing conv
   const { data: history } = useConversation(conversationId || 0);
-  
+
   useEffect(() => {
     if (history?.messages) {
-      // Only set initial history if local state is empty to avoid overwriting streaming state
-      setMessages(prev => prev.length === 0 ? history.messages.map(m => ({ 
-        role: m.role as "user" | "assistant", 
-        content: m.content 
+      setMessages(prev => prev.length === 0 ? history.messages.map(m => ({
+        role: m.role as "user" | "assistant",
+        content: m.content
       })) : prev);
     }
   }, [history]);
@@ -77,7 +72,6 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
     setIsLoading(true);
 
     try {
-      // Using direct fetch for SSE handling
       const response = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,12 +80,11 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
 
       if (!response.ok) throw new Error("Failed to send message");
 
-      // Placeholder for assistant message
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      
+
       if (!reader) throw new Error("No stream available");
 
       let assistantContent = "";
@@ -107,7 +100,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              
+
               if (data.content) {
                 assistantContent += data.content;
                 setMessages(prev => {
@@ -139,44 +132,45 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
 
   if (!conversationId) {
     return (
-      <div className="h-full flex items-center justify-center text-muted-foreground">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+      <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+        <Loader2 className="w-4 h-4 animate-spin mr-2" />
         Initializing chat...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-card/50 backdrop-blur-sm rounded-xl overflow-hidden border border-border/50 shadow-sm">
-      <div className="p-4 border-b border-border bg-card/80 flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-primary" />
-        <h3 className="font-display font-semibold">AI Assistant</h3>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="p-3 border-b border-border flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-primary" />
+        <h3 className="font-semibold text-sm">AI Assistant</h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3" ref={scrollRef}>
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground/80">
-            <Bot className="w-12 h-12 mb-4 text-primary/20" />
-            <p className="font-medium">Ask me anything about this document!</p>
-            <p className="text-sm mt-1 opacity-70">I can summarize key points, explain concepts, or find specific details.</p>
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground/80">
+            <Bot className="w-10 h-10 mb-3 text-primary/20" />
+            <p className="font-medium text-sm">Ask me anything about this document</p>
+            <p className="text-xs mt-1 opacity-70">I can summarize, explain, or find details.</p>
           </div>
         ) : (
           messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              data-testid={`message-${msg.role}-${i}`}
             >
               {msg.role === "assistant" && (
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                  <Bot className="w-4 h-4 text-primary" />
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                  <Bot className="w-3.5 h-3.5 text-primary" />
                 </div>
               )}
-              
+
               <div className={`
-                max-w-[85%] rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm
-                ${msg.role === "user" 
-                  ? "bg-primary text-primary-foreground rounded-br-none" 
-                  : "bg-white dark:bg-zinc-900 border border-border/50 rounded-bl-none text-foreground"}
+                max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed
+                ${msg.role === "user"
+                  ? "bg-primary text-primary-foreground rounded-br-none"
+                  : "bg-card border border-border/50 rounded-bl-none text-foreground"}
               `}>
                 {msg.role === "assistant" ? (
                   <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
@@ -191,19 +185,19 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
               </div>
 
               {msg.role === "user" && (
-                <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center shrink-0">
-                  <User className="w-4 h-4 text-background" />
+                <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-background" />
                 </div>
               )}
             </div>
           ))
         )}
         {isLoading && messages[messages.length - 1]?.role === "user" && (
-          <div className="flex gap-3 justify-start">
-             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 text-primary" />
+          <div className="flex gap-2.5 justify-start">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 text-primary" />
             </div>
-            <div className="bg-muted rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
+            <div className="bg-muted rounded-2xl rounded-bl-none p-3 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -212,22 +206,24 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
         )}
       </div>
 
-      <div className="p-4 bg-background border-t border-border">
+      <div className="p-3 bg-background border-t border-border">
         <form onSubmit={handleSubmit} className="relative">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question..."
-            className="pr-12 py-6 rounded-xl bg-muted/50 border-border focus:bg-background transition-all shadow-inner"
+            className="pr-10 bg-muted/30 border-border"
             disabled={isLoading}
+            data-testid="input-chat-message"
           />
-          <Button 
-            type="submit" 
-            size="icon" 
+          <Button
+            type="submit"
+            size="icon"
             disabled={isLoading || !input.trim()}
-            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-lg shadow-sm"
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+            data-testid="button-send-message"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
           </Button>
         </form>
       </div>

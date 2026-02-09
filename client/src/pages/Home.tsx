@@ -1,93 +1,54 @@
-import { motion } from "framer-motion";
-import { Link } from "wouter";
 import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
-import { LayoutGrid, Loader2, MessagesSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LayoutGrid, Loader2, FileText } from "lucide-react";
 
 export default function Home() {
   const { data: documents, isLoading } = useDocuments();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Decorative background elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-none px-6 pt-5 pb-4">
+        <h1 className="text-2xl font-display font-bold text-foreground tracking-tight" data-testid="text-page-heading">
+          Documents
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Upload and chat with your PDF, Word, or PowerPoint files.
+        </p>
       </div>
 
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-display font-bold text-foreground mb-4 tracking-tight"
-          >
-            Chat with your <span className="text-primary">Documents</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-muted-foreground max-w-2xl mx-auto"
-          >
-            Upload your PDF, Word, or PowerPoint files. We'll convert them to Markdown and let you chat with them instantly using AI.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mt-5"
-          >
-            <Link href="/chat">
-              <Button variant="outline" size="lg" data-testid="button-multi-doc-chat">
-                <MessagesSquare className="w-5 h-5 mr-2" />
-                Chat across multiple documents
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <UploadZone />
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <UploadZone />
-        </motion.div>
-
-        <div className="mt-16">
-          <div className="flex items-center gap-2 mb-6 border-b border-border pb-4">
-            <LayoutGrid className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-display font-semibold">Your Library</h2>
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-4 border-b border-border pb-3">
+            <LayoutGrid className="w-4 h-4 text-primary" />
+            <h2 className="text-base font-display font-semibold" data-testid="text-library-heading">Your Library</h2>
+            {documents && documents.length > 0 && (
+              <span className="text-xs text-muted-foreground ml-auto">{documents.length} file{documents.length !== 1 ? "s" : ""}</span>
+            )}
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="h-48 bg-muted/50 rounded-xl animate-pulse" />
+                <div key={n} className="h-40 bg-muted/50 rounded-md animate-pulse" />
               ))}
             </div>
           ) : documents && documents.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {documents.map((doc) => (
-                <motion.div
-                  key={doc.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <DocumentCard document={doc} />
-                </motion.div>
+                <DocumentCard key={doc.id} document={doc} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 border-2 border-dashed border-border/50 rounded-2xl bg-muted/20">
-              <p className="text-muted-foreground">No documents uploaded yet. Start by dropping a file above!</p>
+            <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-md bg-muted/10">
+              <FileText className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
+              <p className="text-muted-foreground text-sm">No documents yet. Upload a file above to get started.</p>
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

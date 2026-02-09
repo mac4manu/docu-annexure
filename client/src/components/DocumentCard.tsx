@@ -3,6 +3,8 @@ import { formatDistanceToNow } from "date-fns";
 import { FileText, Trash2, ArrowRight } from "lucide-react";
 import { type Document } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,25 +26,33 @@ export function DocumentCard({ document }: DocumentCardProps) {
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument();
 
   return (
-    <div className="
-      group relative flex flex-col justify-between
-      bg-card rounded-xl p-5 border border-border/60
-      shadow-sm hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 hover:-translate-y-1
-      transition-all duration-300 ease-out
-    ">
-      <div className="flex items-start justify-between mb-4">
-        <div className="p-3 bg-primary/10 rounded-lg text-primary">
-          <FileText className="w-6 h-6" />
+    <Card className="group flex flex-col justify-between p-4">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-2 bg-primary/10 rounded-md text-primary shrink-0">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-foreground truncate" title={document.title} data-testid={`text-card-title-${document.id}`}>
+              {document.title}
+            </h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {formatDistanceToNow(new Date(document.createdAt), { addSuffix: true })}
+            </p>
+          </div>
         </div>
-        
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <button 
+            <Button
+              variant="ghost"
+              size="icon"
               disabled={isDeleting}
-              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              className="shrink-0 text-muted-foreground"
+              data-testid={`button-delete-${document.id}`}
             >
-              <Trash2 className="w-4 h-4" />
-            </button>
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -53,9 +63,9 @@ export function DocumentCard({ document }: DocumentCardProps) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => deleteDoc(document.id)}
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                className="bg-destructive text-destructive-foreground"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
@@ -64,24 +74,17 @@ export function DocumentCard({ document }: DocumentCardProps) {
         </AlertDialog>
       </div>
 
-      <div className="mb-6">
-        <h3 className="text-lg font-bold font-display text-foreground line-clamp-1 mb-1" title={document.title}>
-          {document.title}
-        </h3>
-        <p className="text-xs text-muted-foreground font-medium">
-          Uploaded {formatDistanceToNow(new Date(document.createdAt), { addSuffix: true })}
-        </p>
-      </div>
-
       <Link href={`/document/${document.id}`} className="block w-full">
-        <Button 
-          variant="outline" 
-          className="w-full justify-between group-hover:border-primary group-hover:text-primary transition-colors"
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-between"
+          data-testid={`button-view-${document.id}`}
         >
           View & Chat
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          <ArrowRight className="w-3.5 h-3.5" />
         </Button>
       </Link>
-    </div>
+    </Card>
   );
 }

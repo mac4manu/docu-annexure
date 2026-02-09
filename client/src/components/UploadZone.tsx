@@ -82,7 +82,7 @@ export function UploadZone() {
   });
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8" data-testid="upload-zone-container">
+    <div className="w-full" data-testid="upload-zone-container">
       <div
         {...getRootProps()}
         data-testid="dropzone"
@@ -90,7 +90,7 @@ export function UploadZone() {
           relative group cursor-pointer
           rounded-md border-2 border-dashed
           transition-all duration-300 ease-out
-          p-10 text-center
+          p-6 text-center
           bg-background/50 backdrop-blur-sm
           ${
             isDragActive
