@@ -227,8 +227,8 @@ export default function MultiDocChat() {
   const historyConversations = conversationsList || [];
 
   return (
-    <div className="h-full flex overflow-hidden">
-      <div className="w-64 flex-none border-r border-border bg-muted/10 flex flex-col overflow-hidden">
+    <div className="h-full flex overflow-hidden" style={{ maxHeight: "100%" }}>
+      <div className="w-64 flex-none border-r border-border bg-muted/10 flex flex-col overflow-hidden min-h-0">
         <div className="p-3 border-b border-border flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <Button
@@ -359,9 +359,9 @@ export default function MultiDocChat() {
         )}
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
         {!chatStarted ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 min-h-0">
             <Bot className="w-14 h-14 text-primary/10 mb-3" />
             <h2 className="text-lg font-semibold mb-1.5" data-testid="text-empty-state-title">Chat across your documents</h2>
             <p className="text-sm text-muted-foreground max-w-sm">
@@ -382,7 +382,7 @@ export default function MultiDocChat() {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" ref={scrollRef}>
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground/80">
                   <Bot className="w-10 h-10 mb-3 text-primary/20" />
@@ -444,7 +444,7 @@ export default function MultiDocChat() {
               )}
             </div>
 
-            <div className="p-3 bg-background border-t border-border">
+            <div className="flex-none p-3 bg-background border-t border-border">
               <form onSubmit={handleSubmit} className="relative">
                 <Input
                   value={input}

@@ -39,9 +39,7 @@ export default function Landing() {
             <img src={logoImg} alt="DocuAnnexure" className="w-9 h-9 rounded-md" />
             <span className="font-bold text-base tracking-tight" data-testid="text-landing-logo">DocuAnnexure</span>
           </div>
-          <a href="/api/login">
-            <Button data-testid="button-header-login">Log in</Button>
-          </a>
+          <Button data-testid="button-header-login" onClick={() => window.location.href = "/api/login"}>Log in</Button>
         </div>
       </header>
 
@@ -66,12 +64,10 @@ export default function Landing() {
                 across your entire knowledge base.
               </p>
               <div className="flex items-center gap-3 flex-wrap">
-                <a href="/api/login">
-                  <Button size="lg" data-testid="button-hero-get-started">
-                    Get Started
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </a>
+                <Button size="lg" data-testid="button-hero-get-started" onClick={() => window.location.href = "/api/login"}>
+                  Get Started
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
               </div>
               <div className="flex items-center gap-4 pt-2 flex-wrap">
                 {trustItems.map((item) => (

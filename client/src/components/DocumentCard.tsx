@@ -111,10 +111,10 @@ export function DocumentCard({ document }: DocumentCardProps) {
       </Link>
 
       <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2.5">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Link href={`/document/${document.id}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid={`link-view-chat-${document.id}`}>
           <MessageSquare className="w-3 h-3" />
           <span>View & Chat</span>
-        </div>
+        </Link>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>

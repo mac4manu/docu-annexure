@@ -97,11 +97,9 @@ function UserMenu() {
       <span className="text-xs text-muted-foreground hidden sm:inline max-w-[120px] truncate" data-testid="text-user-name">
         {displayName}
       </span>
-      <a href="/api/logout">
-        <Button variant="ghost" size="icon" title="Log out" data-testid="button-logout">
-          <LogOut className="w-4 h-4" />
-        </Button>
-      </a>
+      <Button variant="ghost" size="icon" title="Log out" data-testid="button-logout" onClick={() => window.location.href = "/api/logout"}>
+        <LogOut className="w-4 h-4" />
+      </Button>
     </div>
   );
 }
@@ -121,7 +119,7 @@ function AuthenticatedApp() {
         <HeaderNav />
         <UserMenu />
       </header>
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden min-h-0">
         <Router />
       </main>
     </div>
