@@ -183,40 +183,82 @@ export async function registerRoutes(
     const filePath = req.file.path;
     const fileType = req.file.mimetype;
     const originalFilename = req.file.originalname;
-    const mode = req.body?.mode === "advanced" ? "advanced" : "basic";
     const cleanupList: string[] = [filePath];
 
     try {
       let content = "";
-      console.log(`Processing file: ${originalFilename} (${fileType}) [mode: ${mode}]`);
+      console.log(`Processing file: ${originalFilename} (${fileType})`);
 
-      if (mode === "advanced" && fileType === "application/pdf") {
-        const imagePaths = await convertPdfToImages(filePath);
-        const imageDir = path.dirname(imagePaths[0] || "");
-        if (imageDir) cleanupList.push(imageDir);
+      if (!ALLOWED_MIMETYPES.has(fileType)) {
+        cleanupFiles(cleanupList);
+        return res.status(400).json({ message: "Unsupported file type" });
+      }
 
-        if (imagePaths.length > 0) {
-          content = await extractMarkdownFromImages(imagePaths);
-        } else {
-          content = "No pages found in PDF.";
-        }
-      } else if (ALLOWED_MIMETYPES.has(fileType)) {
+      if (fileType === "application/pdf") {
+        const resolvedPath = path.resolve(filePath);
         let rawText = "";
-        if (fileType === "application/pdf") {
-          try {
-            const resolvedPath = path.resolve(filePath);
-            const { stdout } = await execFileAsync("pdftotext", ["-layout", resolvedPath, "-"], { timeout: 30000 });
-            rawText = stdout;
-          } catch (e) {
-            console.error("pdftotext error:", e);
-            rawText = "";
+        try {
+          const { stdout } = await execFileAsync("pdftotext", ["-layout", resolvedPath, "-"], { timeout: 30000 });
+          rawText = stdout;
+        } catch (e) {
+          console.error("pdftotext error:", e);
+        }
+
+        const pageCountMatch = rawText.split("\f").length;
+        const textPerPage = rawText.trim().length / Math.max(pageCountMatch, 1);
+        const hasTablePatterns = /(\|.*\|)|(\+[-+]+\+)|(┌|├|└|│|─)/.test(rawText);
+        const hasMathSymbols = /[∑∫∂√∞≠≈±×÷∈∀∃∇∆λσμπ]|\\frac|\\sum|\\int|\\sqrt/.test(rawText);
+        const hasLowTextDensity = textPerPage < 200;
+        const isComplex = hasTablePatterns || hasMathSymbols || hasLowTextDensity;
+
+        console.log(`PDF analysis: ${pageCountMatch} pages, ${Math.round(textPerPage)} chars/page, complex=${isComplex} (tables=${hasTablePatterns}, math=${hasMathSymbols}, lowDensity=${hasLowTextDensity})`);
+
+        if (isComplex) {
+          console.log("Using advanced vision-based extraction");
+          const imagePaths = await convertPdfToImages(filePath);
+          const imageDir = path.dirname(imagePaths[0] || "");
+          if (imageDir) cleanupList.push(imageDir);
+
+          if (imagePaths.length > 0) {
+            content = await extractMarkdownFromImages(imagePaths);
+          } else {
+            content = rawText || "No pages found in PDF.";
           }
         } else {
-          try {
-            rawText = await officeParser.parseOfficeAsync(filePath);
-          } catch (e) {
-            rawText = "";
+          console.log("Using basic text extraction");
+          if (rawText && rawText.trim().length > 0) {
+            const response = await openai.chat.completions.create({
+              model: "gpt-5.2",
+              max_completion_tokens: 8192,
+              messages: [
+                {
+                  role: "system",
+                  content: `You are a document formatting expert. Convert the following extracted document text into well-structured Markdown.
+
+Rules:
+- Structure the content with proper headings, lists, and paragraphs
+- If you detect table-like data, format it as a proper Markdown table
+- If you detect mathematical expressions, format them with LaTeX ($ inline, $$ block)
+- Preserve the document's logical structure
+- Do NOT add commentary - just output the formatted markdown`,
+                },
+                {
+                  role: "user",
+                  content: `Format this extracted document content into clean Markdown:\n\n${rawText.slice(0, 100000)}`,
+                },
+              ],
+            });
+            content = response.choices[0]?.message?.content || rawText;
+          } else {
+            content = "No text content could be extracted from this file.";
           }
+        }
+      } else {
+        let rawText = "";
+        try {
+          rawText = await officeParser.parseOfficeAsync(filePath);
+        } catch (e) {
+          rawText = "";
         }
 
         if (rawText && rawText.trim().length > 0) {
@@ -245,9 +287,6 @@ Rules:
         } else {
           content = "No text content could be extracted from this file.";
         }
-      } else {
-        cleanupFiles(cleanupList);
-        return res.status(400).json({ message: "Unsupported file type" });
       }
 
       cleanupFiles(cleanupList);

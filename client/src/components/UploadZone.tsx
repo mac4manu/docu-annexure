@@ -1,33 +1,22 @@
 import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, Loader2, CheckCircle, Zap, ScanSearch } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle } from "lucide-react";
 import { useUploadDocument } from "@/hooks/use-documents";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
-const BASIC_STAGES = [
+const PROGRESS_STAGES = [
   { label: "Uploading file...", duration: 1500 },
-  { label: "Extracting text content...", duration: 3000 },
+  { label: "Analyzing document complexity...", duration: 3000 },
+  { label: "Extracting content...", duration: 20000 },
   { label: "Formatting into Markdown...", duration: 15000 },
   { label: "Saving document...", duration: 5000 },
 ];
 
-const ADVANCED_STAGES = [
-  { label: "Uploading file...", duration: 2000 },
-  { label: "Converting pages to images...", duration: 4000 },
-  { label: "AI is extracting tables, formulas & content...", duration: 30000 },
-  { label: "Finalizing document...", duration: 10000 },
-];
-
 export function UploadZone() {
   const [isDragActive, setIsDragActive] = useState(false);
-  const [advancedMode, setAdvancedMode] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const { mutate: upload, isPending } = useUploadDocument();
   const { toast } = useToast();
-
-  const stages = advancedMode ? ADVANCED_STAGES : BASIC_STAGES;
 
   useEffect(() => {
     if (!isPending) {
@@ -37,17 +26,17 @@ export function UploadZone() {
 
     let timeoutId: ReturnType<typeof setTimeout>;
     const advanceStage = (idx: number) => {
-      if (idx < stages.length - 1) {
+      if (idx < PROGRESS_STAGES.length - 1) {
         timeoutId = setTimeout(() => {
           setStageIndex(idx + 1);
           advanceStage(idx + 1);
-        }, stages[idx].duration);
+        }, PROGRESS_STAGES[idx].duration);
       }
     };
 
     advanceStage(0);
     return () => clearTimeout(timeoutId);
-  }, [isPending, stages]);
+  }, [isPending]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -56,7 +45,6 @@ export function UploadZone() {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("mode", advancedMode ? "advanced" : "basic");
 
       upload(formData, {
         onSuccess: () => {
@@ -74,7 +62,7 @@ export function UploadZone() {
         },
       });
     },
-    [upload, toast, advancedMode]
+    [upload, toast]
   );
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -94,7 +82,7 @@ export function UploadZone() {
   });
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8 space-y-3" data-testid="upload-zone-container">
+    <div className="w-full max-w-2xl mx-auto mb-8" data-testid="upload-zone-container">
       <div
         {...getRootProps()}
         data-testid="dropzone"
@@ -122,11 +110,11 @@ export function UploadZone() {
 
             <div className="space-y-3 w-full max-w-sm">
               <h3 className="text-lg font-semibold text-foreground" data-testid="text-processing-title">
-                Processing Document{advancedMode ? " (Advanced)" : ""}
+                Processing Document
               </h3>
 
               <div className="space-y-2">
-                {stages.map((stage, idx) => (
+                {PROGRESS_STAGES.map((stage, idx) => (
                   <div
                     key={idx}
                     className={`flex items-center gap-2 text-sm transition-all duration-300 ${
@@ -149,6 +137,10 @@ export function UploadZone() {
                   </div>
                 ))}
               </div>
+
+              <p className="text-xs text-muted-foreground pt-1">
+                Complex documents with tables, formulas, or images are automatically detected and analyzed with AI vision.
+              </p>
             </div>
           </div>
         ) : (
@@ -176,35 +168,6 @@ export function UploadZone() {
             </div>
           </div>
         )}
-      </div>
-
-      <div
-        className="flex items-center justify-center gap-3 p-3 rounded-md bg-muted/30 border border-border"
-        onClick={(e) => e.stopPropagation()}
-        data-testid="mode-toggle-container"
-      >
-        <div className={`flex items-center gap-1.5 text-sm transition-colors ${!advancedMode ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-          <Zap className="w-4 h-4" />
-          <span>Basic</span>
-        </div>
-
-        <Switch
-          checked={advancedMode}
-          onCheckedChange={setAdvancedMode}
-          disabled={isPending}
-          data-testid="switch-extraction-mode"
-        />
-
-        <div className={`flex items-center gap-1.5 text-sm transition-colors ${advancedMode ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-          <ScanSearch className="w-4 h-4" />
-          <span>Advanced</span>
-        </div>
-
-        <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
-          {advancedMode
-            ? "AI vision extracts tables, formulas & images (slower, PDFs only)"
-            : "Fast text extraction for simple documents"}
-        </span>
       </div>
     </div>
   );
