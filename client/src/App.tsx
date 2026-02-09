@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FileText, MessagesSquare, BarChart3 } from "lucide-react";
-import logoImg from "@/assets/images/logo-simple.png";
+import logoImg from "@/assets/images/logo-transparent.png";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import DocumentView from "@/pages/DocumentView";
