@@ -1,7 +1,7 @@
-# Doc Annexure - Document Analysis Application
+# DocuAnnexure - Document Analysis Application
 
 ## Overview
-Doc Annexure is a central hub for document inference and chat-driven access to internal knowledge. It accepts PDF, PowerPoint, and Word files, extracts rich content (tables, formulas, images) using AI vision, and provides an AI-powered chat interface for Q&A about document content.
+DocuAnnexure is a central hub for document inference and chat-driven access to internal knowledge. It accepts PDF, PowerPoint, and Word files, extracts rich content (tables, formulas, images) using AI vision, and provides an AI-powered chat interface for Q&A about document content.
 
 ## Architecture
 - **Frontend**: React + Vite, Tailwind CSS, shadcn/ui, wouter routing
