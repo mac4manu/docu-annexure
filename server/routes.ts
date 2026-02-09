@@ -50,27 +50,9 @@ export async function registerRoutes(
 
       if (fileType === "application/pdf") {
         const dataBuffer = fs.readFileSync(filePath);
-        // Try various ways to get the function from the required module
-        // Based on logs, pdfParse is an object with a PDFParse property or maybe just use it differently
-        let parse = pdfParse.default || pdfParse;
-        
-        // If it's the object from logs, it seems to have a PDFParse class/function
-        if (typeof parse !== 'function' && pdfParse.PDFParse) {
-          parse = pdfParse.PDFParse;
-        }
-
-        // Final fallback: if it's still an object, check if it's actually the function itself (common with some build systems)
-        if (typeof parse !== 'function') {
-           // Some versions of pdf-parse are just the function directly when required
-           // But here it seems to be an object. Let's try to find a function in it.
-           const foundFunc = Object.values(pdfParse).find(v => typeof v === 'function');
-           if (foundFunc) parse = foundFunc;
-        }
-
-        if (typeof parse !== 'function') {
-          throw new Error(`pdf-parse is not a function (type: ${typeof parse})`);
-        }
-        const data = await (parse as any)(dataBuffer);
+        // Standard pdf-parse usually works like this with require
+        const parse = require("pdf-parse");
+        const data = await parse(dataBuffer);
         content = data.text;
       } else if (
         fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || 
