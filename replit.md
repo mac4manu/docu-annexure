@@ -1,7 +1,7 @@
-# Document Analysis Application
+# DocuMind - Document Analysis Application
 
 ## Overview
-A document analysis app that accepts PDF, PowerPoint, and Word files, extracts rich content (tables, formulas, images) using AI vision, and provides an AI-powered chat interface for Q&A about document content.
+DocuMind is a central hub for document inference and chat-driven access to internal knowledge. It accepts PDF, PowerPoint, and Word files, extracts rich content (tables, formulas, images) using AI vision, and provides an AI-powered chat interface for Q&A about document content.
 
 ## Architecture
 - **Frontend**: React + Vite, Tailwind CSS, shadcn/ui, wouter routing
@@ -24,6 +24,7 @@ A document analysis app that accepts PDF, PowerPoint, and Word files, extracts r
 - `client/src/components/UploadZone.tsx` - Drag-and-drop file upload
 
 ## Recent Changes
+- 2026-02-09: Renamed app to DocuMind, added name + tagline in header, sidebar defaults to collapsed (hamburger menu style)
 - 2026-02-09: Added multi-document chat feature at /chat route
 - 2026-02-09: Added documentIds array column to conversations for multi-doc support
 - 2026-02-09: Replaced pdf-parse with vision-based extraction using pdftoppm + GPT-5.2

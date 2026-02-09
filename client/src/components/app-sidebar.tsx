@@ -37,8 +37,8 @@ export function AppSidebar() {
             <FileText className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-bold text-sm font-display leading-tight" data-testid="text-app-title">DocChat</h1>
-            <p className="text-[11px] text-muted-foreground leading-tight">AI Document Analysis</p>
+            <h1 className="font-bold text-sm font-display leading-tight" data-testid="text-app-title">DocuMind</h1>
+            <p className="text-[11px] text-muted-foreground leading-tight">Document inference & chat</p>
           </div>
         </div>
       </SidebarHeader>
