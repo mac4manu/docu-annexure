@@ -92,7 +92,7 @@ export function UploadZone() {
             </h3>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
               {isPending 
-                ? "We're converting your file to Markdown. This may take a moment."
+                ? "AI is analyzing your document pages for tables, formulas, and images. This may take a minute."
                 : "Drag & drop PDF, Word, or PowerPoint files here, or click to select."
               }
             </p>

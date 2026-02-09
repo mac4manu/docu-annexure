@@ -6,26 +6,155 @@ import { z } from "zod";
 import multer from "multer";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 const officeParser = require("officeparser");
 
 import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
 
-const upload = multer({ dest: "uploads/" });
+const execFileAsync = promisify(execFile);
+
+const ALLOWED_MIMETYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+]);
+
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIMETYPES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Unsupported file type. Please upload PDF, Word, or PowerPoint files."));
+    }
+  },
+});
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+function getFileType(mimetype: string): string {
+  if (mimetype.includes("pdf")) return "pdf";
+  if (mimetype.includes("presentation") || mimetype.includes("powerpoint")) return "ppt";
+  if (mimetype.includes("wordprocessing") || mimetype.includes("msword")) return "doc";
+  return "other";
+}
+
+async function convertPdfToImages(pdfPath: string): Promise<string[]> {
+  const resolvedPath = path.resolve(pdfPath);
+  if (!resolvedPath.startsWith(path.resolve("uploads"))) {
+    throw new Error("Invalid file path");
+  }
+
+  const outputDir = path.join("uploads", `pages_${Date.now()}`);
+  fs.mkdirSync(outputDir, { recursive: true });
+  const outputPrefix = path.join(outputDir, "page");
+
+  try {
+    await execFileAsync("pdftoppm", ["-png", "-r", "200", resolvedPath, outputPrefix], {
+      timeout: 120000,
+    });
+  } catch (err) {
+    console.error("pdftoppm error:", err);
+    throw new Error("Failed to convert PDF to images");
+  }
+
+  const files = fs.readdirSync(outputDir)
+    .filter(f => f.endsWith(".png"))
+    .sort()
+    .map(f => path.join(outputDir, f));
+
+  return files;
+}
+
+async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> {
+  const batchSize = 5;
+  const allMarkdown: string[] = [];
+
+  for (let i = 0; i < imagePaths.length; i += batchSize) {
+    const batch = imagePaths.slice(i, i + batchSize);
+
+    const imageContents: OpenAI.Chat.Completions.ChatCompletionContentPart[] = batch.map((imgPath, idx) => {
+      const base64 = fs.readFileSync(imgPath).toString("base64");
+      return {
+        type: "image_url" as const,
+        image_url: {
+          url: `data:image/png;base64,${base64}`,
+          detail: "high" as const,
+        },
+      };
+    });
+
+    const pageNumbers = batch.map((_, idx) => i + idx + 1).join(", ");
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 8192,
+      messages: [
+        {
+          role: "system",
+          content: `You are a document content extraction expert. Convert the provided document page images into well-structured Markdown.
+
+Rules:
+- Extract ALL text content faithfully
+- Reproduce tables using proper Markdown table syntax (| col1 | col2 |)
+- For mathematical formulas, use LaTeX notation wrapped in $ for inline and $$ for block
+- For images/charts/diagrams, describe them in detail within an image block like: ![Description of image/chart](image)
+- Preserve headings, bullet points, numbered lists
+- Keep the document structure and hierarchy intact
+- For each page, add a horizontal rule (---) between pages
+- Do NOT add any commentary - just output the extracted markdown`,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Extract the content from these document pages (pages ${pageNumbers}) into Markdown format. Include all tables, formulas, and describe any images or charts.`,
+            },
+            ...imageContents,
+          ],
+        },
+      ],
+    });
+
+    const markdown = response.choices[0]?.message?.content || "";
+    allMarkdown.push(markdown);
+  }
+
+  return allMarkdown.join("\n\n---\n\n");
+}
+
+function cleanupFiles(paths: string[]) {
+  for (const p of paths) {
+    try {
+      if (fs.existsSync(p)) {
+        const stat = fs.statSync(p);
+        if (stat.isDirectory()) {
+          fs.rmSync(p, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(p);
+        }
+      }
+    } catch (e) {
+      console.warn("Cleanup warning:", e);
+    }
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
-  // Documents
   app.get(api.documents.list.path, async (req, res) => {
     const docs = await storage.getDocuments();
     res.json(docs);
@@ -40,67 +169,82 @@ export async function registerRoutes(
   app.post(api.documents.upload.path, upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
+    const filePath = req.file.path;
+    const fileType = req.file.mimetype;
+    const originalFilename = req.file.originalname;
+    const cleanupList: string[] = [filePath];
+
     try {
       let content = "";
-      const filePath = req.file.path;
-      const fileType = req.file.mimetype;
-      const originalFilename = req.file.originalname;
-
       console.log(`Processing file: ${originalFilename} (${fileType})`);
 
       if (fileType === "application/pdf") {
-        const dataBuffer = fs.readFileSync(filePath);
-        // Fallback to officeparser for PDF if pdf-parse is being difficult
-        // or try to find the PDFParse constructor
-        let contentText = "";
-        try {
-          const pdf = require("pdf-parse");
-          const parseFn = typeof pdf === 'function' ? pdf : (pdf.default || pdf.PDFParse);
-          
-          if (typeof parseFn === 'function') {
-            const data = await (parseFn.prototype && parseFn.prototype.constructor === parseFn ? new (parseFn as any)(dataBuffer) : (parseFn as any)(dataBuffer));
-            contentText = data.text;
-          } else {
-            // Fallback to officeparser which often handles PDFs too
-            contentText = await officeParser.parseOfficeAsync(filePath);
-          }
-        } catch (e) {
-          console.log("PDF parse primary failed, trying officeparser fallback");
-          contentText = await officeParser.parseOfficeAsync(filePath);
+        const imagePaths = await convertPdfToImages(filePath);
+        const imageDir = path.dirname(imagePaths[0] || "");
+        if (imageDir) cleanupList.push(imageDir);
+
+        if (imagePaths.length > 0) {
+          content = await extractMarkdownFromImages(imagePaths);
+        } else {
+          content = "No pages found in PDF.";
         }
-        content = contentText;
       } else if (
-        fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || 
+        fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
         fileType === "application/vnd.ms-powerpoint" ||
         fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
         fileType === "application/msword"
       ) {
-        // PPTX or DOCX
-        // officeparser.parseOfficeAsync is the method
-        content = await officeParser.parseOfficeAsync(filePath);
-      } else {
-        // Try generic parse or fail
+        let rawText = "";
         try {
-           content = await officeParser.parseOfficeAsync(filePath);
+          rawText = await officeParser.parseOfficeAsync(filePath);
         } catch (e) {
-           // Fallback to reading as text?
-           content = fs.readFileSync(filePath, "utf-8");
+          rawText = "";
         }
+
+        if (rawText && rawText.trim().length > 0) {
+          const response = await openai.chat.completions.create({
+            model: "gpt-5.2",
+            max_completion_tokens: 8192,
+            messages: [
+              {
+                role: "system",
+                content: `You are a document formatting expert. Convert the following extracted document text into well-structured Markdown.
+
+Rules:
+- Structure the content with proper headings, lists, and paragraphs
+- If you detect table-like data, format it as a proper Markdown table
+- If you detect mathematical expressions, format them with LaTeX ($ inline, $$ block)
+- Preserve the document's logical structure
+- Do NOT add commentary - just output the formatted markdown`,
+              },
+              {
+                role: "user",
+                content: `Format this extracted document content into clean Markdown:\n\n${rawText}`,
+              },
+            ],
+          });
+          content = response.choices[0]?.message?.content || rawText;
+        } else {
+          content = "No text content could be extracted from this file.";
+        }
+      } else {
+        cleanupFiles(cleanupList);
+        return res.status(400).json({ message: "Unsupported file type" });
       }
 
-      // Cleanup
-      fs.unlinkSync(filePath);
+      cleanupFiles(cleanupList);
 
       const doc = await storage.createDocument({
         title: originalFilename,
         originalFilename,
-        content: content || "No text content extracted.",
-        fileType: fileType.includes("pdf") ? "pdf" : "ppt",
+        content: content || "No content extracted.",
+        fileType: getFileType(fileType),
       });
 
       res.status(201).json(doc);
     } catch (err) {
       console.error("Upload error:", err);
+      cleanupFiles(cleanupList);
       res.status(500).json({ message: "Failed to process file" });
     }
   });
@@ -135,33 +279,30 @@ export async function registerRoutes(
     const conversationId = Number(req.params.id);
     const { content } = req.body;
 
-    // 1. Save user message
     const userMsg = await storage.createMessage({
       conversationId,
       role: "user",
       content
     });
 
-    // 2. Get context
     const conversation = await storage.getConversation(conversationId);
     if (!conversation) return res.status(404).json({ message: "Conversation not found" });
 
-    let systemContext = "You are a helpful AI assistant.";
+    let systemContext = "You are a helpful AI assistant that answers questions about documents. Use Markdown formatting in your responses including tables and LaTeX formulas when relevant.";
     if (conversation.documentId) {
       const doc = await storage.getDocument(conversation.documentId);
       if (doc) {
-        systemContext += `\n\nYou are analyzing a document titled "${doc.title}".\n\nContent:\n${doc.content.slice(0, 100000)}...`; // Limit context if needed
+        systemContext += `\n\nYou are analyzing a document titled "${doc.title}".\n\nDocument Content (in Markdown):\n${doc.content.slice(0, 100000)}`;
       }
     }
 
-    // 3. Stream response
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
     try {
       const stream = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [
           { role: "system", content: systemContext },
           ...conversation.messages.map(m => ({ role: m.role as "user"|"assistant", content: m.content })),
@@ -180,7 +321,6 @@ export async function registerRoutes(
         }
       }
 
-      // 4. Save assistant message
       await storage.createMessage({
         conversationId,
         role: "assistant",
