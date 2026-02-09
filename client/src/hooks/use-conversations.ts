@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 
-// GET /api/conversations
 export function useConversations() {
   return useQuery({
     queryKey: [api.conversations.list.path],
@@ -13,7 +12,6 @@ export function useConversations() {
   });
 }
 
-// GET /api/conversations/:id
 export function useConversation(id: number) {
   return useQuery({
     queryKey: [api.conversations.get.path, id],
@@ -28,7 +26,6 @@ export function useConversation(id: number) {
   });
 }
 
-// POST /api/conversations (Create new chat, optionally linked to doc)
 export function useCreateConversation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -48,35 +45,16 @@ export function useCreateConversation() {
   });
 }
 
-// POST /api/conversations/:id/messages
-export function useSendMessage() {
+export function useDeleteConversation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ conversationId, content }: { conversationId: number; content: string }) => {
-      const url = buildUrl(api.messages.create.path, { id: conversationId });
-      const validated = api.messages.create.input.parse({ content });
-
-      // Note: This endpoint streams SSE, but for standard mutation we just need to initiate it.
-      // However, usually we handle SSE separately. 
-      // If the backend returns a stream, useMutation might wait until it closes.
-      // Assuming for now it handles the request initiation.
-      
-      const res = await fetch(url, {
-        method: api.messages.create.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
-      });
-      
-      if (!res.ok) throw new Error("Failed to send message");
-      
-      // If the response is a stream, we can't easily parse JSON here.
-      // The implementation will likely handle reading the stream in the UI component
-      // This hook is mainly for the initial POST if not using a custom fetch loop.
-      return res; 
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.conversations.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete conversation");
     },
-    onSuccess: (_, variables) => {
-      // Invalidate conversation to show new messages if they are persisted
-      queryClient.invalidateQueries({ queryKey: [api.conversations.get.path, variables.conversationId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.conversations.list.path] });
     },
   });
 }

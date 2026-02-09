@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, Sparkles, FileText, User } from "lucide-react";
+import { Send, Bot, Loader2, Sparkles, FileText, User, Plus, Trash2, History, MessageSquare } from "lucide-react";
 import { useDocuments } from "@/hooks/use-documents";
-import { useCreateConversation } from "@/hooks/use-conversations";
+import { useConversations, useCreateConversation, useDeleteConversation } from "@/hooks/use-conversations";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { buildUrl } from "@shared/routes";
+import { api } from "@shared/routes";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -20,7 +22,9 @@ interface ChatMessage {
 
 export default function MultiDocChat() {
   const { data: documents, isLoading: docsLoading } = useDocuments();
+  const { data: conversationsList, isLoading: convsLoading } = useConversations();
   const { mutateAsync: createConv } = useCreateConversation();
+  const { mutateAsync: deleteConv } = useDeleteConversation();
   const { toast } = useToast();
 
   const [selectedDocIds, setSelectedDocIds] = useState<number[]>([]);
@@ -30,6 +34,7 @@ export default function MultiDocChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [needsNewConversation, setNeedsNewConversation] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -84,9 +89,54 @@ export default function MultiDocChat() {
       });
       setConversationId(conv.id);
       setChatStarted(true);
+      setShowHistory(false);
     } catch {
       toast({ title: "Error", description: "Failed to start chat session", variant: "destructive" });
     }
+  };
+
+  const loadConversation = async (convId: number) => {
+    try {
+      const url = buildUrl(api.conversations.get.path, { id: convId });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to load conversation");
+      const data = await res.json();
+      const conv = data.conversation || data;
+      const msgs = data.messages || [];
+
+      setConversationId(convId);
+      setMessages(msgs.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })));
+      setSelectedDocIds(conv.documentIds || (conv.documentId ? [conv.documentId] : []));
+      setChatStarted(true);
+      setNeedsNewConversation(false);
+      setShowHistory(false);
+    } catch {
+      toast({ title: "Error", description: "Failed to load conversation", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteConversation = async (convId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteConv(convId);
+      if (conversationId === convId) {
+        resetChat();
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to delete conversation", variant: "destructive" });
+    }
+  };
+
+  const resetChat = () => {
+    setConversationId(null);
+    setMessages([]);
+    setChatStarted(false);
+    setNeedsNewConversation(false);
+    setSelectedDocIds([]);
+    setInput("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,78 +224,139 @@ export default function MultiDocChat() {
     }
   };
 
+  const historyConversations = conversationsList || [];
+
   return (
     <div className="h-full flex overflow-hidden">
       <div className="w-64 flex-none border-r border-border bg-muted/10 flex flex-col overflow-hidden">
         <div className="p-3 border-b border-border flex items-center justify-between gap-2">
-          <h2 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground" data-testid="text-select-heading">Documents</h2>
-          {documents && documents.length > 0 && !chatStarted && (
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={selectAll} data-testid="button-select-all">
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant={showHistory ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setShowHistory(!showHistory)}
+              data-testid="button-toggle-history"
+              className="toggle-elevate"
+            >
+              <History className="w-3.5 h-3.5" />
+            </Button>
+            <h2 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground" data-testid="text-select-heading">
+              {showHistory ? "History" : "Documents"}
+            </h2>
+          </div>
+          {!showHistory && documents && documents.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={selectAll} data-testid="button-select-all">
               {selectedDocIds.length === documents.length ? "None" : "All"}
             </Button>
           )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {docsLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            </div>
-          ) : documents && documents.length > 0 ? (
-            documents.map(doc => {
-              const isSelected = selectedDocIds.includes(doc.id);
-              return (
-                <div
-                  key={doc.id}
-                  onClick={() => toggleDoc(doc.id)}
-                  className={`
-                    flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors text-sm
-                    ${isSelected ? "bg-primary/10" : "hover-elevate"}
-                  `}
-                  data-testid={`card-document-${doc.id}`}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    className="shrink-0"
-                    data-testid={`checkbox-document-${doc.id}`}
-                  />
-                  <span className="truncate" data-testid={`text-doc-title-${doc.id}`}>{doc.title}</span>
-                </div>
-              );
-            })
-          ) : (
-            <div className="text-center py-6 text-xs text-muted-foreground">
-              <FileText className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
-              No documents yet
-            </div>
-          )}
-        </div>
-
-        <div className="p-2 border-t border-border space-y-1.5">
-          {!chatStarted ? (
-            <Button
-              className="w-full"
-              size="sm"
-              disabled={selectedDocIds.length === 0}
-              onClick={startChat}
-              data-testid="button-start-chat"
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-              Chat ({selectedDocIds.length})
+          {showHistory && chatStarted && (
+            <Button variant="ghost" size="icon" onClick={resetChat} data-testid="button-new-chat">
+              <Plus className="w-3.5 h-3.5" />
             </Button>
-          ) : (
-            <>
-              <Badge variant="secondary" className="w-full justify-center text-xs" data-testid="badge-doc-count">
-                {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""} selected
-              </Badge>
-              {needsNewConversation && selectedDocIds.length > 0 && (
-                <p className="text-[10px] text-muted-foreground text-center" data-testid="text-selection-changed">
-                  Selection changed — next message uses updated docs
-                </p>
-              )}
-            </>
           )}
         </div>
+
+        {showHistory ? (
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {convsLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : historyConversations.length > 0 ? (
+              historyConversations.map(conv => (
+                <div
+                  key={conv.id}
+                  onClick={() => loadConversation(conv.id)}
+                  className={`
+                    flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors text-sm group
+                    ${conversationId === conv.id ? "bg-primary/10" : "hover-elevate"}
+                  `}
+                  data-testid={`card-history-${conv.id}`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate flex-1" data-testid={`text-history-title-${conv.id}`}>{conv.title}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 invisible group-hover:visible"
+                    onClick={(e) => handleDeleteConversation(conv.id, e)}
+                    data-testid={`button-delete-history-${conv.id}`}
+                  >
+                    <Trash2 className="w-3 h-3 text-muted-foreground" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-6 text-xs text-muted-foreground">
+                <History className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+                No chat history yet
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {docsLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : documents && documents.length > 0 ? (
+              documents.map(doc => {
+                const isSelected = selectedDocIds.includes(doc.id);
+                return (
+                  <div
+                    key={doc.id}
+                    onClick={() => toggleDoc(doc.id)}
+                    className={`
+                      flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors text-sm
+                      ${isSelected ? "bg-primary/10" : "hover-elevate"}
+                    `}
+                    data-testid={`card-document-${doc.id}`}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      className="shrink-0"
+                      data-testid={`checkbox-document-${doc.id}`}
+                    />
+                    <span className="truncate" data-testid={`text-doc-title-${doc.id}`}>{doc.title}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-6 text-xs text-muted-foreground">
+                <FileText className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+                No documents yet
+              </div>
+            )}
+          </div>
+        )}
+
+        {!showHistory && (
+          <div className="p-2 border-t border-border space-y-1.5">
+            {!chatStarted ? (
+              <Button
+                className="w-full"
+                size="sm"
+                disabled={selectedDocIds.length === 0}
+                onClick={startChat}
+                data-testid="button-start-chat"
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Chat ({selectedDocIds.length})
+              </Button>
+            ) : (
+              <>
+                <Badge variant="secondary" className="w-full justify-center text-xs" data-testid="badge-doc-count">
+                  {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""} selected
+                </Badge>
+                {needsNewConversation && selectedDocIds.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground text-center" data-testid="text-selection-changed">
+                    Selection changed — next message uses updated docs
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -256,6 +367,18 @@ export default function MultiDocChat() {
             <p className="text-sm text-muted-foreground max-w-sm">
               Select documents from the left, then start a chat. The AI can answer questions referencing all selected files.
             </p>
+            {historyConversations.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => setShowHistory(true)}
+                data-testid="button-view-history"
+              >
+                <History className="w-3.5 h-3.5 mr-1.5" />
+                View chat history ({historyConversations.length})
+              </Button>
+            )}
           </div>
         ) : (
           <>

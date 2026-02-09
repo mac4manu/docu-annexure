@@ -333,6 +333,11 @@ Rules:
     res.status(201).json(conv);
   });
 
+  app.delete(api.conversations.delete.path, async (req, res) => {
+    await storage.deleteConversation(Number(req.params.id));
+    res.status(204).send();
+  });
+
   app.post(api.messages.create.path, async (req, res) => {
     const conversationId = Number(req.params.id);
     const { content } = req.body;
