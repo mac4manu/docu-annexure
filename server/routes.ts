@@ -50,10 +50,15 @@ export async function registerRoutes(
 
       if (fileType === "application/pdf") {
         const dataBuffer = fs.readFileSync(filePath);
-        // pdf-parse exported as a function, but sometimes needs .default depending on environment
-        const parse = typeof pdfParse === 'function' ? pdfParse : pdfParse.default;
+        // Try various ways to get the function from the required module
+        const parse = pdfParse.default || pdfParse;
         if (typeof parse !== 'function') {
-          throw new Error("pdf-parse is not a function");
+          console.log("pdf-parse inspection:", {
+            type: typeof pdfParse,
+            keys: Object.keys(pdfParse),
+            defaultType: typeof pdfParse.default
+          });
+          throw new Error(`pdf-parse is not a function (type: ${typeof parse})`);
         }
         const data = await parse(dataBuffer);
         content = data.text;
