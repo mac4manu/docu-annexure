@@ -202,10 +202,21 @@ export async function registerRoutes(
         }
       } else if (ALLOWED_MIMETYPES.has(fileType)) {
         let rawText = "";
-        try {
-          rawText = await officeParser.parseOfficeAsync(filePath);
-        } catch (e) {
-          rawText = "";
+        if (fileType === "application/pdf") {
+          try {
+            const resolvedPath = path.resolve(filePath);
+            const { stdout } = await execFileAsync("pdftotext", ["-layout", resolvedPath, "-"], { timeout: 30000 });
+            rawText = stdout;
+          } catch (e) {
+            console.error("pdftotext error:", e);
+            rawText = "";
+          }
+        } else {
+          try {
+            rawText = await officeParser.parseOfficeAsync(filePath);
+          } catch (e) {
+            rawText = "";
+          }
         }
 
         if (rawText && rawText.trim().length > 0) {
