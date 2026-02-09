@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FileText, MessagesSquare, BarChart3 } from "lucide-react";
-import logoImg from "@/assets/images/logo-option-1.png";
+import logoImg from "@/assets/images/logo.png";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import DocumentView from "@/pages/DocumentView";
@@ -81,7 +81,7 @@ function App() {
         <div className="flex flex-col h-screen w-full">
           <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50 sticky top-0">
             <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
-              <img src={logoImg} alt="DocuMind" className="w-9 h-9 rounded-md shrink-0 ring-1 ring-border" />
+              <img src={logoImg} alt="DocuMind" className="w-10 h-10 rounded-md shrink-0" />
               <div className="flex flex-col leading-none" data-testid="text-header-app-name">
                 <span className="font-bold text-base tracking-tight">DocuMind</span>
                 <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">Document inference & knowledge chat</span>
