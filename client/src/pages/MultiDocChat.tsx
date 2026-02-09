@@ -449,9 +449,9 @@ export default function MultiDocChat() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask a question across your documents..."
+                  placeholder={selectedDocIds.length === 0 ? "Select documents to start asking questions..." : "Ask a question across your documents..."}
                   className="pr-10 bg-muted/30 border-border"
-                  disabled={isLoading}
+                  disabled={isLoading || selectedDocIds.length === 0}
                   data-testid="input-chat-message"
                 />
                 <Button
