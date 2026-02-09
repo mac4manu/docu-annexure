@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
-import { LayoutGrid, Loader2 } from "lucide-react";
+import { LayoutGrid, Loader2, MessagesSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { data: documents, isLoading } = useDocuments();
@@ -32,6 +34,19 @@ export default function Home() {
           >
             Upload your PDF, Word, or PowerPoint files. We'll convert them to Markdown and let you chat with them instantly using AI.
           </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mt-5"
+          >
+            <Link href="/chat">
+              <Button variant="outline" size="lg" data-testid="button-multi-doc-chat">
+                <MessagesSquare className="w-5 h-5 mr-2" />
+                Chat across multiple documents
+              </Button>
+            </Link>
+          </motion.div>
         </div>
 
         <motion.div

@@ -32,8 +32,8 @@ export function useConversation(id: number) {
 export function useCreateConversation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ title, documentId }: { title?: string; documentId?: number }) => {
-      const validated = api.conversations.create.input.parse({ title, documentId });
+    mutationFn: async ({ title, documentId, documentIds }: { title?: string; documentId?: number; documentIds?: number[] }) => {
+      const validated = api.conversations.create.input.parse({ title, documentId, documentIds });
       const res = await fetch(api.conversations.create.path, {
         method: api.conversations.create.method,
         headers: { "Content-Type": "application/json" },

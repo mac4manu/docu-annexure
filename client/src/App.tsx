@@ -6,12 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import DocumentView from "@/pages/DocumentView";
+import MultiDocChat from "@/pages/MultiDocChat";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/document/:id" component={DocumentView} />
+      <Route path="/chat" component={MultiDocChat} />
       <Route component={NotFound} />
     </Switch>
   );

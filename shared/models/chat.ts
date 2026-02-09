@@ -6,7 +6,8 @@ import { sql } from "drizzle-orm";
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  documentId: integer("document_id"), // Optional link to a document
+  documentId: integer("document_id"),
+  documentIds: integer("document_ids").array(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

@@ -327,7 +327,8 @@ Rules:
     const input = api.conversations.create.input.parse(req.body);
     const conv = await storage.createConversation({
       title: input.title || "New Conversation",
-      documentId: input.documentId
+      documentId: input.documentId,
+      documentIds: input.documentIds || (input.documentId ? [input.documentId] : null),
     });
     res.status(201).json(conv);
   });
@@ -346,10 +347,21 @@ Rules:
     if (!conversation) return res.status(404).json({ message: "Conversation not found" });
 
     let systemContext = "You are a helpful AI assistant that answers questions about documents. Use Markdown formatting in your responses including tables and LaTeX formulas when relevant.";
-    if (conversation.documentId) {
-      const doc = await storage.getDocument(conversation.documentId);
-      if (doc) {
-        systemContext += `\n\nYou are analyzing a document titled "${doc.title}".\n\nDocument Content (in Markdown):\n${doc.content.slice(0, 100000)}`;
+
+    const docIds = conversation.documentIds || (conversation.documentId ? [conversation.documentId] : []);
+
+    if (docIds.length > 0) {
+      const docs = await Promise.all(docIds.map(id => storage.getDocument(id)));
+      const validDocs = docs.filter((d): d is NonNullable<typeof d> => !!d);
+
+      if (validDocs.length === 1) {
+        systemContext += `\n\nYou are analyzing a document titled "${validDocs[0].title}".\n\nDocument Content (in Markdown):\n${validDocs[0].content.slice(0, 100000)}`;
+      } else if (validDocs.length > 1) {
+        systemContext += `\n\nYou are analyzing ${validDocs.length} documents. When answering, reference which document the information comes from.\n\n`;
+        const maxPerDoc = Math.floor(100000 / validDocs.length);
+        for (const doc of validDocs) {
+          systemContext += `--- Document: "${doc.title}" ---\n${doc.content.slice(0, maxPerDoc)}\n\n`;
+        }
       }
     }
 

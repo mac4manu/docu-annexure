@@ -75,6 +75,7 @@ export const api = {
       input: z.object({
         title: z.string().optional(),
         documentId: z.number().optional(),
+        documentIds: z.array(z.number()).optional(),
       }),
       responses: {
         201: z.custom<typeof conversations.$inferSelect>(),
