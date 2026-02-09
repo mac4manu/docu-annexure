@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 const BASIC_STAGES = [
   { label: "Uploading file...", duration: 1500 },
   { label: "Extracting text content...", duration: 3000 },
-  { label: "Saving document...", duration: 2000 },
+  { label: "Formatting into Markdown...", duration: 15000 },
+  { label: "Saving document...", duration: 5000 },
 ];
 
 const ADVANCED_STAGES = [

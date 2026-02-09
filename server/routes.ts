@@ -209,7 +209,28 @@ export async function registerRoutes(
         }
 
         if (rawText && rawText.trim().length > 0) {
-          content = rawText;
+          const response = await openai.chat.completions.create({
+            model: "gpt-5.2",
+            max_completion_tokens: 8192,
+            messages: [
+              {
+                role: "system",
+                content: `You are a document formatting expert. Convert the following extracted document text into well-structured Markdown.
+
+Rules:
+- Structure the content with proper headings, lists, and paragraphs
+- If you detect table-like data, format it as a proper Markdown table
+- If you detect mathematical expressions, format them with LaTeX ($ inline, $$ block)
+- Preserve the document's logical structure
+- Do NOT add commentary - just output the formatted markdown`,
+              },
+              {
+                role: "user",
+                content: `Format this extracted document content into clean Markdown:\n\n${rawText.slice(0, 100000)}`,
+              },
+            ],
+          });
+          content = response.choices[0]?.message?.content || rawText;
         } else {
           content = "No text content could be extracted from this file.";
         }
