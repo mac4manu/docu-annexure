@@ -106,7 +106,7 @@ function UserMenu() {
 
 function AuthenticatedApp() {
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50">
         <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
           <img src={logoImg} alt="DocuAnnexure" className="w-10 h-10 rounded-md shrink-0" />

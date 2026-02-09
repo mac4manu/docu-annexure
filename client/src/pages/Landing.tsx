@@ -43,14 +43,14 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
+      <section className="relative">
+        <div className="absolute inset-0 overflow-hidden">
           <img src={heroBg} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
         </div>
-        <div className="relative max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+        <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div className="space-y-5">
               <h1
                 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight font-serif"
                 data-testid="text-hero-title"
@@ -69,7 +69,7 @@ export default function Landing() {
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-4 pt-2 flex-wrap">
+              <div className="flex items-center gap-4 pt-1 flex-wrap">
                 {trustItems.map((item) => (
                   <span key={item.text} className="flex items-center gap-1.5 text-xs text-white/50">
                     <item.icon className="w-3.5 h-3.5" />
@@ -79,7 +79,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center justify-center">
+            <div className="hidden md:flex items-center justify-center overflow-hidden">
               <div className="w-72 h-72 rounded-full bg-primary/10 blur-3xl absolute" />
               <div className="relative bg-background/10 backdrop-blur-sm rounded-md p-6 ring-1 ring-white/10 space-y-4 w-full max-w-sm">
                 <div className="flex items-center gap-2">
