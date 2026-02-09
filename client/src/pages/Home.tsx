@@ -8,13 +8,15 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="flex-none px-6 pt-5 pb-4">
-        <h1 className="text-2xl font-display font-bold text-foreground tracking-tight" data-testid="text-page-heading">
-          Documents
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Upload and chat with your PDF, Word, or PowerPoint files.
-        </p>
+      <div className="flex-none px-6 pt-4 pb-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h1 className="text-lg font-display font-semibold text-foreground tracking-tight" data-testid="text-page-heading">
+            Documents
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Upload and chat with your PDF, Word, or PowerPoint files
+          </p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-6">
