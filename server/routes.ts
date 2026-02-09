@@ -54,9 +54,11 @@ export async function registerRoutes(
         content = data.text;
       } else if (
         fileType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || 
-        fileType === "application/vnd.ms-powerpoint"
+        fileType === "application/vnd.ms-powerpoint" ||
+        fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        fileType === "application/msword"
       ) {
-        // PPTX
+        // PPTX or DOCX
         // officeparser.parseOfficeAsync is the method
         content = await officeParser.parseOfficeAsync(filePath);
       } else {
