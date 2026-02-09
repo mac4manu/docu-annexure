@@ -3,11 +3,12 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import DocumentView from "@/pages/DocumentView";
 import MultiDocChat from "@/pages/MultiDocChat";
+import Metrics from "@/pages/Metrics";
 
 function Router() {
   return (
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/document/:id" component={DocumentView} />
       <Route path="/chat" component={MultiDocChat} />
+      <Route path="/metrics" component={Metrics} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -24,6 +26,7 @@ function HeaderNav() {
   const [location] = useLocation();
   const isDocuments = location === "/" || location.startsWith("/document");
   const isChat = location === "/chat";
+  const isMetrics = location === "/metrics";
 
   return (
     <nav className="flex items-center gap-1" data-testid="nav-header">
@@ -51,6 +54,19 @@ function HeaderNav() {
         >
           <MessagesSquare className="w-3.5 h-3.5" />
           Chat
+        </span>
+      </Link>
+      <Link href="/metrics">
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            isMetrics
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover-elevate"
+          }`}
+          data-testid="nav-header-metrics"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          Metrics
         </span>
       </Link>
     </nav>

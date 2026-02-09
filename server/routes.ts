@@ -311,6 +311,17 @@ Rules:
     res.status(204).send();
   });
 
+  // Metrics
+  app.get("/api/metrics", async (_req, res) => {
+    try {
+      const metrics = await storage.getMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Metrics error:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
   // Chat
   app.get(api.conversations.list.path, async (req, res) => {
     const convs = await storage.getAllConversations();
