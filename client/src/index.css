@@ -91,8 +91,11 @@
   * {
     @apply border-border;
   }
-  html, body, #root {
+  html, body {
     @apply h-full overflow-hidden m-0 p-0;
+  }
+  #root {
+    @apply h-full m-0 p-0;
   }
   body {
     @apply bg-background text-foreground antialiased;
