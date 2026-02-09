@@ -30,7 +30,7 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            Upload your PDF or PowerPoint files. We'll convert them to Markdown and let you chat with them instantly using AI.
+            Upload your PDF, Word, or PowerPoint files. We'll convert them to Markdown and let you chat with them instantly using AI.
           </motion.p>
         </div>
 

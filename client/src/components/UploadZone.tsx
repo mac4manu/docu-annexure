@@ -47,6 +47,8 @@ export function UploadZone() {
       "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
       "application/vnd.ms-powerpoint": [".ppt"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/msword": [".doc"],
     },
     maxFiles: 1,
     disabled: isPending,
@@ -91,7 +93,7 @@ export function UploadZone() {
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
               {isPending 
                 ? "We're converting your file to Markdown. This may take a moment."
-                : "Drag & drop PDF or PowerPoint files here, or click to select."
+                : "Drag & drop PDF, Word, or PowerPoint files here, or click to select."
               }
             </p>
           </div>
@@ -99,6 +101,7 @@ export function UploadZone() {
           {!isPending && (
             <div className="flex gap-2 mt-2">
               <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">PDF</span>
+              <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">Word</span>
               <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">PPTX</span>
             </div>
           )}
