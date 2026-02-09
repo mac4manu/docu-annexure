@@ -29,6 +29,7 @@ export default function MultiDocChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
+  const [needsNewConversation, setNeedsNewConversation] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,18 +40,25 @@ export default function MultiDocChat() {
   }, [messages]);
 
   const toggleDoc = (id: number) => {
-    if (chatStarted) return;
     setSelectedDocIds(prev =>
       prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
     );
+    if (chatStarted) {
+      setConversationId(null);
+      setNeedsNewConversation(true);
+    }
   };
 
   const selectAll = () => {
-    if (chatStarted || !documents) return;
+    if (!documents) return;
     if (selectedDocIds.length === documents.length) {
       setSelectedDocIds([]);
     } else {
       setSelectedDocIds(documents.map(d => d.id));
+    }
+    if (chatStarted) {
+      setConversationId(null);
+      setNeedsNewConversation(true);
     }
   };
 
@@ -83,7 +91,30 @@ export default function MultiDocChat() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !conversationId) return;
+    if (!input.trim() || selectedDocIds.length === 0) return;
+
+    let activeConvId = conversationId;
+
+    if (needsNewConversation || !activeConvId) {
+      try {
+        const selectedNames = documents
+          ?.filter(d => selectedDocIds.includes(d.id))
+          .map(d => d.title)
+          .slice(0, 3)
+          .join(", ");
+        const title = selectedDocIds.length === 1
+          ? `Chat: ${selectedNames}`
+          : `Chat: ${selectedNames}${selectedDocIds.length > 3 ? "..." : ""}`;
+
+        const conv = await createConv({ title, documentIds: selectedDocIds });
+        activeConvId = conv.id;
+        setConversationId(conv.id);
+        setNeedsNewConversation(false);
+      } catch {
+        toast({ title: "Error", description: "Failed to start chat session", variant: "destructive" });
+        return;
+      }
+    }
 
     const userMsg = input.trim();
     setInput("");
@@ -91,7 +122,7 @@ export default function MultiDocChat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+      const response = await fetch(`/api/conversations/${activeConvId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: userMsg, role: "user" }),
@@ -170,13 +201,11 @@ export default function MultiDocChat() {
                   className={`
                     flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors text-sm
                     ${isSelected ? "bg-primary/10" : "hover-elevate"}
-                    ${chatStarted ? "cursor-default opacity-70" : ""}
                   `}
                   data-testid={`card-document-${doc.id}`}
                 >
                   <Checkbox
                     checked={isSelected}
-                    disabled={chatStarted}
                     className="shrink-0"
                     data-testid={`checkbox-document-${doc.id}`}
                   />
@@ -192,8 +221,8 @@ export default function MultiDocChat() {
           )}
         </div>
 
-        {!chatStarted && (
-          <div className="p-2 border-t border-border">
+        <div className="p-2 border-t border-border space-y-1.5">
+          {!chatStarted ? (
             <Button
               className="w-full"
               size="sm"
@@ -204,16 +233,19 @@ export default function MultiDocChat() {
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               Chat ({selectedDocIds.length})
             </Button>
-          </div>
-        )}
-
-        {chatStarted && (
-          <div className="p-2 border-t border-border">
-            <Badge variant="secondary" className="w-full justify-center text-xs" data-testid="badge-doc-count">
-              {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""} selected
-            </Badge>
-          </div>
-        )}
+          ) : (
+            <>
+              <Badge variant="secondary" className="w-full justify-center text-xs" data-testid="badge-doc-count">
+                {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""} selected
+              </Badge>
+              {needsNewConversation && selectedDocIds.length > 0 && (
+                <p className="text-[10px] text-muted-foreground text-center" data-testid="text-selection-changed">
+                  Selection changed — next message uses updated docs
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -302,7 +334,7 @@ export default function MultiDocChat() {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={isLoading || !input.trim()}
+                  disabled={isLoading || !input.trim() || selectedDocIds.length === 0}
                   className="absolute right-1 top-1/2 -translate-y-1/2"
                   data-testid="button-send-message"
                 >
