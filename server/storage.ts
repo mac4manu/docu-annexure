@@ -27,6 +27,8 @@ export interface AdminUserMetrics {
   documentCount: number;
   conversationCount: number;
   messageCount: number;
+  questionsAsked: number;
+  aiResponses: number;
   lastActive: string | null;
 }
 
@@ -252,9 +254,15 @@ export class DatabaseStorage implements IStorage {
         const userConvIds = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.userId, user.id));
         const convIds = userConvIds.map(c => c.id);
         let mc = 0;
+        let qa = 0;
+        let ar = 0;
         if (convIds.length > 0) {
           const [msgCount] = await db.select({ count: count() }).from(messages).where(inArray(messages.conversationId, convIds));
           mc = msgCount.count;
+          const [userMsgs] = await db.select({ count: count() }).from(messages).where(and(inArray(messages.conversationId, convIds), eq(messages.role, "user")));
+          qa = userMsgs.count;
+          const [aiMsgs] = await db.select({ count: count() }).from(messages).where(and(inArray(messages.conversationId, convIds), eq(messages.role, "assistant")));
+          ar = aiMsgs.count;
         }
         const lastDoc = await db.select({ createdAt: documents.createdAt }).from(documents).where(eq(documents.userId, user.id)).orderBy(desc(documents.createdAt)).limit(1);
         const lastConv = await db.select({ createdAt: conversations.createdAt }).from(conversations).where(eq(conversations.userId, user.id)).orderBy(desc(conversations.createdAt)).limit(1);
@@ -268,6 +276,8 @@ export class DatabaseStorage implements IStorage {
           documentCount: dc.count,
           conversationCount: cc.count,
           messageCount: mc,
+          questionsAsked: qa,
+          aiResponses: ar,
           lastActive,
         };
       })

@@ -25,6 +25,8 @@ interface AdminUserMetrics {
   documentCount: number;
   conversationCount: number;
   messageCount: number;
+  questionsAsked: number;
+  aiResponses: number;
   lastActive: string | null;
 }
 
@@ -277,7 +279,8 @@ function AdminMetrics({ metrics }: { metrics: AdminMetricsData }) {
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Email</th>
                   <th className="text-right py-2 pr-4 font-medium text-muted-foreground">Docs</th>
                   <th className="text-right py-2 pr-4 font-medium text-muted-foreground">Chats</th>
-                  <th className="text-right py-2 pr-4 font-medium text-muted-foreground">Messages</th>
+                  <th className="text-right py-2 pr-4 font-medium text-muted-foreground">Questions</th>
+                  <th className="text-right py-2 pr-4 font-medium text-muted-foreground">AI Replies</th>
                   <th className="text-right py-2 font-medium text-muted-foreground">Last Active</th>
                 </tr>
               </thead>
@@ -288,7 +291,8 @@ function AdminMetrics({ metrics }: { metrics: AdminMetricsData }) {
                     <td className="py-2 pr-4 text-muted-foreground truncate max-w-[200px]">{user.email || "-"}</td>
                     <td className="py-2 pr-4 text-right">{user.documentCount}</td>
                     <td className="py-2 pr-4 text-right">{user.conversationCount}</td>
-                    <td className="py-2 pr-4 text-right">{user.messageCount}</td>
+                    <td className="py-2 pr-4 text-right">{user.questionsAsked}</td>
+                    <td className="py-2 pr-4 text-right">{user.aiResponses}</td>
                     <td className="py-2 text-right text-muted-foreground text-xs">
                       {user.lastActive
                         ? new Date(user.lastActive).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
