@@ -299,6 +299,8 @@ export async function registerRoutes(
   });
 
   // Metrics
+  const ADMIN_USER_IDS = ["54463549"];
+
   app.get("/api/metrics", isAuthenticated, async (req, res) => {
     try {
       const metrics = await storage.getMetrics(getUserId(req));
@@ -307,6 +309,24 @@ export async function registerRoutes(
       console.error("Metrics error:", error);
       res.status(500).json({ message: "Failed to fetch metrics" });
     }
+  });
+
+  app.get("/api/admin/metrics", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    if (!ADMIN_USER_IDS.includes(userId)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const metrics = await storage.getAdminMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Admin metrics error:", error);
+      res.status(500).json({ message: "Failed to fetch admin metrics" });
+    }
+  });
+
+  app.get("/api/admin/check", isAuthenticated, async (req, res) => {
+    res.json({ isAdmin: ADMIN_USER_IDS.includes(getUserId(req)) });
   });
 
   // Chat

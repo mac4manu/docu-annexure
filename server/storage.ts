@@ -5,6 +5,7 @@ import {
   type Conversation, type InsertConversation,
   type Message, type InsertMessage
 } from "@shared/schema";
+import { users } from "@shared/models/auth";
 import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
 
 export interface MetricsData {
@@ -17,6 +18,28 @@ export interface MetricsData {
   recentDocuments: { id: number; title: string; fileType: string; createdAt: Date }[];
   recentConversations: { id: number; title: string; createdAt: Date; messageCount: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
+}
+
+export interface AdminUserMetrics {
+  userId: string;
+  email: string | null;
+  name: string;
+  documentCount: number;
+  conversationCount: number;
+  messageCount: number;
+  lastActive: string | null;
+}
+
+export interface AdminMetricsData {
+  totalUsers: number;
+  totalDocuments: number;
+  totalConversations: number;
+  totalMessages: number;
+  userMessages: number;
+  aiMessages: number;
+  documentsByType: { type: string; count: number }[];
+  activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
+  userBreakdown: AdminUserMetrics[];
 }
 
 export interface IStorage {
@@ -33,6 +56,7 @@ export interface IStorage {
   getMessages(conversationId: number): Promise<Message[]>;
 
   getMetrics(userId: string): Promise<MetricsData>;
+  getAdminMetrics(): Promise<AdminMetricsData>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -185,6 +209,82 @@ export class DatabaseStorage implements IStorage {
       recentDocuments: recentDocs,
       recentConversations: recentConvsWithCounts,
       activityByDay,
+    };
+  }
+  async getAdminMetrics(): Promise<AdminMetricsData> {
+    const [docCount] = await db.select({ count: count() }).from(documents);
+    const [convCount] = await db.select({ count: count() }).from(conversations);
+    const [totalMsgCount] = await db.select({ count: count() }).from(messages);
+    const [userMsgCount] = await db.select({ count: count() }).from(messages).where(eq(messages.role, "user"));
+    const [aiMsgCount] = await db.select({ count: count() }).from(messages).where(eq(messages.role, "assistant"));
+
+    const docsByType = await db
+      .select({ type: documents.fileType, count: count() })
+      .from(documents)
+      .groupBy(documents.fileType);
+
+    const activityRows = await db.execute(sql`
+      SELECT 
+        d::date as date,
+        COALESCE((SELECT COUNT(*) FROM documents WHERE created_at::date = d::date), 0) as documents,
+        COALESCE((SELECT COUNT(*) FROM conversations WHERE created_at::date = d::date), 0) as conversations,
+        COALESCE((SELECT COUNT(*) FROM messages WHERE created_at::date = d::date), 0) as messages
+      FROM generate_series(
+        CURRENT_DATE - INTERVAL '6 days',
+        CURRENT_DATE,
+        '1 day'::interval
+      ) AS d
+      ORDER BY d::date ASC
+    `);
+
+    const activityByDay = (activityRows.rows as Array<{ date: string; documents: string; conversations: string; messages: string }>).map(row => ({
+      date: new Date(row.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      documents: Number(row.documents),
+      conversations: Number(row.conversations),
+      messages: Number(row.messages),
+    }));
+
+    const allUsers = await db.select().from(users);
+    const userBreakdown: AdminUserMetrics[] = await Promise.all(
+      allUsers.map(async (user) => {
+        const [dc] = await db.select({ count: count() }).from(documents).where(eq(documents.userId, user.id));
+        const [cc] = await db.select({ count: count() }).from(conversations).where(eq(conversations.userId, user.id));
+        const userConvIds = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.userId, user.id));
+        const convIds = userConvIds.map(c => c.id);
+        let mc = 0;
+        if (convIds.length > 0) {
+          const [msgCount] = await db.select({ count: count() }).from(messages).where(inArray(messages.conversationId, convIds));
+          mc = msgCount.count;
+        }
+        const lastDoc = await db.select({ createdAt: documents.createdAt }).from(documents).where(eq(documents.userId, user.id)).orderBy(desc(documents.createdAt)).limit(1);
+        const lastConv = await db.select({ createdAt: conversations.createdAt }).from(conversations).where(eq(conversations.userId, user.id)).orderBy(desc(conversations.createdAt)).limit(1);
+        const dates = [lastDoc[0]?.createdAt, lastConv[0]?.createdAt].filter(Boolean) as Date[];
+        const lastActive = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))).toISOString() : null;
+
+        return {
+          userId: user.id,
+          email: user.email,
+          name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "Unknown",
+          documentCount: dc.count,
+          conversationCount: cc.count,
+          messageCount: mc,
+          lastActive,
+        };
+      })
+    );
+
+    userBreakdown.sort((a, b) => (b.documentCount + b.messageCount) - (a.documentCount + a.messageCount));
+
+    return {
+      totalUsers: allUsers.length,
+      totalDocuments: Number(docCount.count),
+      totalConversations: Number(convCount.count),
+      totalMessages: Number(totalMsgCount.count),
+      userMessages: Number(userMsgCount.count),
+      aiMessages: Number(aiMsgCount.count),
+      documentsByType: docsByType.map(r => ({ type: r.type, count: Number(r.count) })),
+      activityByDay,
+      userBreakdown,
     };
   }
 }
