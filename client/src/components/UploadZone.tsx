@@ -5,11 +5,10 @@ import { useUploadDocument } from "@/hooks/use-documents";
 import { useToast } from "@/hooks/use-toast";
 
 const PROGRESS_STAGES = [
-  { label: "Uploading file...", duration: 1500 },
-  { label: "Analyzing document complexity...", duration: 3000 },
-  { label: "Extracting content...", duration: 20000 },
-  { label: "Formatting into Markdown...", duration: 15000 },
-  { label: "Saving document...", duration: 5000 },
+  { label: "Uploading file...", duration: 1000 },
+  { label: "Analyzing document...", duration: 2000 },
+  { label: "Extracting content...", duration: 10000 },
+  { label: "Saving document...", duration: 3000 },
 ];
 
 export function UploadZone() {

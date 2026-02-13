@@ -60,7 +60,7 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   const outputPrefix = path.join(outputDir, "page");
 
   try {
-    await execFileAsync("pdftoppm", ["-png", "-r", "150", resolvedPath, outputPrefix], {
+    await execFileAsync("pdftoppm", ["-png", "-r", "120", resolvedPath, outputPrefix], {
       timeout: 120000,
     });
   } catch (err) {
@@ -143,6 +143,29 @@ async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> 
   );
 
   return results.join("\n\n---\n\n");
+}
+
+async function formatTextToMarkdown(rawText: string): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 4096,
+      messages: [
+        {
+          role: "system",
+          content: `Format the text into clean Markdown. Add headings, lists, and tables where appropriate. Keep it concise. Output only the formatted markdown, no commentary.`,
+        },
+        {
+          role: "user",
+          content: rawText.slice(0, 50000),
+        },
+      ],
+    });
+    return response.choices[0]?.message?.content || rawText;
+  } catch (e) {
+    console.error("Formatting error, using raw text:", e);
+    return rawText;
+  }
 }
 
 function cleanupFiles(paths: string[]) {
@@ -230,30 +253,9 @@ export async function registerRoutes(
             content = rawText || "No pages found in PDF.";
           }
         } else {
-          console.log("Using basic text extraction");
+          console.log("Using basic text extraction with lightweight formatting");
           if (rawText && rawText.trim().length > 0) {
-            const response = await openai.chat.completions.create({
-              model: "gpt-5.2",
-              max_completion_tokens: 8192,
-              messages: [
-                {
-                  role: "system",
-                  content: `You are a document formatting expert. Convert the following extracted document text into well-structured Markdown.
-
-Rules:
-- Structure the content with proper headings, lists, and paragraphs
-- If you detect table-like data, format it as a proper Markdown table
-- If you detect mathematical expressions, format them with LaTeX ($ inline, $$ block)
-- Preserve the document's logical structure
-- Do NOT add commentary - just output the formatted markdown`,
-                },
-                {
-                  role: "user",
-                  content: `Format this extracted document content into clean Markdown:\n\n${rawText.slice(0, 100000)}`,
-                },
-              ],
-            });
-            content = response.choices[0]?.message?.content || rawText;
+            content = await formatTextToMarkdown(rawText);
           } else {
             content = "No text content could be extracted from this file.";
           }
@@ -267,28 +269,7 @@ Rules:
         }
 
         if (rawText && rawText.trim().length > 0) {
-          const response = await openai.chat.completions.create({
-            model: "gpt-5.2",
-            max_completion_tokens: 8192,
-            messages: [
-              {
-                role: "system",
-                content: `You are a document formatting expert. Convert the following extracted document text into well-structured Markdown.
-
-Rules:
-- Structure the content with proper headings, lists, and paragraphs
-- If you detect table-like data, format it as a proper Markdown table
-- If you detect mathematical expressions, format them with LaTeX ($ inline, $$ block)
-- Preserve the document's logical structure
-- Do NOT add commentary - just output the formatted markdown`,
-              },
-              {
-                role: "user",
-                content: `Format this extracted document content into clean Markdown:\n\n${rawText.slice(0, 100000)}`,
-              },
-            ],
-          });
-          content = response.choices[0]?.message?.content || rawText;
+          content = await formatTextToMarkdown(rawText);
         } else {
           content = "No text content could be extracted from this file.";
         }

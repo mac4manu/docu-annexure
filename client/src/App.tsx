@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3, LogOut, Loader2 } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -13,6 +13,7 @@ import DocumentView from "@/pages/DocumentView";
 import MultiDocChat from "@/pages/MultiDocChat";
 import Metrics from "@/pages/Metrics";
 import Landing from "@/pages/Landing";
+import HowToUse from "@/pages/HowToUse";
 import { useAuth } from "@/hooks/use-auth";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/document/:id" component={DocumentView} />
       <Route path="/chat" component={MultiDocChat} />
       <Route path="/metrics" component={Metrics} />
+      <Route path="/how-to-use" component={HowToUse} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -32,6 +34,7 @@ function HeaderNav() {
   const isDocuments = location === "/" || location.startsWith("/document");
   const isChat = location === "/chat";
   const isMetrics = location === "/metrics";
+  const isHowTo = location === "/how-to-use";
 
   return (
     <nav className="flex items-center gap-1" data-testid="nav-header">
@@ -72,6 +75,19 @@ function HeaderNav() {
         >
           <BarChart3 className="w-3.5 h-3.5" />
           Metrics
+        </span>
+      </Link>
+      <Link href="/how-to-use">
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            isHowTo
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover-elevate"
+          }`}
+          data-testid="nav-header-howto"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+          How to Use
         </span>
       </Link>
     </nav>
