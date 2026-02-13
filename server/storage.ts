@@ -5,7 +5,7 @@ import {
   type Conversation, type InsertConversation,
   type Message, type InsertMessage
 } from "@shared/schema";
-import { eq, desc, sql, count, and } from "drizzle-orm";
+import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
 
 export interface MetricsData {
   totalDocuments: number;
@@ -109,12 +109,13 @@ export class DatabaseStorage implements IStorage {
     let userMsgs = 0;
     let aiMsgs = 0;
     if (convIdList.length > 0) {
-      const msgResult = await db.execute(sql`SELECT COUNT(*) as count FROM messages WHERE conversation_id = ANY(${convIdList})`);
-      totalMsgs = Number((msgResult.rows[0] as any)?.count ?? 0);
-      const uMsgResult = await db.execute(sql`SELECT COUNT(*) as count FROM messages WHERE conversation_id = ANY(${convIdList}) AND role = 'user'`);
-      userMsgs = Number((uMsgResult.rows[0] as any)?.count ?? 0);
-      const aMsgResult = await db.execute(sql`SELECT COUNT(*) as count FROM messages WHERE conversation_id = ANY(${convIdList}) AND role = 'assistant'`);
-      aiMsgs = Number((aMsgResult.rows[0] as any)?.count ?? 0);
+      const convIdFilter = inArray(messages.conversationId, convIdList);
+      const [mc] = await db.select({ count: count() }).from(messages).where(convIdFilter);
+      totalMsgs = mc.count;
+      const [umc] = await db.select({ count: count() }).from(messages).where(and(convIdFilter, eq(messages.role, "user")));
+      userMsgs = umc.count;
+      const [amc] = await db.select({ count: count() }).from(messages).where(and(convIdFilter, eq(messages.role, "assistant")));
+      aiMsgs = amc.count;
     }
 
     const docsByType = await db
