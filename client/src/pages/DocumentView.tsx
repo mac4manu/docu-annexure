@@ -1,14 +1,15 @@
+import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, FileText, Calendar, Download } from "lucide-react";
+import { ArrowLeft, Download, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { format } from "date-fns";
 import { useDocument } from "@/hooks/use-documents";
 import { ChatInterface } from "@/components/ChatInterface";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 import "katex/dist/katex.min.css";
 
@@ -16,6 +17,7 @@ export default function DocumentView() {
   const [match, params] = useRoute("/document/:id");
   const id = parseInt(params?.id || "0");
   const { data: doc, isLoading, error } = useDocument(id);
+  const [docPanelVisible, setDocPanelVisible] = useState(true);
 
   if (isLoading) {
     return (
@@ -68,31 +70,48 @@ export default function DocumentView() {
           <Badge variant="secondary" className="text-[10px] shrink-0">{doc.fileType.toUpperCase()}</Badge>
         </div>
 
-        <Button variant="ghost" size="sm" onClick={handleDownload} data-testid="button-download-md">
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          Download
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDocPanelVisible(!docPanelVisible)}
+            title={docPanelVisible ? "Hide document" : "Show document"}
+            data-testid="button-toggle-doc-panel"
+          >
+            {docPanelVisible ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleDownload} data-testid="button-download-md">
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            Download
+          </Button>
+        </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-6 py-8">
-            <article className="prose prose-slate dark:prose-invert lg:prose-lg max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-2 prose-th:bg-muted prose-td:border prose-td:border-border prose-td:p-2" data-testid="article-doc-content">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-              >
-                {doc.content}
-              </ReactMarkdown>
-            </article>
-          </div>
-        </div>
-
-        <div className="w-[1px] bg-border flex-none" />
-
-        <div className="w-full max-w-sm lg:max-w-md flex-none">
-          <ChatInterface documentId={doc.id} />
-        </div>
+      <div className="flex-1 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal" data-testid="panel-group-doc-chat">
+          {docPanelVisible && (
+            <>
+              <ResizablePanel defaultSize={55} minSize={25} data-testid="panel-document">
+                <div className="h-full overflow-y-auto">
+                  <div className="max-w-3xl mx-auto px-6 py-8">
+                    <article className="prose prose-slate dark:prose-invert lg:prose-lg max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-2 prose-th:bg-muted prose-td:border prose-td:border-border prose-td:p-2" data-testid="article-doc-content">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {doc.content}
+                      </ReactMarkdown>
+                    </article>
+                  </div>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle data-testid="handle-resize" />
+            </>
+          )}
+          <ResizablePanel defaultSize={docPanelVisible ? 45 : 100} minSize={30} data-testid="panel-chat">
+            <ChatInterface documentId={doc.id} />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );
