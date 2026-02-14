@@ -45,6 +45,7 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-13: Optimized document upload speed: lower DPI (120), skip AI formatting for simple text PDFs/Office docs
 - 2026-02-13: Added "How to Use" page at /how-to-use with step-by-step guide and FAQ
 - 2026-02-13: Added admin metrics: /api/admin/metrics and /api/admin/check endpoints, admin toggle on Metrics page (admin user ID: 54463549)
+- 2026-02-14: Revamped all AI system prompts for scientific/research, health/medical, and education/academic domain expertise
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000
