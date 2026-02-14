@@ -210,6 +210,13 @@ export async function registerRoutes(
   app.post(api.documents.upload.path, isAuthenticated, upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
+    const userId = getUserId(req);
+    const existingDocs = await storage.getDocuments(userId);
+    if (existingDocs.length >= 3) {
+      cleanupFiles([req.file.path]);
+      return res.status(400).json({ message: "Upload limit reached. This prototype allows a maximum of 3 documents." });
+    }
+
     const filePath = req.file.path;
     const fileType = req.file.mimetype;
     const originalFilename = req.file.originalname;

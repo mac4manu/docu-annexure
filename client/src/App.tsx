@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2 } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -123,6 +123,10 @@ function UserMenu() {
 function AuthenticatedApp() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
+      <div className="flex-none bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-1.5 flex items-center justify-center gap-2 text-xs text-amber-800 dark:text-amber-200" data-testid="banner-prototype">
+        <FlaskConical className="w-3.5 h-3.5 shrink-0" />
+        <span>This app is a prototype and currently in evaluation phase. Upload limit: 3 documents per user.</span>
+      </div>
       <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50">
         <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
           <img src={logoImg} alt="DocuAnnexure" className="w-10 h-10 rounded-md shrink-0" />
