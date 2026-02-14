@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, Brain, ArrowRight, Shield, Zap } from "lucide-react";
+import { FileText, MessagesSquare, Brain, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -7,21 +7,39 @@ import heroBg from "@/assets/images/hero-bg.png";
 const features = [
   {
     icon: FileText,
-    title: "Rich Document Extraction",
+    title: "AI-Powered Extraction",
     description:
-      "Upload PDF, Word, or PowerPoint files. AI-powered vision extracts tables, formulas, images, and text into structured markdown.",
+      "Upload PDF, Word, or PowerPoint files. AI vision extracts tables, formulas, images, and text into structured markdown.",
   },
   {
     icon: MessagesSquare,
     title: "Chat With Your Documents",
     description:
-      "Ask questions about any document or chat across multiple files simultaneously. Get instant, AI-powered answers.",
+      "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers instantly.",
   },
   {
-    icon: Brain,
-    title: "Intelligent Analysis",
+    icon: ShieldAlert,
+    title: "Tortured Phrase Detection",
     description:
-      "Advanced AI understands context, cross-references between documents, and provides insights with proper citations.",
+      "Detect suspicious synonym substitutions that may signal paper mill activity or automated paraphrasing to evade plagiarism.",
+  },
+  {
+    icon: FileStack,
+    title: "Multi-Document Analysis",
+    description:
+      "Compare findings, methodologies, and data across multiple documents in a single chat session with cross-references.",
+  },
+  {
+    icon: TableProperties,
+    title: "Tables & Formulas",
+    description:
+      "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results from your files.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Domain Expertise",
+    description:
+      "Specialized for scientific research, health & medical literature, and education & academic materials.",
   },
 ];
 
