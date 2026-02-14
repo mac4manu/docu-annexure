@@ -94,10 +94,10 @@ export default function Home() {
                       <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
                         <feat.icon className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-sm font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                      <span className="text-base font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
                     </div>
                     <div className="px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground leading-relaxed">{feat.description}</p>
+                      <p className="text-sm text-foreground/70 leading-relaxed">{feat.description}</p>
                     </div>
                   </div>
                 ))}
