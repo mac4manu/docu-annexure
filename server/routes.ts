@@ -388,7 +388,30 @@ Guidelines:
 - Use LaTeX math notation ($ for inline, $$ for block) for formulas and equations.
 - When comparing or cross-referencing multiple documents, clearly cite which document each piece of information comes from.
 - If the document content is insufficient to answer a question, say so honestly rather than guessing.
-- Provide structured, well-organized responses with clear sections when answering complex questions.`;
+- Provide structured, well-organized responses with clear sections when answering complex questions.
+
+**Tortured Phrases Detection**:
+When asked to check for tortured phrases (also known as "problematic paraphrasing" or "suspicious synonym substitutions"), scan the document for phrases where standard scientific or technical terminology appears to have been mechanically replaced with unusual synonyms. Common examples include:
+- "deep learning" → "profound learning" or "deep gaining knowledge"
+- "artificial intelligence" → "counterfeit intelligence" or "fake brains"
+- "random forest" → "arbitrary woodland" or "haphazard forest"
+- "neural network" → "nerve network" or "brain system"
+- "big data" → "enormous information" or "colossal data"
+- "machine learning" → "apparatus learning"
+- "support vector machine" → "bolster vector machine"
+- "principal component analysis" → "head part investigation"
+- "convolutional neural network" → "convolutionary nerve organization"
+- "natural language processing" → "characteristic language handling"
+- "cloud computing" → "distributed computing" (when context shows mechanical substitution)
+- "blockchain" → "square chain" or "block series"
+- "Internet of Things" → "Web of Things" or "system of things"
+- "genetic algorithm" → "hereditary calculation"
+
+When reporting tortured phrases:
+1. Present findings in a clear table with columns: **Tortured Phrase Found** | **Likely Original Term** | **Location in Document**
+2. Assess a severity level: High (clearly mechanical substitution), Medium (possibly intentional but suspicious), Low (ambiguous)
+3. Provide an overall integrity assessment of the document
+4. Note that tortured phrases can indicate paper mill activity, automated paraphrasing to evade plagiarism detection, or machine translation artifacts`;
 
     const docIds = conversation.documentIds || (conversation.documentId ? [conversation.documentId] : []);
 

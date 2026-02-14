@@ -44,6 +44,10 @@ const PROMPT_SUGGESTIONS = [
     label: "List references",
     prompt: "List the key references and citations mentioned in this document, noting which claims they support.",
   },
+  {
+    label: "Detect tortured phrases",
+    prompt: "Scan this document for tortured phrases — suspicious synonym substitutions where standard scientific terminology may have been mechanically replaced (e.g., 'deep learning' replaced with 'profound learning'). Present findings in a table with severity levels and an overall integrity assessment.",
+  },
 ];
 
 export default function MultiDocChat() {
@@ -390,7 +394,7 @@ export default function MultiDocChat() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
-              {PROMPT_SUGGESTIONS.slice(0, selectedCount > 1 ? 6 : 4).map((suggestion) => (
+              {PROMPT_SUGGESTIONS.slice(0, selectedCount > 1 ? 7 : 4).map((suggestion) => (
                 <button
                   key={suggestion.label}
                   onClick={() => sendMessage(suggestion.prompt)}
