@@ -2,10 +2,44 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare } from "lucide-react";
+import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
+
+const FEATURES = [
+  {
+    icon: BrainCircuit,
+    title: "AI-Powered Extraction",
+    description: "Extracts tables, formulas, images, and structured content from PDFs, Word, and PowerPoint files using AI vision.",
+  },
+  {
+    icon: MessagesSquare,
+    title: "Chat with Documents",
+    description: "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Tortured Phrase Detection",
+    description: "Flags suspicious synonym substitutions that may indicate paper mill activity or automated paraphrasing to evade plagiarism.",
+  },
+  {
+    icon: FileStack,
+    title: "Multi-Document Analysis",
+    description: "Compare findings, methodologies, and data across multiple documents in a single chat session.",
+  },
+  {
+    icon: TableProperties,
+    title: "Tables & Formulas",
+    description: "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Domain Expertise",
+    description: "Specialized for scientific research, health & medical literature, and education & academic materials.",
+  },
+];
 
 export default function Home() {
   const { data: documents, isLoading } = useDocuments();
@@ -42,8 +76,29 @@ export default function Home() {
 
       <div className="flex-1 overflow-hidden px-6 pb-6">
         <div className="flex gap-6 h-full">
-          <div className="flex-1 min-w-0 flex flex-col">
-            <UploadZone />
+          <div className="flex-1 min-w-0 flex flex-col overflow-y-auto">
+            <div className="shrink-0" style={{ minHeight: "40%" }}>
+              <UploadZone />
+            </div>
+
+            <div className="mt-4 shrink-0">
+              <h2 className="text-sm font-semibold text-muted-foreground mb-2.5" data-testid="text-features-heading">Key Features</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                {FEATURES.map((feat) => (
+                  <Card key={feat.title} className="p-3" data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                    <div className="flex items-start gap-2.5">
+                      <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
+                        <feat.icon className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{feat.description}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="w-80 lg:w-96 shrink-0 flex flex-col min-h-0">
