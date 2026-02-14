@@ -52,39 +52,12 @@ function getFileLabel(fileType: string) {
 }
 
 function getFileAccentClass(fileType: string) {
-  switch (fileType) {
-    case "pdf":
-      return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40";
-    case "pptx":
-    case "ppt":
-      return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/40";
-    case "docx":
-    case "doc":
-      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/40";
-    default:
-      return "bg-primary/10 text-primary border-primary/20";
-  }
-}
-
-function getTopAccentColor(fileType: string) {
-  switch (fileType) {
-    case "pdf":
-      return "bg-red-500";
-    case "pptx":
-    case "ppt":
-      return "bg-orange-500";
-    case "docx":
-    case "doc":
-      return "bg-blue-500";
-    default:
-      return "bg-primary";
-  }
+  return "bg-primary/10 text-primary border-primary/20";
 }
 
 export function DocumentCard({ document }: DocumentCardProps) {
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument();
   const accentClass = getFileAccentClass(document.fileType);
-  const topAccent = getTopAccentColor(document.fileType);
   const contentPreview = document.content
     ? document.content.replace(/[#*_`>\-\[\]()!|]/g, "").slice(0, 100).trim()
     : "";
@@ -94,7 +67,7 @@ export function DocumentCard({ document }: DocumentCardProps) {
       className="group relative rounded-md border border-border bg-card overflow-hidden transition-shadow duration-200 hover:shadow-md"
       data-testid={`card-document-${document.id}`}
     >
-      <div className={`h-1 ${topAccent}`} />
+      <div className="h-1 bg-primary" />
 
       <Link href={`/document/${document.id}`} className="block">
         <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center gap-3">
