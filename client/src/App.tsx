@@ -36,60 +36,28 @@ function HeaderNav() {
   const isMetrics = location === "/metrics";
   const isHowTo = location === "/how-to-use";
 
+  const navItems = [
+    { href: "/", label: "Documents", icon: FileText, active: isDocuments, testId: "nav-header-documents" },
+    { href: "/chat", label: "Chat", icon: MessagesSquare, active: isChat, testId: "nav-header-chat" },
+    { href: "/metrics", label: "Metrics", icon: BarChart3, active: isMetrics, testId: "nav-header-metrics" },
+    { href: "/how-to-use", label: "How to Use", icon: HelpCircle, active: isHowTo, testId: "nav-header-howto" },
+  ];
+
   return (
-    <nav className="flex items-center gap-1" data-testid="nav-header">
-      <Link href="/">
-        <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-            isDocuments
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover-elevate"
-          }`}
-          data-testid="nav-header-documents"
-        >
-          <FileText className="w-3.5 h-3.5" />
-          Documents
-        </span>
-      </Link>
-      <Link href="/chat">
-        <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-            isChat
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover-elevate"
-          }`}
-          data-testid="nav-header-chat"
-        >
-          <MessagesSquare className="w-3.5 h-3.5" />
-          Chat
-        </span>
-      </Link>
-      <Link href="/metrics">
-        <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-            isMetrics
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover-elevate"
-          }`}
-          data-testid="nav-header-metrics"
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          Metrics
-        </span>
-      </Link>
-      <Link href="/how-to-use">
-        <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-            isHowTo
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover-elevate"
-          }`}
-          data-testid="nav-header-howto"
-        >
-          <HelpCircle className="w-3.5 h-3.5" />
-          How to Use
-        </span>
-      </Link>
+    <nav className="flex items-center gap-1.5" data-testid="nav-header">
+      {navItems.map((item) => (
+        <Link key={item.href} href={item.href}>
+          <Button
+            variant={item.active ? "default" : "ghost"}
+            size="sm"
+            className={item.active ? "" : "text-muted-foreground"}
+            data-testid={item.testId}
+          >
+            <item.icon className="w-3.5 h-3.5 mr-1.5" />
+            {item.label}
+          </Button>
+        </Link>
+      ))}
     </nav>
   );
 }
