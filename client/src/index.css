@@ -106,16 +106,30 @@
 
 @layer utilities {
   .hover-elevate {
-    @apply transition-colors duration-150;
+    @apply transition-all duration-150 relative;
   }
-  .hover-elevate:hover {
+  .hover-elevate::after {
+    content: '';
+    @apply absolute inset-0 rounded-[inherit] pointer-events-none transition-colors duration-150;
+  }
+  .hover-elevate:hover::after {
     @apply bg-foreground/[0.04];
   }
   .active-elevate-2 {
-    @apply transition-colors duration-100;
+    @apply transition-all duration-100 relative;
   }
-  .active-elevate-2:active {
+  .active-elevate-2::after {
+    content: '';
+    @apply absolute inset-0 rounded-[inherit] pointer-events-none transition-colors duration-100;
+  }
+  .active-elevate-2:active::after {
     @apply bg-foreground/[0.08];
+  }
+  .no-default-hover-elevate:hover::after {
+    @apply bg-transparent;
+  }
+  .no-default-active-elevate:active::after {
+    @apply bg-transparent;
   }
 }
 

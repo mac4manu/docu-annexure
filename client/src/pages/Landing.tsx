@@ -1,6 +1,5 @@
-import { FileText, MessagesSquare, Brain, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import logoImg from "@/assets/images/logo-transparent.png";
 import heroBg from "@/assets/images/hero-bg.png";
 
@@ -57,7 +56,7 @@ export default function Landing() {
             <img src={logoImg} alt="DocuAnnexure" className="w-9 h-9 rounded-md" />
             <span className="font-bold text-base tracking-tight" data-testid="text-landing-logo">DocuAnnexure</span>
           </div>
-          <Button data-testid="button-header-login" onClick={() => window.location.href = "/api/login"}>Log in</Button>
+          <Button variant="outline" data-testid="button-header-login" onClick={() => window.location.href = "/api/login"}>Log in</Button>
         </div>
       </header>
 
@@ -82,7 +81,7 @@ export default function Landing() {
                 across your entire knowledge base.
               </p>
               <div className="flex items-center gap-3 flex-wrap">
-                <Button size="lg" data-testid="button-hero-get-started" onClick={() => window.location.href = "/api/login"}>
+                <Button size="lg" className="bg-white text-foreground border-white/80" data-testid="button-hero-get-started" onClick={() => window.location.href = "/api/login"}>
                   Get Started
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -129,19 +128,40 @@ export default function Landing() {
               From extraction to analysis, DocuAnnexure handles your document workflow end-to-end.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((feature) => (
-              <Card key={feature.title} className="hover-elevate" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}>
-                <CardContent className="p-6 space-y-3">
-                  <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                    <feature.icon className="w-5 h-5 text-primary" />
+              <div
+                key={feature.title}
+                className="rounded-md border border-border bg-card overflow-hidden hover:shadow-md transition-shadow duration-200"
+                data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <div className="px-5 py-3.5 border-b border-border bg-muted/20 flex items-center gap-3">
+                  <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
+                    <feature.icon className="w-4 h-4" />
                   </div>
                   <h3 className="font-semibold text-sm">{feature.title}</h3>
+                </div>
+                <div className="px-5 py-4">
                   <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="py-12 bg-muted/30 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight font-serif mb-3" data-testid="text-cta-heading">
+            Ready to get started?
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
+            Upload your first document and start chatting with AI in seconds.
+          </p>
+          <Button size="lg" data-testid="button-cta-login" onClick={() => window.location.href = "/api/login"}>
+            Get Started
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
         </div>
       </section>
 
