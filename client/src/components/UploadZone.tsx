@@ -81,16 +81,17 @@ export function UploadZone() {
   });
 
   return (
-    <div className="w-full" data-testid="upload-zone-container">
+    <div className="w-full h-full" data-testid="upload-zone-container">
       <div
         {...getRootProps()}
         data-testid="dropzone"
         className={`
-          relative group cursor-pointer
+          relative group cursor-pointer h-full
           rounded-md border-2 border-dashed
           transition-all duration-300 ease-out
-          px-5 py-4 text-center
+          px-5 py-4
           bg-background/50 backdrop-blur-sm
+          flex items-center justify-center
           ${
             isDragActive
               ? "border-primary bg-primary/5 scale-[1.01] shadow-xl shadow-primary/10"
@@ -143,27 +144,27 @@ export function UploadZone() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center justify-center gap-3 text-center">
             <div className={`
-              p-2.5 rounded-full transition-colors duration-300 shrink-0
+              p-3.5 rounded-full transition-colors duration-300
               ${isDragActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary"}
             `}>
-              <UploadCloud className="w-5 h-5" />
+              <UploadCloud className="w-7 h-7" />
             </div>
 
-            <div className="text-left">
-              <h3 className="text-sm font-semibold text-foreground" data-testid="text-upload-title">
+            <div>
+              <h3 className="text-base font-semibold text-foreground" data-testid="text-upload-title">
                 Upload Document
               </h3>
-              <p className="text-xs text-muted-foreground" data-testid="text-upload-description">
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs" data-testid="text-upload-description">
                 Drag & drop or click to upload PDF, Word, or PowerPoint files
               </p>
             </div>
 
-            <div className="flex gap-1.5 shrink-0 flex-wrap">
-              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PDF</span>
-              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Word</span>
-              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PPTX</span>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PDF</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Word</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PPTX</span>
             </div>
           </div>
         )}
