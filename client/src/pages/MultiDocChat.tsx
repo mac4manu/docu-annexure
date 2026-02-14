@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X } from "lucide-react";
+import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocuments } from "@/hooks/use-documents";
 import { useConversations, useCreateConversation, useDeleteConversation } from "@/hooks/use-conversations";
@@ -17,6 +17,7 @@ import "katex/dist/katex.min.css";
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  id?: number;
 }
 
 const PROMPT_SUGGESTIONS = [
@@ -65,6 +66,8 @@ export default function MultiDocChat() {
   const [showHistory, setShowHistory] = useState(false);
   const [showDocPicker, setShowDocPicker] = useState(false);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [ratings, setRatings] = useState<Record<number, string>>({});
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -111,7 +114,8 @@ export default function MultiDocChat() {
       const msgs = data.messages || [];
 
       setConversationId(convId);
-      setMessages(msgs.map((m: { role: string; content: string }) => ({
+      setMessages(msgs.map((m: { id: number; role: string; content: string }) => ({
+        id: m.id,
         role: m.role as "user" | "assistant",
         content: m.content,
       })));
@@ -201,6 +205,16 @@ export default function MultiDocChat() {
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
+              if (data.userMessageId) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const userIdx = newMsgs.length - 2;
+                  if (userIdx >= 0 && newMsgs[userIdx].role === "user") {
+                    newMsgs[userIdx] = { ...newMsgs[userIdx], id: data.userMessageId };
+                  }
+                  return newMsgs;
+                });
+              }
               if (data.content) {
                 assistantContent += data.content;
                 setMessages(prev => {
@@ -208,6 +222,16 @@ export default function MultiDocChat() {
                   const lastMsg = newMsgs[newMsgs.length - 1];
                   if (lastMsg.role === "assistant") {
                     lastMsg.content = assistantContent;
+                  }
+                  return newMsgs;
+                });
+              }
+              if (data.done && data.messageId) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const lastMsg = newMsgs[newMsgs.length - 1];
+                  if (lastMsg.role === "assistant") {
+                    newMsgs[newMsgs.length - 1] = { ...lastMsg, id: data.messageId };
                   }
                   return newMsgs;
                 });
@@ -223,6 +247,50 @@ export default function MultiDocChat() {
       toast({ title: "Error", description: "Failed to get response from AI", variant: "destructive" });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (conversationId && messages.length > 0) {
+      const assistantMsgIds = messages.filter(m => m.role === "assistant" && m.id).map(m => m.id!);
+      if (assistantMsgIds.length === 0) return;
+      Promise.all(
+        assistantMsgIds.map(async (id) => {
+          try {
+            const res = await fetch(`/api/messages/${id}/rating`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.rating) {
+                setRatings(prev => ({ ...prev, [id]: data.rating }));
+              }
+            }
+          } catch {}
+        })
+      );
+    }
+  }, [conversationId, messages.length]);
+
+  const handleCopy = async (content: string, msgId?: number) => {
+    await navigator.clipboard.writeText(content);
+    if (msgId) {
+      setCopiedId(msgId);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const handleRate = async (messageId: number, rating: string) => {
+    const current = ratings[messageId];
+    if (current === rating) return;
+    try {
+      const res = await fetch(`/api/messages/${messageId}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setRatings(prev => ({ ...prev, [messageId]: rating }));
+    } catch {
+      toast({ title: "Error", description: "Failed to save rating", variant: "destructive" });
     }
   };
 
@@ -420,13 +488,50 @@ export default function MultiDocChat() {
                 </div>
               )}
 
-              <div className={`max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border/50 rounded-bl-none text-foreground"}`}>
-                {msg.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+              <div className="flex flex-col gap-1 max-w-[80%]">
+                <div className={`rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border/50 rounded-bl-none text-foreground"}`}>
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
+                </div>
+                {msg.role === "assistant" && msg.content && (
+                  <div className="flex items-center gap-0.5 ml-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => handleCopy(msg.content, msg.id || i)}
+                      data-testid={`button-copy-${i}`}
+                    >
+                      {copiedId === (msg.id || i) ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                    </Button>
+                    {msg.id && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={`h-7 w-7 ${ratings[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
+                          onClick={() => handleRate(msg.id!, "thumbs_up")}
+                          data-testid={`button-thumbsup-${i}`}
+                        >
+                          <ThumbsUp className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={`h-7 w-7 ${ratings[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
+                          onClick={() => handleRate(msg.id!, "thumbs_down")}
+                          data-testid={`button-thumbsdown-${i}`}
+                        >
+                          <ThumbsDown className="w-3 h-3" />
+                        </Button>
+                      </>
+                    )}
                   </div>
-                ) : (
-                  msg.content
                 )}
               </div>
 

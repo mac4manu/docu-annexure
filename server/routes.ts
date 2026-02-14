@@ -331,6 +331,53 @@ export async function registerRoutes(
     res.json({ isAdmin: ADMIN_USER_IDS.includes(getUserId(req)) });
   });
 
+  app.post("/api/messages/:id/rate", isAuthenticated, async (req, res) => {
+    try {
+      const { rating } = req.body;
+      if (!["thumbs_up", "thumbs_down"].includes(rating)) {
+        return res.status(400).json({ message: "Rating must be thumbs_up or thumbs_down" });
+      }
+      const result = await storage.rateMessage({
+        messageId: Number(req.params.id),
+        rating,
+        userId: getUserId(req),
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Rating error:", error);
+      res.status(500).json({ message: "Failed to rate message" });
+    }
+  });
+
+  app.get("/api/messages/:id/rating", isAuthenticated, async (req, res) => {
+    const rating = await storage.getMessageRating(Number(req.params.id), getUserId(req));
+    res.json({ rating: rating?.rating || null });
+  });
+
+  app.get("/api/ratings/metrics", isAuthenticated, async (req, res) => {
+    try {
+      const metrics = await storage.getRatingMetrics(getUserId(req));
+      res.json(metrics);
+    } catch (error) {
+      console.error("Rating metrics error:", error);
+      res.status(500).json({ message: "Failed to fetch rating metrics" });
+    }
+  });
+
+  app.get("/api/admin/ratings/metrics", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    if (!ADMIN_USER_IDS.includes(userId)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const metrics = await storage.getAdminRatingMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Admin rating metrics error:", error);
+      res.status(500).json({ message: "Failed to fetch admin rating metrics" });
+    }
+  });
+
   // Chat
   app.get(api.conversations.list.path, isAuthenticated, async (req, res) => {
     const convs = await storage.getAllConversations(getUserId(req));
@@ -434,6 +481,8 @@ When reporting tortured phrases:
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
+    res.write(`data: ${JSON.stringify({ userMessageId: userMsg.id })}\n\n`);
+
     try {
       const stream = await openai.chat.completions.create({
         model: "gpt-5.2",
@@ -455,13 +504,13 @@ When reporting tortured phrases:
         }
       }
 
-      await storage.createMessage({
+      const savedMsg = await storage.createMessage({
         conversationId,
         role: "assistant",
         content: fullResponse
       });
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.write(`data: ${JSON.stringify({ done: true, messageId: savedMsg.id })}\n\n`);
       res.end();
 
     } catch (error) {

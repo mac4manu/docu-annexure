@@ -1,9 +1,10 @@
 import { db } from "./db";
 import {
-  documents, conversations, messages,
+  documents, conversations, messages, messageRatings,
   type Document, type InsertDocument,
   type Conversation, type InsertConversation,
-  type Message, type InsertMessage
+  type Message, type InsertMessage,
+  type MessageRating, type InsertMessageRating
 } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
@@ -56,6 +57,11 @@ export interface IStorage {
   deleteConversation(id: number, userId: string): Promise<void>;
   createMessage(msg: InsertMessage): Promise<Message>;
   getMessages(conversationId: number): Promise<Message[]>;
+
+  rateMessage(rating: InsertMessageRating): Promise<MessageRating>;
+  getMessageRating(messageId: number, userId: string): Promise<MessageRating | undefined>;
+  getRatingMetrics(userId: string): Promise<{ thumbsUp: number; thumbsDown: number; total: number }>;
+  getAdminRatingMetrics(): Promise<{ thumbsUp: number; thumbsDown: number; total: number }>;
 
   getMetrics(userId: string): Promise<MetricsData>;
   getAdminMetrics(): Promise<AdminMetricsData>;
@@ -119,6 +125,42 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(messages)
       .where(eq(messages.conversationId, conversationId))
       .orderBy(messages.createdAt);
+  }
+
+  async rateMessage(rating: InsertMessageRating): Promise<MessageRating> {
+    const existing = await db.select().from(messageRatings)
+      .where(and(eq(messageRatings.messageId, rating.messageId), eq(messageRatings.userId, rating.userId!)));
+    if (existing.length > 0) {
+      const [updated] = await db.update(messageRatings)
+        .set({ rating: rating.rating })
+        .where(eq(messageRatings.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    const [newRating] = await db.insert(messageRatings).values(rating).returning();
+    return newRating;
+  }
+
+  async getMessageRating(messageId: number, userId: string): Promise<MessageRating | undefined> {
+    const [rating] = await db.select().from(messageRatings)
+      .where(and(eq(messageRatings.messageId, messageId), eq(messageRatings.userId, userId)));
+    return rating;
+  }
+
+  async getRatingMetrics(userId: string): Promise<{ thumbsUp: number; thumbsDown: number; total: number }> {
+    const [up] = await db.select({ count: count() }).from(messageRatings)
+      .where(and(eq(messageRatings.userId, userId), eq(messageRatings.rating, "thumbs_up")));
+    const [down] = await db.select({ count: count() }).from(messageRatings)
+      .where(and(eq(messageRatings.userId, userId), eq(messageRatings.rating, "thumbs_down")));
+    return { thumbsUp: up.count, thumbsDown: down.count, total: up.count + down.count };
+  }
+
+  async getAdminRatingMetrics(): Promise<{ thumbsUp: number; thumbsDown: number; total: number }> {
+    const [up] = await db.select({ count: count() }).from(messageRatings)
+      .where(eq(messageRatings.rating, "thumbs_up"));
+    const [down] = await db.select({ count: count() }).from(messageRatings)
+      .where(eq(messageRatings.rating, "thumbs_down"));
+    return { thumbsUp: up.count, thumbsDown: down.count, total: up.count + down.count };
   }
 
   async getMetrics(userId: string): Promise<MetricsData> {

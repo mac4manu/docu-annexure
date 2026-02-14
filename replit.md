@@ -48,6 +48,9 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-14: Revamped all AI system prompts for scientific/research, health/medical, and education/academic domain expertise
 - 2026-02-14: Revamped Chat tab: auto-selects all docs, instant typing (no Start button), smart prompt suggestions, compact doc picker dropdown
 - 2026-02-14: Added domain use case cards (Scientific, Health, Education) to Home page with example prompts
+- 2026-02-14: Added copy button and thumbs up/down rating to AI chat responses (both single-doc and multi-doc chat)
+- 2026-02-14: Added message_ratings table, rating API routes (/api/messages/:id/rate, /api/ratings/metrics, /api/admin/ratings/metrics)
+- 2026-02-14: Added AI Response Accuracy card to Metrics page (personal and admin views) showing thumbs up/down counts and accuracy percentage
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000

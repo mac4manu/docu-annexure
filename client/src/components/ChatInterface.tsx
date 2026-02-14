@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, Loader2, Sparkles } from "lucide-react";
+import { Send, User, Bot, Loader2, Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useConversation, useCreateConversation } from "@/hooks/use-conversations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ interface ChatInterfaceProps {
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  id?: number;
 }
 
 export function ChatInterface({ documentId }: ChatInterfaceProps) {
@@ -23,6 +24,8 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
+  const [ratings, setRatings] = useState<Record<number, string>>({});
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -50,6 +53,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
   useEffect(() => {
     if (history?.messages) {
       setMessages(prev => prev.length === 0 ? history.messages.map(m => ({
+        id: m.id,
         role: m.role as "user" | "assistant",
         content: m.content
       })) : prev);
@@ -101,6 +105,16 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
             try {
               const data = JSON.parse(line.slice(6));
 
+              if (data.userMessageId) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const userIdx = newMsgs.length - 2;
+                  if (userIdx >= 0 && newMsgs[userIdx].role === "user") {
+                    newMsgs[userIdx] = { ...newMsgs[userIdx], id: data.userMessageId };
+                  }
+                  return newMsgs;
+                });
+              }
               if (data.content) {
                 assistantContent += data.content;
                 setMessages(prev => {
@@ -108,6 +122,16 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                   const lastMsg = newMsgs[newMsgs.length - 1];
                   if (lastMsg.role === "assistant") {
                     lastMsg.content = assistantContent;
+                  }
+                  return newMsgs;
+                });
+              }
+              if (data.done && data.messageId) {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const lastMsg = newMsgs[newMsgs.length - 1];
+                  if (lastMsg.role === "assistant") {
+                    newMsgs[newMsgs.length - 1] = { ...lastMsg, id: data.messageId };
                   }
                   return newMsgs;
                 });
@@ -127,6 +151,50 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (conversationId && messages.length > 0) {
+      const assistantMsgIds = messages.filter(m => m.role === "assistant" && m.id).map(m => m.id!);
+      if (assistantMsgIds.length === 0) return;
+      Promise.all(
+        assistantMsgIds.map(async (id) => {
+          try {
+            const res = await fetch(`/api/messages/${id}/rating`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.rating) {
+                setRatings(prev => ({ ...prev, [id]: data.rating }));
+              }
+            }
+          } catch {}
+        })
+      );
+    }
+  }, [conversationId, messages.length]);
+
+  const handleCopy = async (content: string, msgId?: number) => {
+    await navigator.clipboard.writeText(content);
+    if (msgId) {
+      setCopiedId(msgId);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const handleRate = async (messageId: number, rating: string) => {
+    const current = ratings[messageId];
+    if (current === rating) return;
+    try {
+      const res = await fetch(`/api/messages/${messageId}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setRatings(prev => ({ ...prev, [messageId]: rating }));
+    } catch {
+      toast({ title: "Error", description: "Failed to save rating", variant: "destructive" });
     }
   };
 
@@ -166,21 +234,58 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                 </div>
               )}
 
-              <div className={`
-                max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed
-                ${msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-none"
-                  : "bg-card border border-border/50 rounded-bl-none text-foreground"}
-              `}>
-                {msg.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkMath]}
-                      rehypePlugins={[rehypeKatex]}
-                    >{msg.content}</ReactMarkdown>
+              <div className="flex flex-col gap-1 max-w-[85%]">
+                <div className={`
+                  rounded-2xl p-3 text-sm leading-relaxed
+                  ${msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-br-none"
+                    : "bg-card border border-border/50 rounded-bl-none text-foreground"}
+                `}>
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
+                </div>
+                {msg.role === "assistant" && msg.content && (
+                  <div className="flex items-center gap-0.5 ml-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => handleCopy(msg.content, msg.id || i)}
+                      data-testid={`button-copy-${i}`}
+                    >
+                      {copiedId === (msg.id || i) ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                    </Button>
+                    {msg.id && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={`h-7 w-7 ${ratings[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
+                          onClick={() => handleRate(msg.id!, "thumbs_up")}
+                          data-testid={`button-thumbsup-${i}`}
+                        >
+                          <ThumbsUp className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={`h-7 w-7 ${ratings[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
+                          onClick={() => handleRate(msg.id!, "thumbs_down")}
+                          data-testid={`button-thumbsdown-${i}`}
+                        >
+                          <ThumbsDown className="w-3 h-3" />
+                        </Button>
+                      </>
+                    )}
                   </div>
-                ) : (
-                  msg.content
                 )}
               </div>
 

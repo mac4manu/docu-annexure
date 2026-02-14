@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield } from "lucide-react";
+import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface MetricsData {
@@ -42,6 +42,12 @@ interface AdminMetricsData {
   userBreakdown: AdminUserMetrics[];
 }
 
+interface RatingMetrics {
+  thumbsUp: number;
+  thumbsDown: number;
+  total: number;
+}
+
 const TYPE_LABELS: Record<string, string> = {
   pdf: "PDF",
   doc: "Word",
@@ -66,7 +72,49 @@ function StatCard({ title, value, icon: Icon, subtitle }: { title: string; value
   );
 }
 
-function PersonalMetrics({ metrics }: { metrics: MetricsData }) {
+function RatingCard({ ratingMetrics }: { ratingMetrics: RatingMetrics }) {
+  const accuracy = ratingMetrics.total > 0
+    ? Math.round((ratingMetrics.thumbsUp / ratingMetrics.total) * 100)
+    : 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm font-medium text-muted-foreground">AI Response Accuracy</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-3xl font-bold" data-testid="text-accuracy-percentage">
+            {ratingMetrics.total > 0 ? `${accuracy}%` : "N/A"}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Based on {ratingMetrics.total} rating{ratingMetrics.total !== 1 ? "s" : ""}
+          </p>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5">
+              <ThumbsUp className="w-3.5 h-3.5 text-green-500" />
+              <span className="font-medium" data-testid="text-thumbs-up-count">{ratingMetrics.thumbsUp}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ThumbsDown className="w-3.5 h-3.5 text-red-500" />
+              <span className="font-medium" data-testid="text-thumbs-down-count">{ratingMetrics.thumbsDown}</span>
+            </div>
+          </div>
+          {ratingMetrics.total > 0 && (
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-green-500 rounded-full transition-all"
+                style={{ width: `${accuracy}%` }}
+              />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PersonalMetrics({ metrics, ratingMetrics }: { metrics: MetricsData; ratingMetrics?: RatingMetrics }) {
   const pieData = metrics.documentsByType.map(d => ({
     name: TYPE_LABELS[d.type] || d.type,
     value: d.count,
@@ -81,7 +129,7 @@ function PersonalMetrics({ metrics }: { metrics: MetricsData }) {
         <StatCard title="AI Responses" value={metrics.aiMessages} icon={Bot} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">Activity (Last 7 Days)</CardTitle>
@@ -140,6 +188,8 @@ function PersonalMetrics({ metrics }: { metrics: MetricsData }) {
             )}
           </CardContent>
         </Card>
+
+        {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -189,7 +239,7 @@ function PersonalMetrics({ metrics }: { metrics: MetricsData }) {
   );
 }
 
-function AdminMetrics({ metrics }: { metrics: AdminMetricsData }) {
+function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; ratingMetrics?: RatingMetrics }) {
   const pieData = metrics.documentsByType.map(d => ({
     name: TYPE_LABELS[d.type] || d.type,
     value: d.count,
@@ -205,7 +255,7 @@ function AdminMetrics({ metrics }: { metrics: AdminMetricsData }) {
         <StatCard title="AI Responses" value={metrics.aiMessages} icon={Bot} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">Platform Activity (Last 7 Days)</CardTitle>
@@ -264,6 +314,8 @@ function AdminMetrics({ metrics }: { metrics: AdminMetricsData }) {
             )}
           </CardContent>
         </Card>
+
+        {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
       </div>
 
       <Card>
@@ -321,8 +373,18 @@ export default function Metrics() {
     enabled: view === "personal",
   });
 
+  const { data: ratingMetrics } = useQuery<RatingMetrics>({
+    queryKey: ["/api/ratings/metrics"],
+    enabled: view === "personal",
+  });
+
   const { data: adminMetrics, isLoading: adminLoading } = useQuery<AdminMetricsData>({
     queryKey: ["/api/admin/metrics"],
+    enabled: view === "admin" && !!adminCheck?.isAdmin,
+  });
+
+  const { data: adminRatingMetrics } = useQuery<RatingMetrics>({
+    queryKey: ["/api/admin/ratings/metrics"],
     enabled: view === "admin" && !!adminCheck?.isAdmin,
   });
 
@@ -385,8 +447,8 @@ export default function Metrics() {
           )}
         </div>
 
-        {view === "personal" && metrics && <PersonalMetrics metrics={metrics} />}
-        {view === "admin" && adminMetrics && <AdminMetrics metrics={adminMetrics} />}
+        {view === "personal" && metrics && <PersonalMetrics metrics={metrics} ratingMetrics={ratingMetrics} />}
+        {view === "admin" && adminMetrics && <AdminMetrics metrics={adminMetrics} ratingMetrics={adminRatingMetrics} />}
       </div>
     </div>
   );
