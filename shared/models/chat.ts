@@ -25,7 +25,20 @@ export const insertConversationSchema = createInsertSchema(conversations).omit({
   createdAt: true,
 });
 
+export const messageRatings = pgTable("message_ratings", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").notNull().references(() => messages.id, { onDelete: "cascade" }),
+  rating: text("rating").notNull(),
+  userId: varchar("user_id"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMessageRatingSchema = createInsertSchema(messageRatings).omit({
   id: true,
   createdAt: true,
 });
@@ -34,3 +47,5 @@ export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type MessageRating = typeof messageRatings.$inferSelect;
+export type InsertMessageRating = z.infer<typeof insertMessageRatingSchema>;
