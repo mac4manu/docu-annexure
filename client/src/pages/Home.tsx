@@ -92,7 +92,7 @@ export default function Home() {
                       </div>
                       <div className="min-w-0">
                         <span className="text-sm font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feat.description}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{feat.description}</p>
                       </div>
                     </div>
                   </Card>
