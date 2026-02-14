@@ -46,6 +46,8 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-13: Added "How to Use" page at /how-to-use with step-by-step guide and FAQ
 - 2026-02-13: Added admin metrics: /api/admin/metrics and /api/admin/check endpoints, admin toggle on Metrics page (admin user ID: 54463549)
 - 2026-02-14: Revamped all AI system prompts for scientific/research, health/medical, and education/academic domain expertise
+- 2026-02-14: Revamped Chat tab: auto-selects all docs, instant typing (no Start button), smart prompt suggestions, compact doc picker dropdown
+- 2026-02-14: Added domain use case cards (Scientific, Health, Education) to Home page with example prompts
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000

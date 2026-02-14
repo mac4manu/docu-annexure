@@ -2,9 +2,35 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search, SortAsc, SortDesc } from "lucide-react";
+import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, Microscope, HeartPulse, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Link } from "wouter";
+
+const USE_CASES = [
+  {
+    icon: Microscope,
+    domain: "Scientific Research",
+    scenario: "Upload a 30-page manuscript and ask:",
+    prompt: "Summarize the core novelty of this method compared to the literature cited in the introduction.",
+    accentClass: "text-blue-600 dark:text-blue-400 bg-blue-500/10",
+  },
+  {
+    icon: HeartPulse,
+    domain: "Health & Medical",
+    scenario: "Upload a clinical trial report and ask:",
+    prompt: "What were the primary endpoints, sample size, and statistical significance of the outcomes?",
+    accentClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+  },
+  {
+    icon: GraduationCap,
+    domain: "Education & Academic",
+    scenario: "Upload a textbook chapter and ask:",
+    prompt: "Break down the key concepts in this chapter and create a study guide with practice questions.",
+    accentClass: "text-purple-600 dark:text-purple-400 bg-purple-500/10",
+  },
+];
 
 export default function Home() {
   const { data: documents, isLoading } = useDocuments();
@@ -42,6 +68,35 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto px-6 pb-6">
         <UploadZone />
 
+        {!hasDocuments && !isLoading && (
+          <div className="mt-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="text-use-cases-heading">What can you do with DocuAnnexure?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {USE_CASES.map((uc) => (
+                <Card key={uc.domain} className="p-4" data-testid={`card-usecase-${uc.domain.toLowerCase().replace(/\s/g, "-")}`}>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <div className={`p-1.5 rounded-md ${uc.accentClass}`}>
+                      <uc.icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm font-semibold">{uc.domain}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-1.5">{uc.scenario}</p>
+                  <p className="text-xs italic text-foreground/80 leading-relaxed">"{uc.prompt}"</p>
+                </Card>
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                Upload a document above, then head to the{" "}
+                <Link href="/chat" className="text-primary font-medium underline underline-offset-2">
+                  Chat tab
+                </Link>{" "}
+                to start asking questions.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mt-6">
           <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
@@ -74,6 +129,12 @@ export default function Home() {
                 >
                   {sortNewest ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
                 </Button>
+                <Link href="/chat">
+                  <Button variant="default" size="sm" data-testid="button-chat-with-docs">
+                    <MessagesSquare className="w-3.5 h-3.5 mr-1.5" />
+                    Chat with docs
+                  </Button>
+                </Link>
               </div>
             )}
           </div>

@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, Sparkles, FileText, User, Plus, Trash2, History, MessageSquare } from "lucide-react";
+import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useDocuments } from "@/hooks/use-documents";
 import { useConversations, useCreateConversation, useDeleteConversation } from "@/hooks/use-conversations";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { buildUrl } from "@shared/routes";
 import { api } from "@shared/routes";
 import ReactMarkdown from "react-markdown";
@@ -20,6 +19,33 @@ interface ChatMessage {
   content: string;
 }
 
+const PROMPT_SUGGESTIONS = [
+  {
+    label: "Summarize core findings",
+    prompt: "Summarize the core findings and key conclusions of this document in a structured format.",
+  },
+  {
+    label: "Compare methodologies",
+    prompt: "Compare the methodologies described across the selected documents. Highlight similarities and differences.",
+  },
+  {
+    label: "Extract data tables",
+    prompt: "Extract and present all key data tables, statistics, or numerical findings from this document.",
+  },
+  {
+    label: "Explain for a student",
+    prompt: "Explain the main concepts of this document in simple terms, suitable for an undergraduate student.",
+  },
+  {
+    label: "Clinical implications",
+    prompt: "What are the clinical or practical implications discussed in this document? Summarize any recommendations.",
+  },
+  {
+    label: "List references",
+    prompt: "List the key references and citations mentioned in this document, noting which claims they support.",
+  },
+];
+
 export default function MultiDocChat() {
   const { data: documents, isLoading: docsLoading } = useDocuments();
   const { data: conversationsList, isLoading: convsLoading } = useConversations();
@@ -32,11 +58,20 @@ export default function MultiDocChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [chatStarted, setChatStarted] = useState(false);
-  const [needsNewConversation, setNeedsNewConversation] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showDocPicker, setShowDocPicker] = useState(false);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const docPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (documents && documents.length > 0 && !hasAutoSelected) {
+      setSelectedDocIds(documents.map(d => d.id));
+      setHasAutoSelected(true);
+    }
+  }, [documents, hasAutoSelected]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,55 +79,22 @@ export default function MultiDocChat() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (docPickerRef.current && !docPickerRef.current.contains(e.target as Node)) {
+        setShowDocPicker(false);
+      }
+    }
+    if (showDocPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showDocPicker]);
+
   const toggleDoc = (id: number) => {
     setSelectedDocIds(prev =>
       prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
     );
-    if (chatStarted) {
-      setConversationId(null);
-      setNeedsNewConversation(true);
-    }
-  };
-
-  const selectAll = () => {
-    if (!documents) return;
-    if (selectedDocIds.length === documents.length) {
-      setSelectedDocIds([]);
-    } else {
-      setSelectedDocIds(documents.map(d => d.id));
-    }
-    if (chatStarted) {
-      setConversationId(null);
-      setNeedsNewConversation(true);
-    }
-  };
-
-  const startChat = async () => {
-    if (selectedDocIds.length === 0) {
-      toast({ title: "Select documents", description: "Pick at least one document to chat with.", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const selectedNames = documents
-        ?.filter(d => selectedDocIds.includes(d.id))
-        .map(d => d.title)
-        .slice(0, 3)
-        .join(", ");
-      const title = selectedDocIds.length === 1
-        ? `Chat: ${selectedNames}`
-        : `Chat: ${selectedNames}${selectedDocIds.length > 3 ? "..." : ""}`;
-
-      const conv = await createConv({
-        title,
-        documentIds: selectedDocIds,
-      });
-      setConversationId(conv.id);
-      setChatStarted(true);
-      setShowHistory(false);
-    } catch {
-      toast({ title: "Error", description: "Failed to start chat session", variant: "destructive" });
-    }
   };
 
   const loadConversation = async (convId: number) => {
@@ -110,8 +112,6 @@ export default function MultiDocChat() {
         content: m.content,
       })));
       setSelectedDocIds(conv.documentIds || (conv.documentId ? [conv.documentId] : []));
-      setChatStarted(true);
-      setNeedsNewConversation(false);
       setShowHistory(false);
     } catch {
       toast({ title: "Error", description: "Failed to load conversation", variant: "destructive" });
@@ -133,19 +133,18 @@ export default function MultiDocChat() {
   const resetChat = () => {
     setConversationId(null);
     setMessages([]);
-    setChatStarted(false);
-    setNeedsNewConversation(false);
-    setSelectedDocIds([]);
     setInput("");
+    if (documents) {
+      setSelectedDocIds(documents.map(d => d.id));
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || selectedDocIds.length === 0) return;
+  const sendMessage = async (messageText: string) => {
+    if (!messageText.trim() || selectedDocIds.length === 0) return;
 
     let activeConvId = conversationId;
 
-    if (needsNewConversation || !activeConvId) {
+    if (!activeConvId) {
       try {
         const selectedNames = documents
           ?.filter(d => selectedDocIds.includes(d.id))
@@ -159,14 +158,13 @@ export default function MultiDocChat() {
         const conv = await createConv({ title, documentIds: selectedDocIds });
         activeConvId = conv.id;
         setConversationId(conv.id);
-        setNeedsNewConversation(false);
       } catch {
         toast({ title: "Error", description: "Failed to start chat session", variant: "destructive" });
         return;
       }
     }
 
-    const userMsg = input.trim();
+    const userMsg = messageText.trim();
     setInput("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
@@ -224,53 +222,138 @@ export default function MultiDocChat() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendMessage(input);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && selectedDocIds.length > 0 && !isLoading) {
+        sendMessage(input);
+      }
+    }
+  };
+
   const historyConversations = conversationsList || [];
+  const hasMessages = messages.length > 0;
+  const docCount = documents?.length || 0;
+  const selectedCount = selectedDocIds.length;
+
+  if (docsLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (docCount === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center p-6">
+        <FileText className="w-14 h-14 text-primary/10 mb-3" />
+        <h2 className="text-lg font-semibold mb-1.5" data-testid="text-no-docs-title">No documents to chat with</h2>
+        <p className="text-sm text-muted-foreground max-w-sm mb-4">
+          Upload documents in the Documents tab first, then come back here to start asking questions.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => window.location.href = "/"} data-testid="button-go-to-docs">
+          <FileText className="w-3.5 h-3.5 mr-1.5" />
+          Go to Documents
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full flex overflow-hidden">
-      <div className="w-64 flex-none border-r border-border bg-muted/10 flex flex-col overflow-hidden min-h-0">
-        <div className="p-3 border-b border-border flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant={showHistory ? "default" : "ghost"}
-              size="icon"
-              onClick={() => setShowHistory(!showHistory)}
-              data-testid="button-toggle-history"
-              className="toggle-elevate"
-            >
-              <History className="w-3.5 h-3.5" />
-            </Button>
-            <h2 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground" data-testid="text-select-heading">
-              {showHistory ? "History" : "Documents"}
-            </h2>
-          </div>
-          {!showHistory && documents && documents.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={selectAll} data-testid="button-select-all">
-              {selectedDocIds.length === documents.length ? "None" : "All"}
-            </Button>
-          )}
-          {showHistory && chatStarted && (
-            <Button variant="ghost" size="icon" onClick={resetChat} data-testid="button-new-chat">
-              <Plus className="w-3.5 h-3.5" />
-            </Button>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-none px-4 py-2.5 border-b border-border flex items-center gap-2 flex-wrap">
+        <div className="relative" ref={docPickerRef}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDocPicker(!showDocPicker)}
+            data-testid="button-doc-picker"
+          >
+            <FileText className="w-3.5 h-3.5 mr-1.5" />
+            {selectedCount === docCount ? "All documents" : `${selectedCount} of ${docCount} docs`}
+            <ChevronDown className="w-3 h-3 ml-1.5" />
+          </Button>
+
+          {showDocPicker && (
+            <div className="absolute top-full left-0 mt-1 w-72 bg-card border border-border rounded-md shadow-lg z-50 max-h-64 overflow-y-auto" data-testid="dropdown-doc-picker">
+              <div className="p-2 border-b border-border flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">Select documents</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedCount === docCount) {
+                      setSelectedDocIds([]);
+                    } else {
+                      setSelectedDocIds(documents!.map(d => d.id));
+                    }
+                  }}
+                  data-testid="button-toggle-all-docs"
+                >
+                  {selectedCount === docCount ? "Deselect all" : "Select all"}
+                </Button>
+              </div>
+              {documents!.map(doc => {
+                const isSelected = selectedDocIds.includes(doc.id);
+                return (
+                  <div
+                    key={doc.id}
+                    onClick={() => toggleDoc(doc.id)}
+                    className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover-elevate text-sm"
+                    data-testid={`option-doc-${doc.id}`}
+                  >
+                    <div className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${isSelected ? "bg-primary border-primary" : "border-border"}`}>
+                      {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                    </div>
+                    <span className="truncate">{doc.title}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {showHistory ? (
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {convsLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : historyConversations.length > 0 ? (
-              historyConversations.map(conv => (
+        <div className="flex items-center gap-1 ml-auto">
+          {historyConversations.length > 0 && (
+            <Button
+              variant={showHistory ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              data-testid="button-toggle-history"
+            >
+              <History className="w-3.5 h-3.5 mr-1.5" />
+              History
+              <Badge variant="secondary" className="ml-1.5 text-[10px] px-1 py-0 no-default-hover-elevate no-default-active-elevate">{historyConversations.length}</Badge>
+            </Button>
+          )}
+          {hasMessages && (
+            <Button variant="ghost" size="sm" onClick={resetChat} data-testid="button-new-chat">
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              New Chat
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {showHistory && (
+        <div className="flex-none border-b border-border bg-muted/20 max-h-52 overflow-y-auto">
+          {convsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : historyConversations.length > 0 ? (
+            <div className="p-2 space-y-0.5">
+              {historyConversations.map(conv => (
                 <div
                   key={conv.id}
                   onClick={() => loadConversation(conv.id)}
-                  className={`
-                    flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors text-sm group
-                    ${conversationId === conv.id ? "bg-primary/10" : "hover-elevate"}
-                  `}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer text-sm group ${conversationId === conv.id ? "bg-primary/10" : "hover-elevate"}`}
                   data-testid={`card-history-${conv.id}`}
                 >
                   <MessageSquare className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
@@ -285,188 +368,115 @@ export default function MultiDocChat() {
                     <Trash2 className="w-3 h-3 text-muted-foreground" />
                   </Button>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-6 text-xs text-muted-foreground">
-                <History className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
-                No chat history yet
-              </div>
-            )}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-xs text-muted-foreground">No chat history yet</div>
+          )}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" ref={scrollRef}>
+        {!hasMessages ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+            <Bot className="w-12 h-12 text-primary/15 mb-4" />
+            <h2 className="text-lg font-semibold mb-1" data-testid="text-empty-state-title">
+              Ask anything about your documents
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mb-6">
+              {selectedCount === docCount
+                ? `All ${docCount} documents are selected. Type a question below or try a suggestion.`
+                : `${selectedCount} document${selectedCount !== 1 ? "s" : ""} selected. Adjust using the document picker above.`}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
+              {PROMPT_SUGGESTIONS.slice(0, selectedCount > 1 ? 6 : 4).map((suggestion) => (
+                <button
+                  key={suggestion.label}
+                  onClick={() => sendMessage(suggestion.prompt)}
+                  disabled={isLoading || selectedCount === 0}
+                  className="text-left p-3 rounded-md border border-border bg-card text-sm hover-elevate active-elevate-2 transition-colors disabled:opacity-50"
+                  data-testid={`button-suggestion-${suggestion.label.toLowerCase().replace(/\s/g, "-")}`}
+                >
+                  <span className="font-medium text-foreground">{suggestion.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {docsLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : documents && documents.length > 0 ? (
-              documents.map(doc => {
-                const isSelected = selectedDocIds.includes(doc.id);
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => toggleDoc(doc.id)}
-                    className={`
-                      flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors text-sm
-                      ${isSelected ? "bg-primary/10" : "hover-elevate"}
-                    `}
-                    data-testid={`card-document-${doc.id}`}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      className="shrink-0"
-                      data-testid={`checkbox-document-${doc.id}`}
-                    />
-                    <span className="truncate" data-testid={`text-doc-title-${doc.id}`}>{doc.title}</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-6 text-xs text-muted-foreground">
-                <FileText className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
-                No documents yet
-              </div>
-            )}
-          </div>
-        )}
+          messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              data-testid={`message-${msg.role}-${i}`}
+            >
+              {msg.role === "assistant" && (
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                  <Bot className="w-3.5 h-3.5 text-primary" />
+                </div>
+              )}
 
-        {!showHistory && (
-          <div className="p-2 border-t border-border space-y-1.5">
-            {!chatStarted ? (
-              <Button
-                className="w-full"
-                size="sm"
-                disabled={selectedDocIds.length === 0}
-                onClick={startChat}
-                data-testid="button-start-chat"
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Chat ({selectedDocIds.length})
-              </Button>
-            ) : (
-              <>
-                <Badge variant="secondary" className="w-full justify-center text-xs" data-testid="badge-doc-count">
-                  {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""} selected
-                </Badge>
-                {needsNewConversation && selectedDocIds.length > 0 && (
-                  <p className="text-[10px] text-muted-foreground text-center" data-testid="text-selection-changed">
-                    Selection changed — next message uses updated docs
-                  </p>
+              <div className={`max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border/50 rounded-bl-none text-foreground"}`}>
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
                 )}
-              </>
-            )}
+              </div>
+
+              {msg.role === "user" && (
+                <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-background" />
+                </div>
+              )}
+            </div>
+          ))
+        )}
+        {isLoading && messages[messages.length - 1]?.role === "user" && (
+          <div className="flex gap-3 justify-start">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <div className="bg-muted rounded-2xl rounded-bl-none p-3 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
           </div>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
-        {!chatStarted ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 min-h-0">
-            <Bot className="w-14 h-14 text-primary/10 mb-3" />
-            <h2 className="text-lg font-semibold mb-1.5" data-testid="text-empty-state-title">Chat across your documents</h2>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              Select documents from the left, then start a chat. The AI can answer questions referencing all selected files.
-            </p>
-            {historyConversations.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => setShowHistory(true)}
-                data-testid="button-view-history"
-              >
-                <History className="w-3.5 h-3.5 mr-1.5" />
-                View chat history ({historyConversations.length})
-              </Button>
-            )}
+      <div className="flex-none p-3 bg-background border-t border-border">
+        {selectedCount === 0 && (
+          <div className="text-center text-xs text-muted-foreground mb-2 flex items-center justify-center gap-1.5" data-testid="text-no-docs-warning">
+            <X className="w-3 h-3" />
+            Select at least one document to start chatting
           </div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" ref={scrollRef}>
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground/80">
-                  <Bot className="w-10 h-10 mb-3 text-primary/20" />
-                  <p className="font-medium text-sm">Ask me anything about your selected documents</p>
-                  <p className="text-xs mt-1 opacity-70">
-                    I can compare, summarize, or find details across {selectedDocIds.length} document{selectedDocIds.length !== 1 ? "s" : ""}.
-                  </p>
-                </div>
-              ) : (
-                messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    data-testid={`message-${msg.role}-${i}`}
-                  >
-                    {msg.role === "assistant" && (
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                        <Bot className="w-3.5 h-3.5 text-primary" />
-                      </div>
-                    )}
-
-                    <div className={`
-                      max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed
-                      ${msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-none"
-                        : "bg-card border border-border/50 rounded-bl-none text-foreground"}
-                    `}>
-                      {msg.role === "assistant" ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm, remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                          >{msg.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        msg.content
-                      )}
-                    </div>
-
-                    {msg.role === "user" && (
-                      <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
-                        <User className="w-3.5 h-3.5 text-background" />
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-              {isLoading && messages[messages.length - 1]?.role === "user" && (
-                <div className="flex gap-3 justify-start">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <div className="bg-muted rounded-2xl rounded-bl-none p-3 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-none p-3 bg-background border-t border-border">
-              <form onSubmit={handleSubmit} className="relative">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={selectedDocIds.length === 0 ? "Select documents to start asking questions..." : "Ask a question across your documents..."}
-                  className="pr-10 bg-muted/30 border-border"
-                  disabled={isLoading || selectedDocIds.length === 0}
-                  data-testid="input-chat-message"
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={isLoading || !input.trim() || selectedDocIds.length === 0}
-                  className="absolute right-1 top-1/2 -translate-y-1/2"
-                  data-testid="button-send-message"
-                >
-                  {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                </Button>
-              </form>
-            </div>
-          </>
         )}
+        <form onSubmit={handleSubmit} className="relative">
+          <Textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={selectedCount === 0 ? "Select documents above to start..." : "Ask a question about your documents... (Enter to send, Shift+Enter for new line)"}
+            className="resize-none bg-muted/30 pr-12 max-h-[120px]"
+            disabled={isLoading || selectedCount === 0}
+            rows={1}
+            data-testid="input-chat-message"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={isLoading || !input.trim() || selectedCount === 0}
+            className="absolute right-1.5 bottom-1.5"
+            data-testid="button-send-message"
+          >
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          </Button>
+        </form>
       </div>
     </div>
   );
