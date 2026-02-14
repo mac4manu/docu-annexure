@@ -101,26 +101,26 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto px-6 pb-6">
         <UploadZone />
 
-        {!hasDocuments && !isLoading && (
-          <div className="mt-6">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="text-features-heading">Key Features</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-              {FEATURES.map((feat) => (
-                <Card key={feat.title} className="p-4" data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
-                      <feat.icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-semibold" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feat.description}</p>
-                    </div>
+        <div className="mt-4">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2.5" data-testid="text-features-heading">Key Features</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
+            {FEATURES.map((feat) => (
+              <Card key={feat.title} className="p-3" data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                    <feat.icon className="w-3.5 h-3.5" />
                   </div>
-                </Card>
-              ))}
-            </div>
+                  <span className="text-xs font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                  <p className="text-[10px] text-muted-foreground leading-snug">{feat.description}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
 
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="text-use-cases-heading">Try It With Your Documents</h2>
+        {!hasDocuments && !isLoading && (
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2.5" data-testid="text-use-cases-heading">Try It With Your Documents</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {USE_CASES.map((uc) => (
                 <Card key={uc.domain} className="p-4" data-testid={`card-usecase-${uc.domain.toLowerCase().replace(/\s/g, "-")}`}>
@@ -135,7 +135,7 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-            <div className="mt-4 text-center">
+            <div className="mt-3 text-center">
               <p className="text-xs text-muted-foreground">
                 Upload a document above, then head to the{" "}
                 <Link href="/chat" className="text-primary font-medium underline underline-offset-2">

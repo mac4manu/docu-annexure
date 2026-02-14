@@ -89,7 +89,7 @@ export function UploadZone() {
           relative group cursor-pointer
           rounded-md border-2 border-dashed
           transition-all duration-300 ease-out
-          p-6 text-center
+          px-5 py-4 text-center
           bg-background/50 backdrop-blur-sm
           ${
             isDragActive
@@ -143,27 +143,27 @@ export function UploadZone() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-3">
             <div className={`
-              p-4 rounded-full transition-colors duration-300
+              p-2.5 rounded-full transition-colors duration-300 shrink-0
               ${isDragActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary"}
             `}>
-              <UploadCloud className="w-8 h-8" />
+              <UploadCloud className="w-5 h-5" />
             </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-foreground" data-testid="text-upload-title">
+            <div className="text-left">
+              <h3 className="text-sm font-semibold text-foreground" data-testid="text-upload-title">
                 Upload Document
               </h3>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto" data-testid="text-upload-description">
-                Drag & drop PDF, Word, or PowerPoint files here, or click to select.
+              <p className="text-xs text-muted-foreground" data-testid="text-upload-description">
+                Drag & drop or click to upload PDF, Word, or PowerPoint files
               </p>
             </div>
 
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">PDF</span>
-              <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">Word</span>
-              <span className="px-2.5 py-1 rounded-md bg-muted text-xs font-medium text-muted-foreground border border-border">PPTX</span>
+            <div className="flex gap-1.5 shrink-0 flex-wrap">
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PDF</span>
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Word</span>
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PPTX</span>
             </div>
           </div>
         )}
