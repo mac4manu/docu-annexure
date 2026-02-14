@@ -1,5 +1,4 @@
-import { Upload, FileSearch, MessagesSquare, FolderOpen, BarChart3, ArrowRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Upload, FileSearch, MessagesSquare, FolderOpen, BarChart3, ArrowRight, HelpCircle, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -84,23 +83,28 @@ export default function HowToUse() {
 
         <div className="space-y-4">
           {steps.map((step) => (
-            <Card key={step.number} data-testid={`card-step-${step.number}`}>
-              <CardContent className="p-5">
-                <div className="flex gap-4">
-                  <div className="flex-none flex flex-col items-center gap-1">
-                    <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center">
-                      <step.icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="text-[10px] font-bold text-muted-foreground">STEP {step.number}</span>
-                  </div>
-                  <div className="space-y-1.5 min-w-0">
-                    <h3 className="font-semibold text-sm">{step.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-                    <p className="text-xs text-primary/80 leading-relaxed italic">{step.tip}</p>
-                  </div>
+            <div
+              key={step.number}
+              className="rounded-md border border-border bg-card overflow-hidden"
+              data-testid={`card-step-${step.number}`}
+            >
+              <div className="px-5 py-3 border-b border-border bg-muted/20 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                  <step.icon className="w-4 h-4 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">STEP {step.number}</span>
+                  <h3 className="font-semibold text-sm truncate">{step.title}</h3>
+                </div>
+              </div>
+              <div className="px-5 py-4 space-y-2.5">
+                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <div className="flex items-start gap-2 text-xs text-primary/80 leading-relaxed">
+                  <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{step.tip}</span>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
@@ -110,12 +114,19 @@ export default function HowToUse() {
           </h2>
           <div className="space-y-3">
             {faqs.map((faq, idx) => (
-              <Card key={idx} data-testid={`card-faq-${idx}`}>
-                <CardContent className="p-4 space-y-1.5">
+              <div
+                key={idx}
+                className="rounded-md border border-border bg-card overflow-hidden"
+                data-testid={`card-faq-${idx}`}
+              >
+                <div className="px-5 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2.5">
+                  <HelpCircle className="w-3.5 h-3.5 text-primary shrink-0" />
                   <p className="text-sm font-medium">{faq.q}</p>
+                </div>
+                <div className="px-5 py-3.5">
                   <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
