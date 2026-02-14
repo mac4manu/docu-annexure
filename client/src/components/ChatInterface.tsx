@@ -312,12 +312,12 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
       </div>
 
       <div className="p-3 bg-background border-t border-border">
-        <form onSubmit={handleSubmit} className="relative">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question..."
-            className="pr-10 bg-muted/30 border-border"
+            className="flex-1 bg-muted/30 border-border"
             disabled={isLoading}
             data-testid="input-chat-message"
           />
@@ -325,7 +325,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
             type="submit"
             size="icon"
             disabled={isLoading || !input.trim()}
-            className="absolute right-1 top-1/2 -translate-y-1/2"
+            className="shrink-0"
             data-testid="button-send-message"
           >
             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}

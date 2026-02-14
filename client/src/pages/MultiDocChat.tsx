@@ -564,14 +564,14 @@ export default function MultiDocChat() {
             Select at least one document to start chatting
           </div>
         )}
-        <form onSubmit={handleSubmit} className="relative">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <Textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={selectedCount === 0 ? "Select documents above to start..." : "Ask a question about your documents... (Enter to send, Shift+Enter for new line)"}
-            className="resize-none bg-muted/30 pr-12 max-h-[120px]"
+            className="flex-1 resize-none bg-muted/30 max-h-[120px]"
             disabled={isLoading || selectedCount === 0}
             rows={1}
             data-testid="input-chat-message"
@@ -580,7 +580,7 @@ export default function MultiDocChat() {
             type="submit"
             size="icon"
             disabled={isLoading || !input.trim() || selectedCount === 0}
-            className="absolute right-1.5 bottom-1.5"
+            className="shrink-0"
             data-testid="button-send-message"
           >
             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
