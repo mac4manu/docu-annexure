@@ -2,11 +2,44 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, Microscope, HeartPulse, GraduationCap } from "lucide-react";
+import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, Microscope, HeartPulse, GraduationCap, TableProperties, BrainCircuit, ShieldAlert, FileStack, BookOpenCheck, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
+
+const FEATURES = [
+  {
+    icon: BrainCircuit,
+    title: "AI-Powered Extraction",
+    description: "Extracts tables, formulas, images, and structured content from PDFs, Word, and PowerPoint files using AI vision.",
+  },
+  {
+    icon: MessagesSquare,
+    title: "Chat with Documents",
+    description: "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Tortured Phrase Detection",
+    description: "Flags suspicious synonym substitutions that may indicate paper mill activity or automated paraphrasing to evade plagiarism.",
+  },
+  {
+    icon: FileStack,
+    title: "Multi-Document Analysis",
+    description: "Compare findings, methodologies, and data across multiple documents in a single chat session.",
+  },
+  {
+    icon: TableProperties,
+    title: "Tables & Formulas",
+    description: "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Domain Expertise",
+    description: "Specialized for scientific research, health & medical literature, and education & academic materials.",
+  },
+];
 
 const USE_CASES = [
   {
@@ -70,7 +103,24 @@ export default function Home() {
 
         {!hasDocuments && !isLoading && (
           <div className="mt-6">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="text-use-cases-heading">What can you do with DocuAnnexure?</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="text-features-heading">Key Features</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+              {FEATURES.map((feat) => (
+                <Card key={feat.title} className="p-4" data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
+                      <feat.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feat.description}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="text-use-cases-heading">Try It With Your Documents</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {USE_CASES.map((uc) => (
                 <Card key={uc.domain} className="p-4" data-testid={`card-usecase-${uc.domain.toLowerCase().replace(/\s/g, "-")}`}>
