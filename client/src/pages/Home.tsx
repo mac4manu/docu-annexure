@@ -91,8 +91,8 @@ export default function Home() {
                         <feat.icon className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
-                        <span className="text-xs font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{feat.description}</p>
+                        <span className="text-sm font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feat.description}</p>
                       </div>
                     </div>
                   </Card>
