@@ -139,10 +139,10 @@ export default function Landing() {
                   <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
                     <feature.icon className="w-4 h-4" />
                   </div>
-                  <h3 className="font-semibold text-sm">{feature.title}</h3>
+                  <h3 className="font-semibold text-base">{feature.title}</h3>
                 </div>
                 <div className="px-5 py-4">
-                  <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                  <p className="text-sm text-foreground/70 leading-relaxed">{feature.description}</p>
                 </div>
               </div>
             ))}
