@@ -394,7 +394,7 @@ export default function MultiDocChat() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
-              {PROMPT_SUGGESTIONS.slice(0, selectedCount > 1 ? 7 : 4).map((suggestion) => (
+              {PROMPT_SUGGESTIONS.map((suggestion) => (
                 <button
                   key={suggestion.label}
                   onClick={() => sendMessage(suggestion.prompt)}
