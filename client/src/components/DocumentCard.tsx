@@ -1,9 +1,8 @@
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { FileText, Trash2, MessageSquare, FileType2, Presentation } from "lucide-react";
+import { FileText, Trash2, MessageSquare, FileType2, Presentation, ArrowRight } from "lucide-react";
 import { type Document } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -25,15 +24,15 @@ interface DocumentCardProps {
 function getFileIcon(fileType: string) {
   switch (fileType) {
     case "pdf":
-      return <FileText className="w-5 h-5" />;
+      return <FileText className="w-4 h-4" />;
     case "pptx":
     case "ppt":
-      return <Presentation className="w-5 h-5" />;
+      return <Presentation className="w-4 h-4" />;
     case "docx":
     case "doc":
-      return <FileType2 className="w-5 h-5" />;
+      return <FileType2 className="w-4 h-4" />;
     default:
-      return <FileText className="w-5 h-5" />;
+      return <FileText className="w-4 h-4" />;
   }
 }
 
@@ -55,33 +54,51 @@ function getFileLabel(fileType: string) {
 function getFileAccentClass(fileType: string) {
   switch (fileType) {
     case "pdf":
-      return "bg-red-500/10 text-red-600 dark:text-red-400";
+      return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40";
     case "pptx":
     case "ppt":
-      return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
+      return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/40";
     case "docx":
     case "doc":
-      return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/40";
     default:
-      return "bg-primary/10 text-primary";
+      return "bg-primary/10 text-primary border-primary/20";
+  }
+}
+
+function getTopAccentColor(fileType: string) {
+  switch (fileType) {
+    case "pdf":
+      return "bg-red-500";
+    case "pptx":
+    case "ppt":
+      return "bg-orange-500";
+    case "docx":
+    case "doc":
+      return "bg-blue-500";
+    default:
+      return "bg-primary";
   }
 }
 
 export function DocumentCard({ document }: DocumentCardProps) {
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument();
   const accentClass = getFileAccentClass(document.fileType);
+  const topAccent = getTopAccentColor(document.fileType);
   const contentPreview = document.content
-    ? document.content.replace(/[#*_`>\-\[\]()!|]/g, "").slice(0, 120).trim()
+    ? document.content.replace(/[#*_`>\-\[\]()!|]/g, "").slice(0, 100).trim()
     : "";
 
   return (
-    <Card
-      className="group relative flex flex-col p-0 cursor-pointer transition-shadow duration-200 hover:shadow-md"
+    <div
+      className="group relative rounded-md border border-border bg-card overflow-hidden transition-shadow duration-200 hover:shadow-md"
       data-testid={`card-document-${document.id}`}
     >
-      <Link href={`/document/${document.id}`} className="flex flex-col flex-1">
-        <div className="flex items-start gap-3 p-4 pb-2">
-          <div className={`p-2.5 rounded-md shrink-0 ${accentClass}`}>
+      <div className={`h-1 ${topAccent}`} />
+
+      <Link href={`/document/${document.id}`} className="block">
+        <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center gap-3">
+          <div className={`p-1.5 rounded-md border shrink-0 ${accentClass}`}>
             {getFileIcon(document.fileType)}
           </div>
           <div className="min-w-0 flex-1">
@@ -92,61 +109,69 @@ export function DocumentCard({ document }: DocumentCardProps) {
             >
               {document.title}
             </h3>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium no-default-hover-elevate no-default-active-elevate">
-                {getFileLabel(document.fileType)}
-              </Badge>
-              <span className="text-[11px] text-muted-foreground">
-                {formatDistanceToNow(new Date(document.createdAt), { addSuffix: true })}
-              </span>
-            </div>
           </div>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium shrink-0 no-default-hover-elevate no-default-active-elevate">
+            {getFileLabel(document.fileType)}
+          </Badge>
         </div>
 
-        {contentPreview && (
-          <p className="px-4 pb-3 text-xs text-muted-foreground leading-relaxed line-clamp-2" data-testid={`text-card-preview-${document.id}`}>
-            {contentPreview}...
-          </p>
-        )}
+        <div className="px-4 py-3">
+          {contentPreview ? (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2" data-testid={`text-card-preview-${document.id}`}>
+              {contentPreview}...
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground/50 italic">No preview available</p>
+          )}
+        </div>
       </Link>
 
-      <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2.5">
-        <Link href={`/document/${document.id}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid={`link-view-chat-${document.id}`}>
-          <MessageSquare className="w-3 h-3" />
-          <span>View & Chat</span>
-        </Link>
+      <div className="flex items-center justify-between border-t border-border px-4 py-2 bg-muted/10">
+        <span className="text-[11px] text-muted-foreground">
+          {formatDistanceToNow(new Date(document.createdAt), { addSuffix: true })}
+        </span>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={isDeleting}
-              className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-              data-testid={`button-delete-${document.id}`}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-1">
+          <Link href={`/document/${document.id}`}>
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1" data-testid={`link-view-chat-${document.id}`}>
+              <MessageSquare className="w-3 h-3" />
+              View & Chat
+              <ArrowRight className="w-3 h-3" />
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Document?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete "{document.title}" and remove it from your library.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteDoc(document.id)}
-                className="bg-destructive text-destructive-foreground"
+          </Link>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isDeleting}
+                className="shrink-0 text-muted-foreground invisible group-hover:visible"
+                data-testid={`button-delete-${document.id}`}
               >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Document?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete "{document.title}" and remove it from your library.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteDoc(document.id)}
+                  className="bg-destructive text-destructive-foreground"
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }

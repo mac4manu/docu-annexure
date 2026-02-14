@@ -83,19 +83,23 @@ export default function Home() {
 
             <div className="mt-4 shrink-0">
               <h2 className="text-sm font-semibold text-muted-foreground mb-2.5" data-testid="text-features-heading">Key Features</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
                 {FEATURES.map((feat) => (
-                  <Card key={feat.title} className="p-3" data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>
-                    <div className="flex items-start gap-2.5">
-                      <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
+                  <div
+                    key={feat.title}
+                    className="rounded-md border border-border bg-card overflow-hidden"
+                    data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <div className="px-3 py-2 border-b border-border bg-muted/20 flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
                         <feat.icon className="w-3.5 h-3.5" />
                       </div>
-                      <div className="min-w-0">
-                        <span className="text-sm font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
-                        <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{feat.description}</p>
-                      </div>
+                      <span className="text-sm font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
                     </div>
-                  </Card>
+                    <div className="px-3 py-2.5">
+                      <p className="text-xs text-muted-foreground leading-relaxed">{feat.description}</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
