@@ -543,15 +543,14 @@ export default function MultiDocChat() {
             </div>
           ))
         )}
-        {isLoading && messages[messages.length - 1]?.role === "user" && (
-          <div className="flex gap-3 justify-start">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+        {isLoading && (
+          <div className="flex gap-3 justify-start" data-testid="chat-status-indicator">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
               <Bot className="w-3.5 h-3.5 text-primary" />
             </div>
-            <div className="bg-muted rounded-2xl rounded-bl-none p-3 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="bg-muted rounded-2xl rounded-bl-none px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="w-3 h-3 animate-spin text-primary" />
+              <span>{messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content ? "Writing..." : "Thinking..."}</span>
             </div>
           </div>
         )}
