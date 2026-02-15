@@ -266,7 +266,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                         data-testid={`badge-confidence-${i}`}
                       >
                         <Gauge className="w-2.5 h-2.5" />
-                        {msg.confidenceScore}%
+                        Confidence: {msg.confidenceScore}%
                       </span>
                     )}
                     <Button
