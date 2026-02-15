@@ -236,13 +236,13 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
 
               <div className="flex flex-col gap-1 max-w-[85%]">
                 <div className={`
-                  rounded-2xl p-3 text-[13px] leading-relaxed
+                  rounded-2xl p-3 text-sm leading-relaxed
                   ${msg.role === "user"
                     ? "bg-primary text-primary-foreground rounded-br-none"
                     : "bg-card border border-border/50 rounded-bl-none text-foreground"}
                 `}>
                   {msg.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-[13px] prose-p:text-[13px] prose-li:text-[13px] prose-headings:text-sm prose-headings:font-semibold prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:text-xs prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1 prose-td:text-[13px] prose-code:text-xs prose-pre:text-xs">
+                    <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-[13px] prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1 prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
