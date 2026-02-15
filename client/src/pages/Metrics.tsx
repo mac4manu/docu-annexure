@@ -339,7 +339,7 @@ function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; r
     <>
       <SummaryLine metrics={metrics} />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <StatCard title="Total Users" value={metrics.totalUsers} icon={Users} />
         <StatCard title="Documents" value={metrics.totalDocuments} icon={FileText} />
         <StatCard title="Conversations" value={metrics.totalConversations} icon={MessagesSquare} />
