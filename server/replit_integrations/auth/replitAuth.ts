@@ -52,13 +52,12 @@ function updateUserSession(
 }
 
 async function upsertUser(claims: any) {
-  await authStorage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
-  });
+  const userData: any = { id: claims["sub"] };
+  if (claims["email"]) userData.email = claims["email"];
+  if (claims["first_name"]) userData.firstName = claims["first_name"];
+  if (claims["last_name"]) userData.lastName = claims["last_name"];
+  if (claims["profile_image_url"]) userData.profileImageUrl = claims["profile_image_url"];
+  await authStorage.upsertUser(userData);
 }
 
 export async function setupAuth(app: Express) {
@@ -75,7 +74,11 @@ export async function setupAuth(app: Express) {
   ) => {
     const user = {};
     updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    try {
+      await upsertUser(tokens.claims());
+    } catch (err) {
+      console.error("Failed to upsert user during login:", err);
+    }
     verified(null, user);
   };
 
@@ -154,6 +157,15 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const email = user.claims?.email?.toLowerCase();
   if (!email || !ALLOWED_EMAILS.includes(email)) {
     return res.status(403).json({ message: "Access restricted. Your account is not authorized to use this application." });
+  }
+
+  if (!user._userEnsured) {
+    try {
+      await upsertUser(user.claims);
+      user._userEnsured = true;
+    } catch (err) {
+      console.error("Failed to upsert user during request:", err);
+    }
   }
 
   const now = Math.floor(Date.now() / 1000);
