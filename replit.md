@@ -53,6 +53,8 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-14: Added AI Response Accuracy card to Metrics page (personal and admin views) showing thumbs up/down counts and accuracy percentage
 - 2026-02-15: Redesigned Metrics page with antd-style cards, summary line, timestamps, upload trend, avg messages/chat, most queried documents
 - 2026-02-15: Increased document upload limit from 3 to 10
+- 2026-02-15: Added version check banner that detects new publishes and prompts users to refresh
+- 2026-02-15: Added "What's New" changelog page at /changelog with timeline layout and release notes
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000
