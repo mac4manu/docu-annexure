@@ -252,39 +252,35 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                     msg.content
                   )}
                 </div>
-                {msg.role === "assistant" && msg.content && (
+                {msg.role === "assistant" && msg.id && msg.content && (
                   <div className="flex items-center gap-0.5 ml-1">
                     <Button
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7"
-                      onClick={() => handleCopy(msg.content, msg.id || i)}
+                      onClick={() => handleCopy(msg.content, msg.id!)}
                       data-testid={`button-copy-${i}`}
                     >
-                      {copiedId === (msg.id || i) ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                      {copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
                     </Button>
-                    {msg.id && (
-                      <>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className={`h-7 w-7 ${ratings[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
-                          onClick={() => handleRate(msg.id!, "thumbs_up")}
-                          data-testid={`button-thumbsup-${i}`}
-                        >
-                          <ThumbsUp className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className={`h-7 w-7 ${ratings[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
-                          onClick={() => handleRate(msg.id!, "thumbs_down")}
-                          data-testid={`button-thumbsdown-${i}`}
-                        >
-                          <ThumbsDown className="w-3 h-3" />
-                        </Button>
-                      </>
-                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={`h-7 w-7 ${ratings[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
+                      onClick={() => handleRate(msg.id!, "thumbs_up")}
+                      data-testid={`button-thumbsup-${i}`}
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={`h-7 w-7 ${ratings[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
+                      onClick={() => handleRate(msg.id!, "thumbs_down")}
+                      data-testid={`button-thumbsdown-${i}`}
+                    >
+                      <ThumbsDown className="w-3 h-3" />
+                    </Button>
                   </div>
                 )}
               </div>
