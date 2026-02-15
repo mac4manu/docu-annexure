@@ -31,7 +31,6 @@ interface AdminUserMetrics {
   questionsAsked: number;
   aiResponses: number;
   lastActive: string | null;
-  status: "active" | "pending";
 }
 
 interface AdminMetricsData {
@@ -436,7 +435,6 @@ function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; r
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-1.5 pr-3 font-medium text-muted-foreground text-xs">User</th>
-                    <th className="text-left py-1.5 pr-3 font-medium text-muted-foreground text-xs">Status</th>
                     <th className="text-right py-1.5 pr-3 font-medium text-muted-foreground text-xs">Docs</th>
                     <th className="text-right py-1.5 pr-3 font-medium text-muted-foreground text-xs">Chats</th>
                     <th className="text-right py-1.5 pr-3 font-medium text-muted-foreground text-xs">Q&A</th>
@@ -449,11 +447,6 @@ function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; r
                       <td className="py-1.5 pr-3">
                         <div className="font-medium text-xs">{user.name}</div>
                         {user.email && <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{user.email}</div>}
-                      </td>
-                      <td className="py-1.5 pr-3">
-                        <Badge variant={user.status === "active" ? "default" : "secondary"} className="text-[10px] no-default-hover-elevate no-default-active-elevate">
-                          {user.status === "active" ? "Active" : "Invited"}
-                        </Badge>
                       </td>
                       <td className="py-1.5 pr-3 text-right text-xs">{user.documentCount}</td>
                       <td className="py-1.5 pr-3 text-right text-xs">{user.conversationCount}</td>
