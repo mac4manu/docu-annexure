@@ -8,6 +8,7 @@ import {
 } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
+import { ALLOWED_EMAILS } from "./replit_integrations/auth/replitAuth";
 
 export interface MetricsData {
   totalDocuments: number;
@@ -35,6 +36,7 @@ export interface AdminUserMetrics {
   questionsAsked: number;
   aiResponses: number;
   lastActive: string | null;
+  status: "active" | "pending";
 }
 
 export interface AdminMetricsData {
@@ -393,11 +395,32 @@ export class DatabaseStorage implements IStorage {
           questionsAsked: qa,
           aiResponses: ar,
           lastActive,
+          status: "active" as const,
         };
       })
     );
 
-    userBreakdown.sort((a, b) => (b.documentCount + b.messageCount) - (a.documentCount + a.messageCount));
+    const existingEmails = new Set(allUsers.map(u => u.email?.toLowerCase()).filter(Boolean));
+    const pendingUsers: AdminUserMetrics[] = ALLOWED_EMAILS
+      .filter(email => !existingEmails.has(email.toLowerCase()))
+      .map(email => ({
+        userId: `pending-${email}`,
+        email,
+        name: email.split("@")[0],
+        documentCount: 0,
+        conversationCount: 0,
+        messageCount: 0,
+        questionsAsked: 0,
+        aiResponses: 0,
+        lastActive: null,
+        status: "pending" as const,
+      }));
+
+    userBreakdown.push(...pendingUsers);
+    userBreakdown.sort((a, b) => {
+      if (a.status !== b.status) return a.status === "active" ? -1 : 1;
+      return (b.documentCount + b.messageCount) - (a.documentCount + a.messageCount);
+    });
 
     return {
       totalUsers: allUsers.length,
