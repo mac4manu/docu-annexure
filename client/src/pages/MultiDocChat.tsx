@@ -30,8 +30,8 @@ const PROMPT_SUGGESTIONS = [
     prompt: "Compare the methodologies described across the selected documents. Highlight similarities and differences.",
   },
   {
-    label: "Extract data tables",
-    prompt: "Extract and present all key data tables, statistics, or numerical findings from this document.",
+    label: "Extract data & formulas",
+    prompt: "Extract and present all key data tables, statistics, mathematical formulas, and equations from this document.",
   },
   {
     label: "Explain for a student",
