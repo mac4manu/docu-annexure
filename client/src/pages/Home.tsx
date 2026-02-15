@@ -37,7 +37,7 @@ const FEATURES = [
   {
     icon: FlaskConical,
     title: "Domain Expertise",
-    description: "Specialized for scientific research, health & medical literature, and education & academic materials.",
+    description: "Specialized in scientific research, health & medical literature, and academic materials.",
   },
 ];
 
