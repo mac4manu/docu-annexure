@@ -15,10 +15,14 @@ export interface MetricsData {
   totalMessages: number;
   userMessages: number;
   aiMessages: number;
+  avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
   recentDocuments: { id: number; title: string; fileType: string; createdAt: Date }[];
   recentConversations: { id: number; title: string; createdAt: Date; messageCount: number }[];
+  mostQueriedDocs: { id: number; title: string; queryCount: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
+  uploadsThisWeek: number;
+  uploadsLastWeek: number;
 }
 
 export interface AdminUserMetrics {
@@ -40,8 +44,12 @@ export interface AdminMetricsData {
   totalMessages: number;
   userMessages: number;
   aiMessages: number;
+  avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
+  mostQueriedDocs: { id: number; title: string; queryCount: number }[];
+  uploadsThisWeek: number;
+  uploadsLastWeek: number;
   userBreakdown: AdminUserMetrics[];
 }
 
@@ -243,16 +251,45 @@ export class DatabaseStorage implements IStorage {
       messages: Number(row.messages),
     }));
 
+    const totalConversations = Number(convCount.count);
+    const avgMessagesPerChat = totalConversations > 0 ? Math.round((totalMsgs / totalConversations) * 10) / 10 : 0;
+
+    const mostQueriedRows = await db.execute(sql`
+      SELECT d.id, d.title, COUNT(c.id) as query_count
+      FROM documents d
+      INNER JOIN conversations c ON (c.document_id = d.id OR d.id = ANY(COALESCE(c.document_ids, ARRAY[]::int[])))
+      WHERE d.user_id = ${userId} AND (c.document_id IS NOT NULL OR c.document_ids IS NOT NULL)
+      GROUP BY d.id, d.title
+      ORDER BY query_count DESC
+      LIMIT 5
+    `);
+    const mostQueriedDocs = (mostQueriedRows.rows as Array<{ id: number; title: string; query_count: string }>).map(r => ({
+      id: r.id,
+      title: r.title,
+      queryCount: Number(r.query_count),
+    }));
+
+    const uploadTrendRows = await db.execute(sql`
+      SELECT
+        COALESCE((SELECT COUNT(*) FROM documents WHERE user_id = ${userId} AND created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as this_week,
+        COALESCE((SELECT COUNT(*) FROM documents WHERE user_id = ${userId} AND created_at >= CURRENT_DATE - INTERVAL '14 days' AND created_at < CURRENT_DATE - INTERVAL '7 days'), 0) as last_week
+    `);
+    const trend = uploadTrendRows.rows[0] as { this_week: string; last_week: string };
+
     return {
       totalDocuments: Number(docCount.count),
-      totalConversations: Number(convCount.count),
+      totalConversations,
       totalMessages: totalMsgs,
       userMessages: userMsgs,
       aiMessages: aiMsgs,
+      avgMessagesPerChat,
       documentsByType: docsByType.map(r => ({ type: r.type, count: Number(r.count) })),
       recentDocuments: recentDocs,
       recentConversations: recentConvsWithCounts,
+      mostQueriedDocs,
       activityByDay,
+      uploadsThisWeek: Number(trend.this_week),
+      uploadsLastWeek: Number(trend.last_week),
     };
   }
   async getAdminMetrics(): Promise<AdminMetricsData> {
@@ -287,6 +324,32 @@ export class DatabaseStorage implements IStorage {
       conversations: Number(row.conversations),
       messages: Number(row.messages),
     }));
+
+    const totalConvCount = Number(convCount.count);
+    const totalMsgs = Number(totalMsgCount.count);
+    const avgMessagesPerChat = totalConvCount > 0 ? Math.round((totalMsgs / totalConvCount) * 10) / 10 : 0;
+
+    const mostQueriedRows = await db.execute(sql`
+      SELECT d.id, d.title, COUNT(c.id) as query_count
+      FROM documents d
+      INNER JOIN conversations c ON (c.document_id = d.id OR d.id = ANY(COALESCE(c.document_ids, ARRAY[]::int[])))
+      WHERE (c.document_id IS NOT NULL OR c.document_ids IS NOT NULL)
+      GROUP BY d.id, d.title
+      ORDER BY query_count DESC
+      LIMIT 5
+    `);
+    const mostQueriedDocs = (mostQueriedRows.rows as Array<{ id: number; title: string; query_count: string }>).map(r => ({
+      id: r.id,
+      title: r.title,
+      queryCount: Number(r.query_count),
+    }));
+
+    const uploadTrendRows = await db.execute(sql`
+      SELECT
+        COALESCE((SELECT COUNT(*) FROM documents WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'), 0) as this_week,
+        COALESCE((SELECT COUNT(*) FROM documents WHERE created_at >= CURRENT_DATE - INTERVAL '14 days' AND created_at < CURRENT_DATE - INTERVAL '7 days'), 0) as last_week
+    `);
+    const trend = uploadTrendRows.rows[0] as { this_week: string; last_week: string };
 
     const allUsers = await db.select().from(users);
     const userBreakdown: AdminUserMetrics[] = await Promise.all(
@@ -330,12 +393,16 @@ export class DatabaseStorage implements IStorage {
     return {
       totalUsers: allUsers.length,
       totalDocuments: Number(docCount.count),
-      totalConversations: Number(convCount.count),
-      totalMessages: Number(totalMsgCount.count),
+      totalConversations: totalConvCount,
+      totalMessages: totalMsgs,
       userMessages: Number(userMsgCount.count),
       aiMessages: Number(aiMsgCount.count),
+      avgMessagesPerChat,
       documentsByType: docsByType.map(r => ({ type: r.type, count: Number(r.count) })),
       activityByDay,
+      mostQueriedDocs,
+      uploadsThisWeek: Number(trend.this_week),
+      uploadsLastWeek: Number(trend.last_week),
       userBreakdown,
     };
   }

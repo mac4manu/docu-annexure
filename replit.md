@@ -51,6 +51,8 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-14: Added copy button and thumbs up/down rating to AI chat responses (both single-doc and multi-doc chat)
 - 2026-02-14: Added message_ratings table, rating API routes (/api/messages/:id/rate, /api/ratings/metrics, /api/admin/ratings/metrics)
 - 2026-02-14: Added AI Response Accuracy card to Metrics page (personal and admin views) showing thumbs up/down counts and accuracy percentage
+- 2026-02-15: Redesigned Metrics page with antd-style cards, summary line, timestamps, upload trend, avg messages/chat, most queried documents
+- 2026-02-15: Increased document upload limit from 3 to 10
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000
