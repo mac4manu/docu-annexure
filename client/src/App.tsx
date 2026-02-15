@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone, ShieldX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -120,8 +120,31 @@ function AuthenticatedApp() {
   );
 }
 
+function AccessRestricted() {
+  return (
+    <div className="flex items-center justify-center h-full w-full">
+      <div className="max-w-md text-center space-y-4 px-6">
+        <div className="mx-auto w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+          <ShieldX className="w-7 h-7 text-muted-foreground" />
+        </div>
+        <h1 className="text-xl font-bold" data-testid="text-access-restricted-title">Access Restricted</h1>
+        <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-access-restricted-message">
+          This application is currently in a closed evaluation phase. Your account is not on the approved access list.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          If you believe you should have access, please contact the administrator.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => window.location.href = "/api/logout"} data-testid="button-restricted-logout">
+          <LogOut className="w-3.5 h-3.5 mr-1.5" />
+          Sign out
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isRestricted } = useAuth();
 
   if (isLoading) {
     return (
@@ -129,6 +152,10 @@ function AppContent() {
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (isRestricted) {
+    return <AccessRestricted />;
   }
 
   if (!user) {

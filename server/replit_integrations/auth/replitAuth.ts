@@ -131,11 +131,27 @@ export async function setupAuth(app: Express) {
   });
 }
 
+const ALLOWED_EMAILS = [
+  "mailbox4manu@gmail.com",
+  "githageorge@gmail.com",
+  "shaileshsivan@gmail.com",
+  "lagnaparija@gmail.com",
+  "sabithastfrancis@gmail.com",
+  "shashi.shekhar1176@gmail.com",
+  "tamilselvan.kiran@gmail.com",
+  "venug.krish@gmail.com",
+];
+
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const email = user.claims?.email?.toLowerCase();
+  if (!email || !ALLOWED_EMAILS.includes(email)) {
+    return res.status(403).json({ message: "Access restricted. Your account is not authorized to use this application." });
   }
 
   const now = Math.floor(Date.now() / 1000);

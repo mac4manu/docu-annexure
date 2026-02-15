@@ -55,6 +55,7 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-15: Increased document upload limit from 3 to 10
 - 2026-02-15: Added version check banner that detects new publishes and prompts users to refresh
 - 2026-02-15: Added "What's New" changelog page at /changelog with timeline layout and release notes
+- 2026-02-15: Added email allowlist for closed evaluation phase (8 approved users), with Access Restricted page for unauthorized users
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000
