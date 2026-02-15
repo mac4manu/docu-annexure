@@ -384,13 +384,15 @@ export class DatabaseStorage implements IStorage {
         const dates = [lastDoc[0]?.createdAt, lastConv[0]?.createdAt].filter(Boolean) as Date[];
         const lastActive = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))).toISOString() : null;
 
-        const hasActivity = dc.count > 0 || cc.count > 0;
+        const docNum = Number(dc.count);
+        const convNum = Number(cc.count);
+        const hasActivity = docNum > 0 || convNum > 0;
         return {
           userId: user.id,
           email: user.email,
           name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Unknown",
-          documentCount: dc.count,
-          conversationCount: cc.count,
+          documentCount: docNum,
+          conversationCount: convNum,
           messageCount: mc,
           questionsAsked: qa,
           aiResponses: ar,
