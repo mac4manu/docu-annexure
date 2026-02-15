@@ -196,7 +196,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.execute(sql`
       SELECT AVG(confidence_score) as avg_confidence, COUNT(confidence_score) as total_scored
       FROM messages
-      WHERE conversation_id = ANY(${convIds})
+      WHERE conversation_id IN (${sql.join(convIds.map(id => sql`${id}`), sql`, `)})
         AND role = 'assistant'
         AND confidence_score IS NOT NULL
     `);
