@@ -82,8 +82,8 @@ function StatCard({ title, value, icon: Icon, subtitle }: { title: string; value
   return (
     <div className="rounded-md border border-border bg-card overflow-hidden" data-testid={`card-stat-${title.toLowerCase().replace(/\s/g, "-")}`}>
       <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{title}</span>
-        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{title}</span>
+        <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
       </div>
       <div className="px-4 py-3">
         <div className="text-2xl font-bold" data-testid={`text-stat-${title.toLowerCase().replace(/\s/g, "-")}`}>{value}</div>
