@@ -134,6 +134,7 @@ export async function setupAuth(app: Express) {
 const ALLOWED_EMAILS = [
   "mailbox4manu@gmail.com",
   "githageorge@gmail.com",
+  "githa.george@springernature.com",
   "shaileshsivan@gmail.com",
   "lagnaparija@gmail.com",
   "sabithastfrancis@gmail.com",
