@@ -77,7 +77,7 @@ export default function Landing() {
                 <span className="text-primary">intelligently understood</span>
               </h1>
               <p className="text-base md:text-lg text-white/70 max-w-lg leading-relaxed">
-                Upload any document and let AI extract rich content, answer your questions, and help you discover insights
+                Upload any document and let AI extract rich content — tables, formulas, and more — answer your questions, and help you discover insights
                 across your entire knowledge base.
               </p>
               <div className="flex items-center gap-3 flex-wrap">
