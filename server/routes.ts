@@ -661,7 +661,7 @@ Respond with ONLY a single integer between 0 and 100. Nothing else.`
               content: `Question: ${content}\n\nAI Response: ${fullResponse.slice(0, 3000)}`
             }
           ],
-          max_tokens: 5,
+          max_completion_tokens: 5,
           temperature: 0,
         });
         const scoreText = confidenceResponse.choices[0]?.message?.content?.trim();
