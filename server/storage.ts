@@ -35,6 +35,7 @@ export interface AdminUserMetrics {
   questionsAsked: number;
   aiResponses: number;
   lastActive: string | null;
+  status: "active" | "logged_in_only";
 }
 
 export interface AdminMetricsData {
@@ -383,6 +384,7 @@ export class DatabaseStorage implements IStorage {
         const dates = [lastDoc[0]?.createdAt, lastConv[0]?.createdAt].filter(Boolean) as Date[];
         const lastActive = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))).toISOString() : null;
 
+        const hasActivity = dc.count > 0 || cc.count > 0;
         return {
           userId: user.id,
           email: user.email,
@@ -393,6 +395,7 @@ export class DatabaseStorage implements IStorage {
           questionsAsked: qa,
           aiResponses: ar,
           lastActive,
+          status: hasActivity ? "active" as const : "logged_in_only" as const,
         };
       })
     );
