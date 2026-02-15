@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -14,6 +14,8 @@ import MultiDocChat from "@/pages/MultiDocChat";
 import Metrics from "@/pages/Metrics";
 import Landing from "@/pages/Landing";
 import HowToUse from "@/pages/HowToUse";
+import Changelog from "@/pages/Changelog";
+import VersionBanner from "@/components/VersionBanner";
 import { useAuth } from "@/hooks/use-auth";
 
 function Router() {
@@ -24,6 +26,7 @@ function Router() {
       <Route path="/chat" component={MultiDocChat} />
       <Route path="/metrics" component={Metrics} />
       <Route path="/how-to-use" component={HowToUse} />
+      <Route path="/changelog" component={Changelog} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -35,12 +38,14 @@ function HeaderNav() {
   const isChat = location === "/chat";
   const isMetrics = location === "/metrics";
   const isHowTo = location === "/how-to-use";
+  const isChangelog = location === "/changelog";
 
   const navItems = [
     { href: "/", label: "Documents", icon: FileText, active: isDocuments, testId: "nav-header-documents" },
     { href: "/chat", label: "Chat", icon: MessagesSquare, active: isChat, testId: "nav-header-chat" },
     { href: "/metrics", label: "Metrics", icon: BarChart3, active: isMetrics, testId: "nav-header-metrics" },
     { href: "/how-to-use", label: "How to Use", icon: HelpCircle, active: isHowTo, testId: "nav-header-howto" },
+    { href: "/changelog", label: "What's New", icon: Megaphone, active: isChangelog, testId: "nav-header-changelog" },
   ];
 
   return (
@@ -91,6 +96,7 @@ function UserMenu() {
 function AuthenticatedApp() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
+      <VersionBanner />
       <div className="flex-none bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-1.5 flex items-center justify-center gap-2 text-xs text-amber-800 dark:text-amber-200" data-testid="banner-prototype">
         <FlaskConical className="w-3.5 h-3.5 shrink-0" />
         <span>This app is a prototype and currently in evaluation phase. Upload limit: 10 documents per user.</span>

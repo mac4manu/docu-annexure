@@ -14,8 +14,61 @@ import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { isAuthenticated } from "./replit_integrations/auth";
+import crypto from "crypto";
 
 const execFileAsync = promisify(execFile);
+
+const APP_VERSION = crypto.randomBytes(8).toString("hex");
+
+const CHANGELOG_ENTRIES = [
+  {
+    version: "0.9.5",
+    date: "2026-02-15",
+    title: "Enhanced Metrics & Analytics",
+    changes: [
+      "Redesigned Metrics page with antd-style card layout",
+      "Added upload trend tracking (last 7 days vs prior 7 days)",
+      "Added average messages per chat statistic",
+      "Added most queried documents section",
+      "Improved summary line with key stats at a glance",
+    ],
+  },
+  {
+    version: "0.9.4",
+    date: "2026-02-14",
+    title: "AI Chat Improvements & Response Rating",
+    changes: [
+      "Revamped AI system prompts for scientific, health, and education domains",
+      "Auto-select all documents in Chat tab for instant interaction",
+      "Added smart prompt suggestions based on document content",
+      "Added copy button and thumbs up/down rating for AI responses",
+      "Added AI Response Accuracy tracking in Metrics",
+    ],
+  },
+  {
+    version: "0.9.3",
+    date: "2026-02-13",
+    title: "Performance & Usability",
+    changes: [
+      "Optimized document upload speed with lower DPI processing",
+      "Added How to Use page with step-by-step guide and FAQ",
+      "Added admin metrics with user breakdown",
+      "Increased document upload limit from 3 to 10",
+    ],
+  },
+  {
+    version: "0.9.2",
+    date: "2026-02-09",
+    title: "Multi-Document Chat & Auth",
+    changes: [
+      "Added Replit Auth with secure login",
+      "Added multi-document chat for cross-document Q&A",
+      "Added chat history with load and delete functionality",
+      "Redesigned navigation with header-based tabs",
+      "Upgraded PDF extraction to AI vision-based processing",
+    ],
+  },
+];
 
 const ALLOWED_MIMETYPES = new Set([
   "application/pdf",
@@ -195,7 +248,15 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
+  app.get("/api/version", (_req, res) => {
+    res.json({ version: APP_VERSION });
+  });
+
+  app.get("/api/changelog", (_req, res) => {
+    res.json(CHANGELOG_ENTRIES);
+  });
+
   app.get(api.documents.list.path, isAuthenticated, async (req, res) => {
     const docs = await storage.getDocuments(getUserId(req));
     res.json(docs);
