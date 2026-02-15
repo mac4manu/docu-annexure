@@ -65,6 +65,7 @@ export interface IStorage {
   createConversation(conv: InsertConversation): Promise<Conversation>;
   deleteConversation(id: number, userId: string): Promise<void>;
   createMessage(msg: InsertMessage): Promise<Message>;
+  updateMessageConfidence(messageId: number, confidenceScore: number): Promise<void>;
   getMessages(conversationId: number): Promise<Message[]>;
 
   verifyMessageOwnership(messageId: number, userId: string): Promise<boolean>;
@@ -72,6 +73,8 @@ export interface IStorage {
   getMessageRating(messageId: number, userId: string): Promise<MessageRating | undefined>;
   getRatingMetrics(userId: string): Promise<{ thumbsUp: number; thumbsDown: number; total: number }>;
   getAdminRatingMetrics(): Promise<{ thumbsUp: number; thumbsDown: number; total: number }>;
+  getConfidenceMetrics(userId: string): Promise<{ avgConfidence: number; totalScored: number }>;
+  getAdminConfidenceMetrics(): Promise<{ avgConfidence: number; totalScored: number }>;
 
   getMetrics(userId: string): Promise<MetricsData>;
   getAdminMetrics(): Promise<AdminMetricsData>;
@@ -131,6 +134,10 @@ export class DatabaseStorage implements IStorage {
     return newMsg;
   }
 
+  async updateMessageConfidence(messageId: number, confidenceScore: number): Promise<void> {
+    await db.update(messages).set({ confidenceScore }).where(eq(messages.id, messageId));
+  }
+
   async getMessages(conversationId: number): Promise<Message[]> {
     return db.select().from(messages)
       .where(eq(messages.conversationId, conversationId))
@@ -179,6 +186,38 @@ export class DatabaseStorage implements IStorage {
     const [down] = await db.select({ count: count() }).from(messageRatings)
       .where(eq(messageRatings.rating, "thumbs_down"));
     return { thumbsUp: up.count, thumbsDown: down.count, total: up.count + down.count };
+  }
+
+  async getConfidenceMetrics(userId: string): Promise<{ avgConfidence: number; totalScored: number }> {
+    const userConvIds = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.userId, userId));
+    const convIds = userConvIds.map(c => c.id);
+    if (convIds.length === 0) return { avgConfidence: 0, totalScored: 0 };
+
+    const result = await db.execute(sql`
+      SELECT AVG(confidence_score) as avg_confidence, COUNT(confidence_score) as total_scored
+      FROM messages
+      WHERE conversation_id = ANY(${convIds})
+        AND role = 'assistant'
+        AND confidence_score IS NOT NULL
+    `);
+    const row = result.rows[0] as { avg_confidence: string | null; total_scored: string };
+    return {
+      avgConfidence: row.avg_confidence ? Math.round(Number(row.avg_confidence)) : 0,
+      totalScored: Number(row.total_scored),
+    };
+  }
+
+  async getAdminConfidenceMetrics(): Promise<{ avgConfidence: number; totalScored: number }> {
+    const result = await db.execute(sql`
+      SELECT AVG(confidence_score) as avg_confidence, COUNT(confidence_score) as total_scored
+      FROM messages
+      WHERE role = 'assistant' AND confidence_score IS NOT NULL
+    `);
+    const row = result.rows[0] as { avg_confidence: string | null; total_scored: string };
+    return {
+      avgConfidence: row.avg_confidence ? Math.round(Number(row.avg_confidence)) : 0,
+      totalScored: Number(row.total_scored),
+    };
   }
 
   async getMetrics(userId: string): Promise<MetricsData> {

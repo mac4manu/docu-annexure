@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Minus, Search, Clock } from "lucide-react";
+import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Minus, Search, Clock, Gauge } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface MetricsData {
@@ -54,6 +54,11 @@ interface RatingMetrics {
   thumbsUp: number;
   thumbsDown: number;
   total: number;
+}
+
+interface ConfidenceMetrics {
+  avgConfidence: number;
+  totalScored: number;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -156,6 +161,43 @@ function RatingCard({ ratingMetrics }: { ratingMetrics: RatingMetrics }) {
   );
 }
 
+function ConfidenceCard({ confidenceMetrics }: { confidenceMetrics: ConfidenceMetrics }) {
+  const score = confidenceMetrics.avgConfidence;
+  const scoreColor = score >= 80 ? "text-green-600 dark:text-green-400"
+    : score >= 50 ? "text-yellow-600 dark:text-yellow-400"
+    : "text-red-600 dark:text-red-400";
+  const barColor = score >= 80 ? "bg-green-600 dark:bg-green-400"
+    : score >= 50 ? "bg-yellow-600 dark:bg-yellow-400"
+    : "bg-red-600 dark:bg-red-400";
+
+  return (
+    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-ai-confidence">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">AI Confidence Score</span>
+        <Gauge className="w-3.5 h-3.5 text-muted-foreground" />
+      </div>
+      <div className="px-4 py-3">
+        <div className="flex flex-col items-center gap-2.5">
+          <div className={`text-3xl font-bold ${scoreColor}`} data-testid="text-confidence-score">
+            {confidenceMetrics.totalScored > 0 ? `${score}%` : "N/A"}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Avg across {confidenceMetrics.totalScored} response{confidenceMetrics.totalScored !== 1 ? "s" : ""}
+          </p>
+          {confidenceMetrics.totalScored > 0 && (
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-full ${barColor} rounded-full transition-all`}
+                style={{ width: `${score}%` }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SummaryLine({ metrics }: { metrics: MetricsData | AdminMetricsData }) {
   const parts: string[] = [];
   if (metrics.totalDocuments > 0) parts.push(`${metrics.totalDocuments} document${metrics.totalDocuments !== 1 ? "s" : ""}`);
@@ -184,7 +226,7 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function PersonalMetrics({ metrics, ratingMetrics }: { metrics: MetricsData; ratingMetrics?: RatingMetrics }) {
+function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: MetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
   const pieData = metrics.documentsByType.map(d => ({
     name: TYPE_LABELS[d.type] || d.type,
     value: d.count,
@@ -202,7 +244,7 @@ function PersonalMetrics({ metrics, ratingMetrics }: { metrics: MetricsData; rat
         <UploadTrendCard thisWeek={metrics.uploadsThisWeek} lastWeek={metrics.uploadsLastWeek} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <ChartCard title="Activity (Last 7 Days)">
           {metrics.activityByDay.some(d => d.documents > 0 || d.conversations > 0 || d.messages > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -253,6 +295,7 @@ function PersonalMetrics({ metrics, ratingMetrics }: { metrics: MetricsData; rat
         </ChartCard>
 
         {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
+        {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -330,7 +373,7 @@ function PersonalMetrics({ metrics, ratingMetrics }: { metrics: MetricsData; rat
   );
 }
 
-function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; ratingMetrics?: RatingMetrics }) {
+function AdminMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: AdminMetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
   const pieData = metrics.documentsByType.map(d => ({
     name: TYPE_LABELS[d.type] || d.type,
     value: d.count,
@@ -349,7 +392,7 @@ function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; r
         <UploadTrendCard thisWeek={metrics.uploadsThisWeek} lastWeek={metrics.uploadsLastWeek} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <ChartCard title="Platform Activity (Last 7 Days)">
           {metrics.activityByDay.some(d => d.documents > 0 || d.conversations > 0 || d.messages > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -400,6 +443,7 @@ function AdminMetrics({ metrics, ratingMetrics }: { metrics: AdminMetricsData; r
         </ChartCard>
 
         {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
+        {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -490,6 +534,11 @@ export default function Metrics() {
     enabled: view === "personal",
   });
 
+  const { data: confidenceMetrics } = useQuery<ConfidenceMetrics>({
+    queryKey: ["/api/confidence/metrics"],
+    enabled: view === "personal",
+  });
+
   const { data: adminMetrics, isLoading: adminLoading } = useQuery<AdminMetricsData>({
     queryKey: ["/api/admin/metrics"],
     enabled: view === "admin" && !!adminCheck?.isAdmin,
@@ -497,6 +546,11 @@ export default function Metrics() {
 
   const { data: adminRatingMetrics } = useQuery<RatingMetrics>({
     queryKey: ["/api/admin/ratings/metrics"],
+    enabled: view === "admin" && !!adminCheck?.isAdmin,
+  });
+
+  const { data: adminConfidenceMetrics } = useQuery<ConfidenceMetrics>({
+    queryKey: ["/api/admin/confidence/metrics"],
     enabled: view === "admin" && !!adminCheck?.isAdmin,
   });
 
@@ -559,8 +613,8 @@ export default function Metrics() {
           )}
         </div>
 
-        {view === "personal" && metrics && <PersonalMetrics metrics={metrics} ratingMetrics={ratingMetrics} />}
-        {view === "admin" && adminMetrics && <AdminMetrics metrics={adminMetrics} ratingMetrics={adminRatingMetrics} />}
+        {view === "personal" && metrics && <PersonalMetrics metrics={metrics} ratingMetrics={ratingMetrics} confidenceMetrics={confidenceMetrics} />}
+        {view === "admin" && adminMetrics && <AdminMetrics metrics={adminMetrics} ratingMetrics={adminRatingMetrics} confidenceMetrics={adminConfidenceMetrics} />}
       </div>
     </div>
   );

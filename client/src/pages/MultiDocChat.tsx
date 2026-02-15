@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X, Copy, ThumbsUp, ThumbsDown, Gauge } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocuments } from "@/hooks/use-documents";
 import { useConversations, useCreateConversation, useDeleteConversation } from "@/hooks/use-conversations";
@@ -18,6 +18,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   id?: number;
+  confidenceScore?: number | null;
 }
 
 const PROMPT_SUGGESTIONS = [
@@ -114,10 +115,11 @@ export default function MultiDocChat() {
       const msgs = data.messages || [];
 
       setConversationId(convId);
-      setMessages(msgs.map((m: { id: number; role: string; content: string }) => ({
+      setMessages(msgs.map((m: { id: number; role: string; content: string; confidenceScore?: number | null }) => ({
         id: m.id,
         role: m.role as "user" | "assistant",
         content: m.content,
+        confidenceScore: m.confidenceScore ?? null,
       })));
       setSelectedDocIds(conv.documentIds || (conv.documentId ? [conv.documentId] : []));
       setShowHistory(false);
@@ -231,7 +233,7 @@ export default function MultiDocChat() {
                   const newMsgs = [...prev];
                   const lastMsg = newMsgs[newMsgs.length - 1];
                   if (lastMsg.role === "assistant") {
-                    newMsgs[newMsgs.length - 1] = { ...lastMsg, id: data.messageId };
+                    newMsgs[newMsgs.length - 1] = { ...lastMsg, id: data.messageId, confidenceScore: data.confidenceScore ?? null };
                   }
                   return newMsgs;
                 });
@@ -507,6 +509,19 @@ export default function MultiDocChat() {
                 </div>
                 {msg.role === "assistant" && msg.id && msg.content && (
                   <div className="flex items-center gap-0.5 ml-1">
+                    {msg.confidenceScore != null && (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full mr-1 ${
+                          msg.confidenceScore >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : msg.confidenceScore >= 50 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                        data-testid={`badge-confidence-${i}`}
+                      >
+                        <Gauge className="w-2.5 h-2.5" />
+                        {msg.confidenceScore}%
+                      </span>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"

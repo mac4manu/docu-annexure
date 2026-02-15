@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, Loader2, Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Send, User, Bot, Loader2, Sparkles, Copy, Check, ThumbsUp, ThumbsDown, Gauge } from "lucide-react";
 import { useConversation, useCreateConversation } from "@/hooks/use-conversations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   id?: number;
+  confidenceScore?: number | null;
 }
 
 export function ChatInterface({ documentId }: ChatInterfaceProps) {
@@ -55,7 +56,8 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
       setMessages(prev => prev.length === 0 ? history.messages.map(m => ({
         id: m.id,
         role: m.role as "user" | "assistant",
-        content: m.content
+        content: m.content,
+        confidenceScore: m.confidenceScore ?? null,
       })) : prev);
     }
   }, [history]);
@@ -131,7 +133,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                   const newMsgs = [...prev];
                   const lastMsg = newMsgs[newMsgs.length - 1];
                   if (lastMsg.role === "assistant") {
-                    newMsgs[newMsgs.length - 1] = { ...lastMsg, id: data.messageId };
+                    newMsgs[newMsgs.length - 1] = { ...lastMsg, id: data.messageId, confidenceScore: data.confidenceScore ?? null };
                   }
                   return newMsgs;
                 });
@@ -254,6 +256,19 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                 </div>
                 {msg.role === "assistant" && msg.id && msg.content && (
                   <div className="flex items-center gap-0.5 ml-1">
+                    {msg.confidenceScore != null && (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full mr-1 ${
+                          msg.confidenceScore >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : msg.confidenceScore >= 50 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                        data-testid={`badge-confidence-${i}`}
+                      >
+                        <Gauge className="w-2.5 h-2.5" />
+                        {msg.confidenceScore}%
+                      </span>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"

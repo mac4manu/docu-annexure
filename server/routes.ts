@@ -482,6 +482,30 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/confidence/metrics", isAuthenticated, async (req, res) => {
+    try {
+      const metrics = await storage.getConfidenceMetrics(getUserId(req));
+      res.json(metrics);
+    } catch (error) {
+      console.error("Confidence metrics error:", error);
+      res.status(500).json({ message: "Failed to fetch confidence metrics" });
+    }
+  });
+
+  app.get("/api/admin/confidence/metrics", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    if (!ADMIN_USER_IDS.includes(userId)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const metrics = await storage.getAdminConfidenceMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Admin confidence metrics error:", error);
+      res.status(500).json({ message: "Failed to fetch admin confidence metrics" });
+    }
+  });
+
   // Chat
   app.get(api.conversations.list.path, isAuthenticated, async (req, res) => {
     const convs = await storage.getAllConversations(getUserId(req));
@@ -614,7 +638,43 @@ When reporting tortured phrases:
         content: fullResponse
       });
 
-      res.write(`data: ${JSON.stringify({ done: true, messageId: savedMsg.id })}\n\n`);
+      let confidenceScore: number | null = null;
+      try {
+        const confidenceResponse = await openai.chat.completions.create({
+          model: "gpt-5.2",
+          messages: [
+            {
+              role: "system",
+              content: `You are a confidence evaluator. Given a question and an AI response based on document content, rate the confidence of the response on a scale of 0-100.
+
+Consider these factors:
+- How well does the response answer the question? (higher = better)
+- Is the response based on document content or general knowledge? (document-based = higher)
+- How specific and detailed is the response? (more specific = higher)
+- Does the response acknowledge uncertainty where appropriate? (acknowledging = higher)
+- Does the response contain hedging language like "I'm not sure" or "the document doesn't mention"? (more hedging = lower)
+
+Respond with ONLY a single integer between 0 and 100. Nothing else.`
+            },
+            {
+              role: "user",
+              content: `Question: ${content}\n\nAI Response: ${fullResponse.slice(0, 3000)}`
+            }
+          ],
+          max_tokens: 5,
+          temperature: 0,
+        });
+        const scoreText = confidenceResponse.choices[0]?.message?.content?.trim();
+        const parsed = parseInt(scoreText || "", 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+          confidenceScore = parsed;
+          await storage.updateMessageConfidence(savedMsg.id, confidenceScore);
+        }
+      } catch (e) {
+        console.error("Confidence scoring error:", e);
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true, messageId: savedMsg.id, confidenceScore })}\n\n`);
       res.end();
 
     } catch (error) {
