@@ -314,7 +314,7 @@ export class DatabaseStorage implements IStorage {
         return {
           userId: user.id,
           email: user.email,
-          name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "Unknown",
+          name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Unknown",
           documentCount: dc.count,
           conversationCount: cc.count,
           messageCount: mc,
