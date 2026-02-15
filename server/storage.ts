@@ -66,6 +66,7 @@ export interface IStorage {
   createMessage(msg: InsertMessage): Promise<Message>;
   getMessages(conversationId: number): Promise<Message[]>;
 
+  verifyMessageOwnership(messageId: number, userId: string): Promise<boolean>;
   rateMessage(rating: InsertMessageRating): Promise<MessageRating>;
   getMessageRating(messageId: number, userId: string): Promise<MessageRating | undefined>;
   getRatingMetrics(userId: string): Promise<{ thumbsUp: number; thumbsDown: number; total: number }>;
@@ -133,6 +134,14 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(messages)
       .where(eq(messages.conversationId, conversationId))
       .orderBy(messages.createdAt);
+  }
+
+  async verifyMessageOwnership(messageId: number, userId: string): Promise<boolean> {
+    const [msg] = await db.select().from(messages).where(eq(messages.id, messageId));
+    if (!msg) return false;
+    const [conv] = await db.select().from(conversations)
+      .where(and(eq(conversations.id, msg.conversationId), eq(conversations.userId, userId)));
+    return !!conv;
   }
 
   async rateMessage(rating: InsertMessageRating): Promise<MessageRating> {

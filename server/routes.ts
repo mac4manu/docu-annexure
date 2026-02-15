@@ -102,6 +102,28 @@ function getFileType(mimetype: string): string {
   return "other";
 }
 
+function validateFileSignature(filePath: string, declaredMime: string): boolean {
+  try {
+    const fd = fs.openSync(filePath, "r");
+    const buf = Buffer.alloc(8);
+    fs.readSync(fd, buf, 0, 8, 0);
+    fs.closeSync(fd);
+
+    if (declaredMime.includes("pdf")) {
+      return buf.subarray(0, 4).equals(Buffer.from([0x25, 0x50, 0x44, 0x46]));
+    }
+    if (declaredMime.includes("openxmlformats") || declaredMime.includes("wordprocessing") || declaredMime.includes("presentation")) {
+      return buf.subarray(0, 4).equals(Buffer.from([0x50, 0x4B, 0x03, 0x04]));
+    }
+    if (declaredMime.includes("msword") || declaredMime.includes("ms-powerpoint")) {
+      return buf.subarray(0, 4).equals(Buffer.from([0xD0, 0xCF, 0x11, 0xE0]));
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   const resolvedPath = path.resolve(pdfPath);
   if (!resolvedPath.startsWith(path.resolve("uploads"))) {
@@ -283,6 +305,11 @@ export async function registerRoutes(
     const originalFilename = req.file.originalname;
     const cleanupList: string[] = [filePath];
 
+    if (!validateFileSignature(filePath, fileType)) {
+      cleanupFiles([filePath]);
+      return res.status(400).json({ message: "File content does not match declared type. Please upload a valid PDF, Word, or PowerPoint file." });
+    }
+
     try {
       let content = "";
       console.log(`Processing file: ${originalFilename} (${fileType})`);
@@ -401,14 +428,19 @@ export async function registerRoutes(
 
   app.post("/api/messages/:id/rate", isAuthenticated, async (req, res) => {
     try {
+      const userId = getUserId(req);
+      const messageId = Number(req.params.id);
+      const ownershipOk = await storage.verifyMessageOwnership(messageId, userId);
+      if (!ownershipOk) return res.status(404).json({ message: "Message not found" });
+
       const { rating } = req.body;
       if (!["thumbs_up", "thumbs_down"].includes(rating)) {
         return res.status(400).json({ message: "Rating must be thumbs_up or thumbs_down" });
       }
       const result = await storage.rateMessage({
-        messageId: Number(req.params.id),
+        messageId,
         rating,
-        userId: getUserId(req),
+        userId,
       });
       res.json(result);
     } catch (error) {
@@ -418,7 +450,11 @@ export async function registerRoutes(
   });
 
   app.get("/api/messages/:id/rating", isAuthenticated, async (req, res) => {
-    const rating = await storage.getMessageRating(Number(req.params.id), getUserId(req));
+    const userId = getUserId(req);
+    const messageId = Number(req.params.id);
+    const ownershipOk = await storage.verifyMessageOwnership(messageId, userId);
+    if (!ownershipOk) return res.status(404).json({ message: "Message not found" });
+    const rating = await storage.getMessageRating(messageId, userId);
     res.json({ rating: rating?.rating || null });
   });
 
@@ -479,14 +515,14 @@ export async function registerRoutes(
     const conversationId = Number(req.params.id);
     const { content } = req.body;
 
+    const conversation = await storage.getConversation(conversationId, userId);
+    if (!conversation) return res.status(404).json({ message: "Conversation not found" });
+
     const userMsg = await storage.createMessage({
       conversationId,
       role: "user",
       content
     });
-
-    const conversation = await storage.getConversation(conversationId, userId);
-    if (!conversation) return res.status(404).json({ message: "Conversation not found" });
 
     let systemContext = `You are DocuAnnexure AI — an expert document analysis assistant specializing in three key domains:
 
