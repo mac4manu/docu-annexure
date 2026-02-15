@@ -140,6 +140,7 @@ const ALLOWED_EMAILS = [
   "shashi.shekhar1176@gmail.com",
   "tamilselvan.kiran@gmail.com",
   "venug.krish@gmail.com",
+  "neenamanu2010@gmail.com",
 ];
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
