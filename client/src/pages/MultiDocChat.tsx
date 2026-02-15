@@ -345,11 +345,17 @@ export default function MultiDocChat() {
             variant="outline"
             size="sm"
             onClick={() => setShowDocPicker(!showDocPicker)}
+            className={selectedCount > 0 ? "border-primary/40 bg-primary/5" : ""}
             data-testid="button-doc-picker"
           >
             <FileText className="w-3.5 h-3.5 mr-1.5" />
-            {selectedCount === docCount ? "All documents" : `${selectedCount} of ${docCount} docs`}
-            <ChevronDown className="w-3 h-3 ml-1.5" />
+            {selectedCount === docCount
+              ? `All ${docCount} documents selected`
+              : selectedCount > 0
+                ? `${selectedCount} of ${docCount} documents selected`
+                : "Select documents"}
+            <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0 no-default-hover-elevate no-default-active-elevate">{selectedCount}</Badge>
+            <ChevronDown className="w-3 h-3 ml-1" />
           </Button>
 
           {showDocPicker && (
