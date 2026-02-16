@@ -23,6 +23,43 @@ const APP_VERSION = crypto.randomBytes(8).toString("hex");
 
 const CHANGELOG_ENTRIES = [
   {
+    version: "0.9.8",
+    date: "2026-02-16",
+    title: "Document Metadata & Upload Limit",
+    changes: [
+      "Automatic metadata extraction: DOI, title, authors, journal, year, abstract, and keywords",
+      "Collapsible metadata panel on document view with DOI links and keyword badges",
+      "Document cards now show academic title, authors, and DOI instead of just filename",
+      "Added Excel file support (.xlsx, .xls) with spreadsheet-to-markdown formatting",
+      "Increased document upload limit from 10 to 20",
+      "Added 'Extract metadata & DOI' prompt suggestion in Chat",
+      "Added Metadata Extraction feature card to landing and documents pages",
+    ],
+  },
+  {
+    version: "0.9.7",
+    date: "2026-02-16",
+    title: "Vision-Based DOCX & Confidence Scores",
+    changes: [
+      "Upgraded DOCX extraction to vision-based: LibreOffice converts DOCX to PDF, then AI vision extracts tables, figures, and images",
+      "Fallback to text-based extraction when LibreOffice is unavailable",
+      "Added AI confidence score: GPT evaluates its own response confidence (0-100%)",
+      "Confidence displayed as color-coded badge on chat responses",
+      "Average confidence metrics on Metrics page (personal and admin)",
+    ],
+  },
+  {
+    version: "0.9.6",
+    date: "2026-02-15",
+    title: "Version Check & Access Control",
+    changes: [
+      "Added version check banner that detects new publishes and prompts users to refresh",
+      "Added What's New changelog page with timeline layout and release notes",
+      "Added email allowlist for closed evaluation phase",
+      "Access Restricted page for unauthorized users",
+    ],
+  },
+  {
     version: "0.9.5",
     date: "2026-02-15",
     title: "Enhanced Metrics & Analytics",
