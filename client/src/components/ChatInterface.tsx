@@ -321,13 +321,13 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
         )}
       </div>
 
-      <div className="p-3 bg-background border-t border-border">
+      <div className="px-4 py-3 bg-muted/30 border-t-2 border-primary/20 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_-2px_8px_rgba(0,0,0,0.15)]">
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
-            className="flex-1 bg-muted/30 border-border"
+            placeholder="Ask a question about this document..."
+            className="flex-1 bg-background border-primary/30 focus-visible:ring-primary/30"
             disabled={isLoading}
             data-testid="input-chat-message"
           />

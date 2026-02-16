@@ -597,7 +597,7 @@ export default function MultiDocChat() {
         )}
       </div>
 
-      <div className="flex-none p-3 bg-background border-t border-border">
+      <div className="flex-none px-4 py-3 bg-muted/30 border-t-2 border-primary/20 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_-2px_8px_rgba(0,0,0,0.15)]">
         {selectedCount === 0 && (
           <div className="text-center text-xs text-muted-foreground mb-2 flex items-center justify-center gap-1.5" data-testid="text-no-docs-warning">
             <X className="w-3 h-3" />
@@ -610,8 +610,8 @@ export default function MultiDocChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={selectedCount === 0 ? "Select documents above to start..." : "Ask a question about your documents... (Enter to send, Shift+Enter for new line)"}
-            className="flex-1 resize-none bg-muted/30 max-h-[120px]"
+            placeholder={selectedCount === 0 ? "Select documents above to start..." : "Ask a question about your documents..."}
+            className="flex-1 resize-none bg-background border-primary/30 focus-visible:ring-primary/30 max-h-[120px]"
             disabled={isLoading || selectedCount === 0}
             rows={1}
             data-testid="input-chat-message"
@@ -626,6 +626,7 @@ export default function MultiDocChat() {
             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
           </Button>
         </form>
+        <p className="text-[10px] text-muted-foreground/50 mt-1.5 text-center">Enter to send, Shift+Enter for new line</p>
       </div>
     </div>
   );
