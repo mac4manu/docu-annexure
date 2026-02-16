@@ -138,12 +138,7 @@ const ALLOWED_EMAILS = [
   "mailbox4manu@gmail.com",
   "githageorge@gmail.com",
   "githa.george@springernature.com",
-  "shaileshsivan@gmail.com",
-  "lagnaparija@gmail.com",
   "sabithastfrancis@gmail.com",
-  "shashi.shekhar1176@gmail.com",
-  "tamilselvan.kiran@gmail.com",
-  "venug.krish@gmail.com",
   "neenamanu2010@gmail.com",
 ];
 
