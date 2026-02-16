@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, varchar, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
@@ -10,6 +10,13 @@ export const documents = pgTable("documents", {
   content: text("content").notNull(),
   fileType: text("file_type").notNull(),
   userId: varchar("user_id"),
+  doi: text("doi"),
+  docTitle: text("doc_title"),
+  authors: text("authors"),
+  journal: text("journal"),
+  publishYear: integer("publish_year"),
+  abstract: text("abstract"),
+  keywords: text("keywords"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
