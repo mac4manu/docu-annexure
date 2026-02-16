@@ -194,7 +194,7 @@ export default function DocumentView() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         <ResizablePanelGroup direction="horizontal" data-testid="panel-group-doc-chat">
           {docPanelVisible && (
             <>

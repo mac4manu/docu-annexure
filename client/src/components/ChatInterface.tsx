@@ -224,9 +224,9 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
         <h3 className="font-semibold text-sm">AI Assistant</h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-3" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0" ref={scrollRef}>
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground/80">
+          <div className="min-h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground/80">
             <Bot className="w-10 h-10 mb-3 text-primary/20" />
             <p className="font-medium text-sm">Ask me anything about this document</p>
             <p className="text-xs mt-1 opacity-70">I can summarize, explain, or find details.</p>
