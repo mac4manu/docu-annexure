@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X, Copy, ThumbsUp, ThumbsDown, Gauge } from "lucide-react";
+import { Send, Bot, Loader2, FileText, User, Plus, Trash2, History, MessageSquare, ChevronDown, Check, X, Copy, ThumbsUp, ThumbsDown, Gauge, Sparkles, Clock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocuments } from "@/hooks/use-documents";
 import { useConversations, useCreateConversation, useDeleteConversation } from "@/hooks/use-conversations";
@@ -24,34 +24,32 @@ interface ChatMessage {
 const PROMPT_SUGGESTIONS = [
   {
     label: "Summarize core findings",
+    description: "Key conclusions in structured format",
     prompt: "Summarize the core findings and key conclusions of this document in a structured format.",
   },
   {
     label: "Compare methodologies",
+    description: "Similarities & differences across docs",
     prompt: "Compare the methodologies described across the selected documents. Highlight similarities and differences.",
   },
   {
     label: "Extract tables & formulas",
+    description: "Pull out data tables and equations",
     prompt: "Extract and present all key data tables, mathematical formulas, and equations from this document.",
   },
   {
     label: "Explain for a student",
+    description: "Simplified undergraduate-level summary",
     prompt: "Explain the main concepts of this document in simple terms, suitable for an undergraduate student.",
   },
   {
-    label: "Clinical implications",
-    prompt: "What are the clinical or practical implications discussed in this document? Summarize any recommendations.",
-  },
-  {
-    label: "List references",
-    prompt: "List the key references and citations mentioned in this document, noting which claims they support.",
-  },
-  {
     label: "Detect tortured phrases",
+    description: "Flag suspicious synonym substitutions",
     prompt: "Scan this document for tortured phrases — suspicious synonym substitutions where standard scientific terminology may have been mechanically replaced (e.g., 'deep learning' replaced with 'profound learning'). Present findings in a table with severity levels and an overall integrity assessment.",
   },
   {
     label: "Extract metadata & DOI",
+    description: "Title, authors, journal, DOI link",
     prompt: "Extract the bibliographic metadata from the selected documents: DOI (Digital Object Identifier), full title, all authors, journal or conference name, publication year, abstract, and keywords. If a DOI is found, provide the full DOI link. Present the information in a structured format.",
   },
 ];
@@ -348,12 +346,9 @@ export default function MultiDocChat() {
       <div className="flex-none px-4 py-2.5 border-b border-border flex items-center gap-2 flex-wrap">
         <div className="relative" ref={docPickerRef}>
           <Button
-            variant="outline"
+            variant={selectedCount > 0 ? "default" : "outline"}
             size="sm"
             onClick={() => setShowDocPicker(!showDocPicker)}
-            className={selectedCount > 0
-              ? "border-primary text-primary"
-              : "text-muted-foreground"}
             data-testid="button-doc-picker"
           >
             <FileText className="w-3.5 h-3.5 mr-1.5" />
@@ -361,7 +356,7 @@ export default function MultiDocChat() {
               ? "Select documents"
               : selectedCount === docCount
                 ? `All ${docCount} documents selected`
-                : `${selectedCount} of ${docCount} documents selected`}
+                : `${selectedCount} of ${docCount} selected`}
             <ChevronDown className="w-3 h-3 ml-1.5" />
           </Button>
 
@@ -407,13 +402,13 @@ export default function MultiDocChat() {
         <div className="flex items-center gap-1 ml-auto">
           {historyConversations.length > 0 && (
             <Button
-              variant={showHistory ? "default" : "ghost"}
+              variant={showHistory ? "default" : "outline"}
               size="sm"
               onClick={() => setShowHistory(!showHistory)}
               data-testid="button-toggle-history"
             >
-              <History className="w-3.5 h-3.5 mr-1.5" />
-              History
+              <Clock className="w-3.5 h-3.5 mr-1.5" />
+              Past Chats
               <Badge variant="secondary" className="ml-1.5 text-[10px] px-1 py-0 no-default-hover-elevate no-default-active-elevate">{historyConversations.length}</Badge>
             </Button>
           )}
@@ -464,26 +459,34 @@ export default function MultiDocChat() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" ref={scrollRef}>
         {!hasMessages ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6">
-            <Bot className="w-12 h-12 text-primary/15 mb-4" />
+            <div className="p-3 rounded-full bg-primary/10 mb-4">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
             <h2 className="text-lg font-semibold mb-1" data-testid="text-empty-state-title">
-              Ask anything about your documents
+              What would you like to know?
             </h2>
-            <p className="text-sm text-muted-foreground max-w-md mb-6">
+            <p className="text-sm text-muted-foreground max-w-md mb-1.5">
+              AI can summarize, compare, extract data, and answer questions across your documents.
+            </p>
+            <p className="text-xs text-muted-foreground/70 mb-5">
               {selectedCount === docCount
-                ? `All ${docCount} documents are selected. Type a question below or try a suggestion.`
-                : `${selectedCount} document${selectedCount !== 1 ? "s" : ""} selected. Adjust using the document picker above.`}
+                ? `All ${docCount} documents included`
+                : selectedCount > 0
+                  ? `${selectedCount} of ${docCount} documents included \u2014 change with the picker above`
+                  : "No documents selected \u2014 use the picker above to choose which to include"}
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-w-2xl w-full">
               {PROMPT_SUGGESTIONS.map((suggestion) => (
                 <button
                   key={suggestion.label}
                   onClick={() => sendMessage(suggestion.prompt)}
                   disabled={isLoading || selectedCount === 0}
-                  className="text-left p-3 rounded-md border border-border bg-card text-sm hover-elevate active-elevate-2 transition-colors disabled:opacity-50"
+                  className="text-left p-3 rounded-md border border-border bg-card hover-elevate active-elevate-2 transition-colors disabled:opacity-50"
                   data-testid={`button-suggestion-${suggestion.label.toLowerCase().replace(/\s/g, "-")}`}
                 >
-                  <span className="font-medium text-foreground">{suggestion.label}</span>
+                  <span className="text-sm font-medium text-foreground">{suggestion.label}</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{suggestion.description}</p>
                 </button>
               ))}
             </div>
