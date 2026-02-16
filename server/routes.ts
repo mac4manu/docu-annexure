@@ -128,6 +128,62 @@ function validateFileSignature(filePath: string, declaredMime: string): boolean 
   }
 }
 
+let libreOfficeAvailable: boolean | null = null;
+
+async function checkLibreOffice(): Promise<boolean> {
+  if (libreOfficeAvailable !== null) return libreOfficeAvailable;
+  try {
+    await execFileAsync("which", ["libreoffice"], { timeout: 5000 });
+    libreOfficeAvailable = true;
+    console.log("LibreOffice detected - vision-based DOCX extraction enabled");
+  } catch {
+    libreOfficeAvailable = false;
+    console.log("LibreOffice not found - using text-based DOCX extraction");
+  }
+  return libreOfficeAvailable;
+}
+
+async function convertDocxToPdf(docxPath: string): Promise<string> {
+  const resolvedPath = path.resolve(docxPath);
+  if (!resolvedPath.startsWith(path.resolve("uploads"))) {
+    throw new Error("Invalid file path");
+  }
+
+  const hasLibreOffice = await checkLibreOffice();
+  if (!hasLibreOffice) {
+    throw new Error("LibreOffice not available");
+  }
+
+  const outputDir = path.dirname(resolvedPath);
+
+  try {
+    await execFileAsync("libreoffice", [
+      "--headless",
+      "--convert-to", "pdf",
+      "--outdir", outputDir,
+      resolvedPath,
+    ], {
+      timeout: 120000,
+      env: {
+        ...process.env,
+        HOME: "/tmp",
+      },
+    });
+  } catch (err) {
+    console.error("LibreOffice conversion error:", err);
+    throw new Error("Failed to convert DOCX to PDF");
+  }
+
+  const baseName = path.basename(resolvedPath, path.extname(resolvedPath));
+  const pdfPath = path.join(outputDir, `${baseName}.pdf`);
+
+  if (!fs.existsSync(pdfPath)) {
+    throw new Error("LibreOffice conversion produced no output");
+  }
+
+  return pdfPath;
+}
+
 async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   const resolvedPath = path.resolve(pdfPath);
   if (!resolvedPath.startsWith(path.resolve("uploads"))) {
@@ -399,36 +455,53 @@ export async function registerRoutes(
           content = "No data could be extracted from this spreadsheet.";
         }
       } else if (fileType.includes("wordprocessing") || fileType.includes("msword")) {
-        let rawText = "";
+        console.log("Using vision-based extraction for Word document...");
+        let visionSuccess = false;
 
         try {
-          console.log("Attempting mammoth extraction for DOCX...");
-          const mammothResult = await mammoth.extractRawText({ path: filePath });
-          rawText = mammothResult.value || "";
-          if (mammothResult.messages && mammothResult.messages.length > 0) {
-            console.log("Mammoth warnings:", mammothResult.messages.map((m: any) => m.message).join("; "));
+          const pdfPath = await convertDocxToPdf(filePath);
+          cleanupList.push(pdfPath);
+          console.log("DOCX converted to PDF, extracting pages as images...");
+
+          const imagePaths = await convertPdfToImages(pdfPath);
+          const imageDir = path.dirname(imagePaths[0] || "");
+          if (imageDir) cleanupList.push(imageDir);
+
+          if (imagePaths.length > 0) {
+            content = await extractMarkdownFromImages(imagePaths);
+            visionSuccess = true;
+            console.log(`Vision extraction completed: ${content.length} chars from ${imagePaths.length} pages`);
           }
         } catch (e) {
-          console.error("Mammoth extraction failed:", e);
+          console.error("Vision-based DOCX extraction failed, falling back to text extraction:", e);
         }
 
-        if (!rawText || rawText.trim().length < 50) {
-          console.log("Mammoth returned insufficient text, trying officeParser fallback...");
+        if (!visionSuccess) {
+          let rawText = "";
           try {
-            const fallbackText = await officeParser.parseOfficeAsync(filePath);
-            if (fallbackText && fallbackText.trim().length > (rawText?.trim().length || 0)) {
-              rawText = fallbackText;
-            }
+            console.log("Falling back to mammoth extraction for DOCX...");
+            const mammothResult = await mammoth.extractRawText({ path: filePath });
+            rawText = mammothResult.value || "";
           } catch (e) {
-            console.error("officeParser fallback also failed:", e);
+            console.error("Mammoth extraction failed:", e);
           }
-        }
 
-        if (rawText && rawText.trim().length > 0) {
-          console.log(`DOCX extracted ${rawText.trim().length} chars successfully`);
-          content = await formatTextToMarkdown(rawText);
-        } else {
-          content = "No text content could be extracted from this file.";
+          if (!rawText || rawText.trim().length < 50) {
+            try {
+              const fallbackText = await officeParser.parseOfficeAsync(filePath);
+              if (fallbackText && fallbackText.trim().length > (rawText?.trim().length || 0)) {
+                rawText = fallbackText;
+              }
+            } catch (e) {
+              console.error("officeParser fallback also failed:", e);
+            }
+          }
+
+          if (rawText && rawText.trim().length > 0) {
+            content = await formatTextToMarkdown(rawText);
+          } else {
+            content = "No text content could be extracted from this file.";
+          }
         }
       } else {
         let rawText = "";
