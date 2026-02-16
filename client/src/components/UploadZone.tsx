@@ -83,12 +83,12 @@ export function UploadZone() {
   });
 
   return (
-    <div className="w-full h-full" data-testid="upload-zone-container">
+    <div className="w-full" data-testid="upload-zone-container">
       <div
         {...getRootProps()}
         data-testid="dropzone"
         className={`
-          relative group cursor-pointer h-full
+          relative group cursor-pointer
           rounded-md border-2 border-dashed
           transition-all duration-300 ease-out
           px-5 py-4
@@ -146,28 +146,28 @@ export function UploadZone() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-3 text-center">
+          <div className="flex items-center gap-4 text-left">
             <div className={`
-              p-3.5 rounded-full transition-colors duration-300
+              p-2.5 rounded-full transition-colors duration-300 shrink-0
               ${isDragActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary"}
             `}>
-              <UploadCloud className="w-7 h-7" />
+              <UploadCloud className="w-5 h-5" />
             </div>
 
-            <div>
-              <h3 className="text-base font-semibold text-foreground" data-testid="text-upload-title">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground" data-testid="text-upload-title">
                 Upload Document
               </h3>
-              <p className="text-xs text-muted-foreground mt-1 max-w-xs" data-testid="text-upload-description">
+              <p className="text-[11px] text-muted-foreground mt-0.5" data-testid="text-upload-description">
                 Drag & drop or click to upload PDF, Word, PowerPoint, or Excel files (max 20 documents)
               </p>
             </div>
 
-            <div className="flex gap-2 mt-1 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PDF</span>
-              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Word</span>
-              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PPTX</span>
-              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Excel</span>
+            <div className="flex gap-1.5 shrink-0 flex-wrap">
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PDF</span>
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Word</span>
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PPTX</span>
+              <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Excel</span>
             </div>
           </div>
         )}

@@ -82,7 +82,7 @@ export default function Home() {
       <div className="flex-1 overflow-hidden px-6 pb-6">
         <div className="flex gap-6 h-full">
           <div className="flex-1 min-w-0 flex flex-col overflow-y-auto">
-            <div className="shrink-0" style={{ minHeight: "40%" }}>
+            <div className="shrink-0">
               <UploadZone />
             </div>
 
