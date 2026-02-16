@@ -92,7 +92,7 @@ function MetadataPanel({ doc }: { doc: any }) {
               <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Keywords</span>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {doc.keywords.split(",").map((kw: string, i: number) => (
-                  <Badge key={i} variant="secondary" className="text-[10px] no-default-hover-elevate no-default-active-elevate">
+                  <Badge key={i} variant="secondary" className="text-[10px] whitespace-break-spaces no-default-hover-elevate no-default-active-elevate">
                     {kw.trim()}
                   </Badge>
                 ))}
