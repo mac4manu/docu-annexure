@@ -99,7 +99,7 @@ function AuthenticatedApp() {
       <VersionBanner />
       <div className="flex-none bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-1.5 flex items-center justify-center gap-2 text-xs text-amber-800 dark:text-amber-200" data-testid="banner-prototype">
         <FlaskConical className="w-3.5 h-3.5 shrink-0" />
-        <span>This app is a prototype and currently in evaluation phase. Upload limit: 10 documents per user.</span>
+        <span>This app is a prototype and currently in evaluation phase. Upload limit: 20 documents per user.</span>
       </div>
       <header className="flex-none h-14 border-b border-border bg-background px-4 flex items-center gap-3 z-50">
         <Link href="/" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
