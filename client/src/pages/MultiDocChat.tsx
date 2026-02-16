@@ -479,9 +479,9 @@ export default function MultiDocChat() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto min-h-0" ref={scrollRef}>
         {!hasMessages ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+          <div className="min-h-full flex flex-col items-center justify-center text-center p-6">
             <div className="p-3 rounded-full bg-primary/10 mb-4">
               <Sparkles className="w-6 h-6 text-primary" />
             </div>
@@ -515,91 +515,93 @@ export default function MultiDocChat() {
             </div>
           </div>
         ) : (
-          messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              data-testid={`message-${msg.role}-${i}`}
-            >
-              {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                  <Bot className="w-3.5 h-3.5 text-primary" />
-                </div>
-              )}
+          <div className="p-4 space-y-4">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                data-testid={`message-${msg.role}-${i}`}
+              >
+                {msg.role === "assistant" && (
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                    <Bot className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                )}
 
-              <div className="flex flex-col gap-1 max-w-[80%]">
-                <div className={`rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border/50 rounded-bl-none text-foreground"}`}>
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-[13px] prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1 prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
-                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+                <div className="flex flex-col gap-1 max-w-[80%]">
+                  <div className={`rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border/50 rounded-bl-none text-foreground"}`}>
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-[13px] prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1 prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                  {msg.role === "assistant" && msg.id && msg.content && (
+                    <div className="flex items-center gap-0.5 ml-1">
+                      {msg.confidenceScore != null && (
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full mr-1 ${
+                            msg.confidenceScore >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : msg.confidenceScore >= 50 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          }`}
+                          data-testid={`badge-confidence-${i}`}
+                        >
+                          <Gauge className="w-2.5 h-2.5" />
+                          Confidence: {msg.confidenceScore}%
+                        </span>
+                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => handleCopy(msg.content, msg.id!)}
+                        data-testid={`button-copy-${i}`}
+                      >
+                        {copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className={`h-7 w-7 ${ratings[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
+                        onClick={() => handleRate(msg.id!, "thumbs_up")}
+                        data-testid={`button-thumbsup-${i}`}
+                      >
+                        <ThumbsUp className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className={`h-7 w-7 ${ratings[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
+                        onClick={() => handleRate(msg.id!, "thumbs_down")}
+                        data-testid={`button-thumbsdown-${i}`}
+                      >
+                        <ThumbsDown className="w-3 h-3" />
+                      </Button>
                     </div>
-                  ) : (
-                    msg.content
                   )}
                 </div>
-                {msg.role === "assistant" && msg.id && msg.content && (
-                  <div className="flex items-center gap-0.5 ml-1">
-                    {msg.confidenceScore != null && (
-                      <span
-                        className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full mr-1 ${
-                          msg.confidenceScore >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : msg.confidenceScore >= 50 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        }`}
-                        data-testid={`badge-confidence-${i}`}
-                      >
-                        <Gauge className="w-2.5 h-2.5" />
-                        Confidence: {msg.confidenceScore}%
-                      </span>
-                    )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => handleCopy(msg.content, msg.id!)}
-                      data-testid={`button-copy-${i}`}
-                    >
-                      {copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className={`h-7 w-7 ${ratings[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
-                      onClick={() => handleRate(msg.id!, "thumbs_up")}
-                      data-testid={`button-thumbsup-${i}`}
-                    >
-                      <ThumbsUp className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className={`h-7 w-7 ${ratings[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
-                      onClick={() => handleRate(msg.id!, "thumbs_down")}
-                      data-testid={`button-thumbsdown-${i}`}
-                    >
-                      <ThumbsDown className="w-3 h-3" />
-                    </Button>
+
+                {msg.role === "user" && (
+                  <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                    <User className="w-3.5 h-3.5 text-background" />
                   </div>
                 )}
               </div>
-
-              {msg.role === "user" && (
-                <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
-                  <User className="w-3.5 h-3.5 text-background" />
+            ))}
+            {isLoading && (
+              <div className="flex gap-3 justify-start" data-testid="chat-status-indicator">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                  <Bot className="w-3.5 h-3.5 text-primary" />
                 </div>
-              )}
-            </div>
-          ))
-        )}
-        {isLoading && (
-          <div className="flex gap-3 justify-start" data-testid="chat-status-indicator">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-              <Bot className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <div className="bg-muted rounded-2xl rounded-bl-none px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="w-3 h-3 animate-spin text-primary" />
-              <span>{messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content ? "Writing..." : "Thinking..."}</span>
-            </div>
+                <div className="bg-muted rounded-2xl rounded-bl-none px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                  <span>{messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content ? "Writing..." : "Thinking..."}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
