@@ -75,6 +75,8 @@ export function UploadZone() {
       "application/vnd.ms-powerpoint": [".ppt"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
       "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.ms-excel": [".xls"],
     },
     maxFiles: 1,
     disabled: isPending,
@@ -157,7 +159,7 @@ export function UploadZone() {
                 Upload Document
               </h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs" data-testid="text-upload-description">
-                Drag & drop or click to upload PDF, Word, or PowerPoint files (max 10 documents)
+                Drag & drop or click to upload PDF, Word, PowerPoint, or Excel files (max 10 documents)
               </p>
             </div>
 
@@ -165,6 +167,7 @@ export function UploadZone() {
               <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PDF</span>
               <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Word</span>
               <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">PPTX</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground border border-border">Excel</span>
             </div>
           </div>
         )}

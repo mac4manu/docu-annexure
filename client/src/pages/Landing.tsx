@@ -8,7 +8,7 @@ const features = [
     icon: FileText,
     title: "AI-Powered Extraction",
     description:
-      "Upload PDF, Word, or PowerPoint files. AI vision extracts tables, formulas, images, and text into structured markdown.",
+      "Upload PDF, Word, PowerPoint, or Excel files. AI vision extracts tables, formulas, images, and text into structured markdown.",
   },
   {
     icon: MessagesSquare,

@@ -12,7 +12,7 @@ const FEATURES = [
   {
     icon: BrainCircuit,
     title: "AI-Powered Extraction",
-    description: "Extracts tables, formulas, images, and structured content from PDFs, Word, and PowerPoint files using AI vision.",
+    description: "Extracts tables, formulas, images, and structured content from PDFs, Word, PowerPoint, and Excel files using AI vision.",
   },
   {
     icon: MessagesSquare,
@@ -69,7 +69,7 @@ export default function Home() {
             Documents
           </h1>
           <p className="text-xs text-muted-foreground">
-            Upload and chat with your PDF, Word, or PowerPoint files
+            Upload and chat with your PDF, Word, PowerPoint, or Excel files
           </p>
         </div>
       </div>

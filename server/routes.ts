@@ -7,6 +7,7 @@ import multer from "multer";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const officeParser = require("officeparser");
+import mammoth from "mammoth";
 
 import OpenAI from "openai";
 import fs from "fs";
@@ -76,6 +77,8 @@ const ALLOWED_MIMETYPES = new Set([
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
 ]);
 
 const upload = multer({
@@ -85,7 +88,7 @@ const upload = multer({
     if (ALLOWED_MIMETYPES.has(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Unsupported file type. Please upload PDF, Word, or PowerPoint files."));
+      cb(new Error("Unsupported file type. Please upload PDF, Word, PowerPoint, or Excel files."));
     }
   },
 });
@@ -99,6 +102,7 @@ function getFileType(mimetype: string): string {
   if (mimetype.includes("pdf")) return "pdf";
   if (mimetype.includes("presentation") || mimetype.includes("powerpoint")) return "ppt";
   if (mimetype.includes("wordprocessing") || mimetype.includes("msword")) return "doc";
+  if (mimetype.includes("spreadsheet") || mimetype.includes("excel")) return "xlsx";
   return "other";
 }
 
@@ -115,7 +119,7 @@ function validateFileSignature(filePath: string, declaredMime: string): boolean 
     if (declaredMime.includes("openxmlformats") || declaredMime.includes("wordprocessing") || declaredMime.includes("presentation")) {
       return buf.subarray(0, 4).equals(Buffer.from([0x50, 0x4B, 0x03, 0x04]));
     }
-    if (declaredMime.includes("msword") || declaredMime.includes("ms-powerpoint")) {
+    if (declaredMime.includes("msword") || declaredMime.includes("ms-powerpoint") || declaredMime.includes("ms-excel")) {
       return buf.subarray(0, 4).equals(Buffer.from([0xD0, 0xCF, 0x11, 0xE0]));
     }
     return false;
@@ -245,6 +249,29 @@ async function formatTextToMarkdown(rawText: string): Promise<string> {
   }
 }
 
+async function formatExcelToMarkdown(rawText: string): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 4096,
+      messages: [
+        {
+          role: "system",
+          content: `Format the extracted spreadsheet data into clean, well-structured Markdown. Convert tabular data into proper Markdown tables with headers. If there are multiple sheets, separate them with headings. Preserve numerical data, formulas results, and any labels. Output only the formatted markdown, no commentary.`,
+        },
+        {
+          role: "user",
+          content: rawText.slice(0, 50000),
+        },
+      ],
+    });
+    return response.choices[0]?.message?.content || rawText;
+  } catch (e) {
+    console.error("Excel formatting error, using raw text:", e);
+    return rawText;
+  }
+}
+
 function cleanupFiles(paths: string[]) {
   for (const p of paths) {
     try {
@@ -356,6 +383,52 @@ export async function registerRoutes(
           } else {
             content = "No text content could be extracted from this file.";
           }
+        }
+      } else if (fileType.includes("spreadsheet") || fileType.includes("excel")) {
+        let rawText = "";
+        try {
+          rawText = await officeParser.parseOfficeAsync(filePath);
+        } catch (e) {
+          console.error("Excel officeParser error:", e);
+          rawText = "";
+        }
+
+        if (rawText && rawText.trim().length > 0) {
+          content = await formatExcelToMarkdown(rawText);
+        } else {
+          content = "No data could be extracted from this spreadsheet.";
+        }
+      } else if (fileType.includes("wordprocessing") || fileType.includes("msword")) {
+        let rawText = "";
+
+        try {
+          console.log("Attempting mammoth extraction for DOCX...");
+          const mammothResult = await mammoth.extractRawText({ path: filePath });
+          rawText = mammothResult.value || "";
+          if (mammothResult.messages && mammothResult.messages.length > 0) {
+            console.log("Mammoth warnings:", mammothResult.messages.map((m: any) => m.message).join("; "));
+          }
+        } catch (e) {
+          console.error("Mammoth extraction failed:", e);
+        }
+
+        if (!rawText || rawText.trim().length < 50) {
+          console.log("Mammoth returned insufficient text, trying officeParser fallback...");
+          try {
+            const fallbackText = await officeParser.parseOfficeAsync(filePath);
+            if (fallbackText && fallbackText.trim().length > (rawText?.trim().length || 0)) {
+              rawText = fallbackText;
+            }
+          } catch (e) {
+            console.error("officeParser fallback also failed:", e);
+          }
+        }
+
+        if (rawText && rawText.trim().length > 0) {
+          console.log(`DOCX extracted ${rawText.trim().length} chars successfully`);
+          content = await formatTextToMarkdown(rawText);
+        } else {
+          content = "No text content could be extracted from this file.";
         }
       } else {
         let rawText = "";

@@ -8,7 +8,7 @@ const steps = [
     icon: Upload,
     title: "Upload Your Documents",
     description:
-      "Go to the Documents tab and drag & drop your files into the upload area, or click to browse. We support PDF, Word (.docx), and PowerPoint (.pptx) files up to 50 MB.",
+      "Go to the Documents tab and drag & drop your files into the upload area, or click to browse. We support PDF, Word (.docx), PowerPoint (.pptx), and Excel (.xlsx) files up to 50 MB.",
     tip: "Complex documents with tables, formulas, or images are automatically detected and processed with advanced AI for the best results.",
   },
   {
@@ -48,7 +48,7 @@ const steps = [
 const faqs = [
   {
     q: "What file types can I upload?",
-    a: "PDF (.pdf), Word (.docx, .doc), and PowerPoint (.pptx, .ppt) files.",
+    a: "PDF (.pdf), Word (.docx, .doc), PowerPoint (.pptx, .ppt), and Excel (.xlsx, .xls) files.",
   },
   {
     q: "Is there a file size limit?",

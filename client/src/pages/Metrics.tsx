@@ -65,6 +65,7 @@ const TYPE_LABELS: Record<string, string> = {
   pdf: "PDF",
   doc: "Word",
   ppt: "PowerPoint",
+  xlsx: "Excel",
   other: "Other",
 };
 
