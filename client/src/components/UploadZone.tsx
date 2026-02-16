@@ -92,12 +92,12 @@ export function UploadZone() {
           rounded-md border-2 border-dashed
           transition-all duration-300 ease-out
           px-5 py-4
-          bg-background/50 backdrop-blur-sm
+          bg-primary/[0.03] dark:bg-primary/[0.06]
           flex items-center justify-center
           ${
             isDragActive
-              ? "border-primary bg-primary/5 scale-[1.01] shadow-xl shadow-primary/10"
-              : "border-border hover:border-primary/50 hover:bg-muted/30"
+              ? "border-primary bg-primary/10 scale-[1.01] shadow-xl shadow-primary/10"
+              : "border-primary/30 hover:border-primary hover:bg-primary/[0.07]"
           }
           ${isPending ? "pointer-events-none cursor-wait" : ""}
         `}
@@ -149,7 +149,7 @@ export function UploadZone() {
           <div className="flex items-center gap-4 text-left">
             <div className={`
               p-2.5 rounded-full transition-colors duration-300 shrink-0
-              ${isDragActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary"}
+              ${isDragActive ? "bg-primary/15 text-primary" : "bg-primary/10 text-primary group-hover:bg-primary/15"}
             `}>
               <UploadCloud className="w-5 h-5" />
             </div>
