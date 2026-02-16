@@ -282,6 +282,90 @@ async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> 
   return results.join("\n\n---\n\n");
 }
 
+interface DocumentMetadata {
+  doi: string | null;
+  docTitle: string | null;
+  authors: string | null;
+  journal: string | null;
+  publishYear: number | null;
+  abstract: string | null;
+  keywords: string | null;
+}
+
+function extractDoiFromText(text: string): string | null {
+  const doiPatterns = [
+    /(?:doi[:\s]*|https?:\/\/(?:dx\.)?doi\.org\/)(10\.\d{4,}\/[^\s,;}\]"']+)/gi,
+    /\b(10\.\d{4,}\/[^\s,;}\]"']+)\b/g,
+  ];
+
+  for (const pattern of doiPatterns) {
+    const match = pattern.exec(text);
+    if (match) {
+      let doi = match[1].replace(/[.)]+$/, "");
+      return doi;
+    }
+  }
+  return null;
+}
+
+async function extractDocumentMetadata(content: string): Promise<DocumentMetadata> {
+  const regexDoi = extractDoiFromText(content);
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 1024,
+      messages: [
+        {
+          role: "system",
+          content: `You are a metadata extraction expert. Extract bibliographic metadata from the document content. Return ONLY valid JSON with these fields:
+{
+  "doi": "DOI string or null if not found",
+  "docTitle": "The actual title of the paper/document (not the filename)",
+  "authors": "Comma-separated list of authors, e.g. 'John Smith, Jane Doe'",
+  "journal": "Journal or conference name, or null",
+  "publishYear": year as integer or null,
+  "abstract": "The abstract text (first 500 chars max), or null",
+  "keywords": "Comma-separated keywords, or null"
+}
+Be precise. If a field cannot be determined, use null. For DOI, look for patterns like 10.xxxx/xxxxx.`,
+        },
+        {
+          role: "user",
+          content: content.slice(0, 8000),
+        },
+      ],
+    });
+
+    const raw = response.choices[0]?.message?.content || "";
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        doi: regexDoi || parsed.doi || null,
+        docTitle: parsed.docTitle || null,
+        authors: parsed.authors || null,
+        journal: parsed.journal || null,
+        publishYear: typeof parsed.publishYear === "number" ? parsed.publishYear : null,
+        abstract: parsed.abstract ? parsed.abstract.slice(0, 500) : null,
+        keywords: parsed.keywords || null,
+      };
+    }
+  } catch (e) {
+    console.error("Metadata extraction error:", e);
+  }
+
+  return {
+    doi: regexDoi,
+    docTitle: null,
+    authors: null,
+    journal: null,
+    publishYear: null,
+    abstract: null,
+    keywords: null,
+  };
+}
+
 async function formatTextToMarkdown(rawText: string): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
@@ -520,12 +604,25 @@ export async function registerRoutes(
 
       cleanupFiles(cleanupList);
 
+      const finalContent = content || "No content extracted.";
+      console.log("Extracting document metadata...");
+      const metadata = await extractDocumentMetadata(finalContent);
+      if (metadata.doi) console.log(`DOI found: ${metadata.doi}`);
+      if (metadata.docTitle) console.log(`Document title: ${metadata.docTitle}`);
+
       const doc = await storage.createDocument({
         title: originalFilename,
         originalFilename,
-        content: content || "No content extracted.",
+        content: finalContent,
         fileType: getFileType(fileType),
         userId: getUserId(req),
+        doi: metadata.doi,
+        docTitle: metadata.docTitle,
+        authors: metadata.authors,
+        journal: metadata.journal,
+        publishYear: metadata.publishYear,
+        abstract: metadata.abstract,
+        keywords: metadata.keywords,
       });
 
       res.status(201).json(doc);

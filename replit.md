@@ -60,6 +60,9 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-15: Added confidence metrics API routes: /api/confidence/metrics (personal), /api/admin/confidence/metrics (admin)
 - 2026-02-16: Upgraded DOCX extraction to vision-based: LibreOffice converts DOCX→PDF, then pdftoppm+GPT vision extracts tables, figures, images (mammoth/officeParser as fallback)
 - 2026-02-16: Added Excel file support (.xlsx, .xls) with spreadsheet-to-markdown formatting
+- 2026-02-16: Added document metadata extraction: DOI detection (regex + GPT), title, authors, journal, year, abstract, keywords extracted during upload
+- 2026-02-16: Added metadata panel on DocumentView page (collapsible card with DOI link, authors, keywords badges)
+- 2026-02-16: Document cards show academic title, authors, DOI badge, journal/year instead of just filename
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000

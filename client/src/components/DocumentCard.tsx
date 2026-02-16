@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { FileText, Trash2, MessageSquare, FileType2, Presentation, ArrowRight } from "lucide-react";
+import { FileText, Trash2, MessageSquare, FileType2, Presentation, ArrowRight, Hash, Users } from "lucide-react";
 import { type Document } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,24 +77,47 @@ export function DocumentCard({ document }: DocumentCardProps) {
           <div className="min-w-0 flex-1">
             <h3
               className="text-sm font-semibold text-foreground truncate leading-snug"
-              title={document.title}
+              title={document.docTitle || document.title}
               data-testid={`text-card-title-${document.id}`}
             >
-              {document.title}
+              {document.docTitle || document.title}
             </h3>
+            {document.authors && (
+              <p className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1" data-testid={`text-card-authors-${document.id}`}>
+                <Users className="w-3 h-3 shrink-0" />
+                {document.authors}
+              </p>
+            )}
           </div>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium shrink-0 no-default-hover-elevate no-default-active-elevate">
-            {getFileLabel(document.fileType)}
-          </Badge>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {document.doi && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium no-default-hover-elevate no-default-active-elevate">
+                <Hash className="w-3 h-3 mr-0.5" />
+                DOI
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium no-default-hover-elevate no-default-active-elevate">
+              {getFileLabel(document.fileType)}
+            </Badge>
+          </div>
         </div>
 
         <div className="px-4 py-3">
-          {contentPreview ? (
+          {document.abstract ? (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2" data-testid={`text-card-preview-${document.id}`}>
+              {document.abstract}
+            </p>
+          ) : contentPreview ? (
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2" data-testid={`text-card-preview-${document.id}`}>
               {contentPreview}...
             </p>
           ) : (
             <p className="text-xs text-muted-foreground/50 italic">No preview available</p>
+          )}
+          {(document.journal || document.publishYear) && (
+            <p className="text-[11px] text-muted-foreground/70 mt-1.5 truncate" data-testid={`text-card-journal-${document.id}`}>
+              {[document.journal, document.publishYear].filter(Boolean).join(" · ")}
+            </p>
           )}
         </div>
       </Link>
