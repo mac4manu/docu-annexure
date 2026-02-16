@@ -329,6 +329,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
             placeholder="Ask a question about this document..."
             className="flex-1 bg-background border-primary/30 focus-visible:ring-primary/30"
             disabled={isLoading}
+            autoFocus
             data-testid="input-chat-message"
           />
           <Button
