@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
 import heroBg from "@/assets/images/hero-bg.png";
@@ -33,6 +33,12 @@ const features = [
     title: "Tables & Formulas",
     description:
       "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results from your files.",
+  },
+  {
+    icon: BookOpen,
+    title: "Metadata Extraction",
+    description:
+      "Automatically extracts DOI, title, authors, journal, publication year, abstract, and keywords from uploaded documents.",
   },
   {
     icon: FlaskConical,

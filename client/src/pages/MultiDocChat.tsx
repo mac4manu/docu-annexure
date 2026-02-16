@@ -50,6 +50,10 @@ const PROMPT_SUGGESTIONS = [
     label: "Detect tortured phrases",
     prompt: "Scan this document for tortured phrases — suspicious synonym substitutions where standard scientific terminology may have been mechanically replaced (e.g., 'deep learning' replaced with 'profound learning'). Present findings in a table with severity levels and an overall integrity assessment.",
   },
+  {
+    label: "Extract metadata",
+    prompt: "Extract the bibliographic metadata from the selected documents: DOI, full title, all authors, journal or conference name, publication year, abstract, and keywords. Present the information in a structured format.",
+  },
 ];
 
 export default function MultiDocChat() {

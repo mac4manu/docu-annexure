@@ -2,7 +2,7 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical } from "lucide-react";
+import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,6 +33,11 @@ const FEATURES = [
     icon: TableProperties,
     title: "Tables & Formulas",
     description: "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results.",
+  },
+  {
+    icon: BookOpen,
+    title: "Metadata Extraction",
+    description: "Automatically extracts DOI, title, authors, journal, year, abstract, and keywords from uploaded documents.",
   },
   {
     icon: FlaskConical,
