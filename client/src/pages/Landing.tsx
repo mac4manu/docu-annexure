@@ -1,5 +1,6 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import logoImg from "@/assets/images/logo-transparent.png";
 import heroBg from "@/assets/images/hero-bg.png";
 
@@ -156,6 +157,68 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="py-12 md:py-16 bg-muted/20 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 mb-3">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="text-xl md:text-2xl font-bold tracking-tight font-serif" data-testid="text-privacy-heading">
+                Your data, your control
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              We are transparent about how your documents are handled.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[
+              {
+                icon: Database,
+                title: "No file retention",
+                desc: "Original uploaded files are deleted after processing. Only extracted text is stored.",
+              },
+              {
+                icon: Lock,
+                title: "Private to you",
+                desc: "All documents and chats are isolated to your account. No other user can access them.",
+              },
+              {
+                icon: Bot,
+                title: "AI processing",
+                desc: "Document content is sent to OpenAI for extraction and chat. Avoid uploading highly confidential files.",
+              },
+              {
+                icon: Shield,
+                title: "Delete anytime",
+                desc: "You can permanently delete any document or conversation from the app whenever you choose.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-md border border-border bg-card p-4 space-y-2"
+                data-testid={`card-privacy-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    <item.icon className="w-3.5 h-3.5" />
+                  </div>
+                  <h3 className="font-semibold text-sm">{item.title}</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center">
+            <Link href="/privacy">
+              <Button variant="outline" size="sm" data-testid="button-read-privacy-policy">
+                Read full Privacy & Data Policy
+                <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="py-12 bg-muted/30 border-t border-border">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight font-serif mb-3" data-testid="text-cta-heading">
@@ -174,7 +237,12 @@ export default function Landing() {
       <footer className="border-t border-border py-6">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between gap-4 flex-wrap">
           <span className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} DocuAnnexure</span>
-          <span className="text-xs text-muted-foreground">Document inference & knowledge chat</span>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
+              Privacy & Data Policy
+            </Link>
+            <span className="text-xs text-muted-foreground">Document inference & knowledge chat</span>
+          </div>
         </div>
       </footer>
     </div>

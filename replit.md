@@ -28,6 +28,7 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - `client/src/pages/DocumentView.tsx` - Document viewer with markdown rendering and chat panel
 - `client/src/pages/MultiDocChat.tsx` - Multi-document chat with document selection, chat history sidebar
 - `client/src/pages/Metrics.tsx` - Analytics dashboard with stats, charts, and activity tracking
+- `client/src/pages/Privacy.tsx` - Privacy & Data Policy page (accessible without login)
 - `client/src/hooks/use-auth.ts` - React hook for authentication state
 - `client/src/components/ChatInterface.tsx` - AI chat with streaming responses
 - `client/src/components/UploadZone.tsx` - Drag-and-drop file upload
@@ -63,6 +64,7 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-16: Added document metadata extraction: DOI detection (regex + GPT), title, authors, journal, year, abstract, keywords extracted during upload
 - 2026-02-16: Added metadata panel on DocumentView page (collapsible card with DOI link, authors, keywords badges)
 - 2026-02-16: Document cards show academic title, authors, DOI badge, journal/year instead of just filename
+- 2026-02-16: Added Privacy & Data Policy page at /privacy (accessible without login) with disclaimer section on landing page
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000

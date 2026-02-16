@@ -1,4 +1,4 @@
-import { Switch, Route, Link, useLocation } from "wouter";
+import { Switch, Route, Link, useLocation, useRoute } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +15,7 @@ import Metrics from "@/pages/Metrics";
 import Landing from "@/pages/Landing";
 import HowToUse from "@/pages/HowToUse";
 import Changelog from "@/pages/Changelog";
+import Privacy from "@/pages/Privacy";
 import VersionBanner from "@/components/VersionBanner";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/metrics" component={Metrics} />
       <Route path="/how-to-use" component={HowToUse} />
       <Route path="/changelog" component={Changelog} />
+      <Route path="/privacy" component={Privacy} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -145,6 +147,11 @@ function AccessRestricted() {
 
 function AppContent() {
   const { user, isLoading, isRestricted } = useAuth();
+  const [isPrivacy] = useRoute("/privacy");
+
+  if (isPrivacy) {
+    return <Privacy />;
+  }
 
   if (isLoading) {
     return (
