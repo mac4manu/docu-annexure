@@ -505,7 +505,7 @@ All API routes (except `/api/auth/*` and `/api/version`) use the `isAuthenticate
 
 ## Admin Features
 
-- **Admin User:** Identified by user ID `54463549`
+- **Admin User:** Identified by a designated user ID configured on the server (not exposed publicly)
 - **Admin Metrics Toggle:** On the Metrics page, the admin can switch between personal metrics and all-user aggregate metrics
 - **Admin Endpoints:** Separate API routes provide platform-wide statistics including total documents, conversations, messages, ratings, and confidence scores across all users
 
