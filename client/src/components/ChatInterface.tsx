@@ -29,6 +29,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutateAsync: createConv } = useCreateConversation();
 
@@ -67,6 +68,13 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [conversationId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,12 +332,12 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
       <div className="px-4 py-3 bg-muted/30 border-t-2 border-primary/20 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_-2px_8px_rgba(0,0,0,0.15)]">
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question about this document..."
             className="flex-1 bg-background border-primary/30 focus-visible:ring-primary/30"
             disabled={isLoading}
-            autoFocus
             data-testid="input-chat-message"
           />
           <Button

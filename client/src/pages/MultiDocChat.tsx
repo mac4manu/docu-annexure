@@ -85,6 +85,13 @@ export default function MultiDocChat() {
   }, [documents, hasAutoSelected]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -614,7 +621,6 @@ export default function MultiDocChat() {
             className="flex-1 resize-none bg-background border-primary/30 focus-visible:ring-primary/30 max-h-[120px]"
             disabled={isLoading || selectedCount === 0}
             rows={1}
-            autoFocus
             data-testid="input-chat-message"
           />
           <Button

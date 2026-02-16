@@ -21,7 +21,7 @@ function MetadataPanel({ doc }: { doc: any }) {
   if (!hasMetadata) return null;
 
   return (
-    <Card className="mx-6 mt-6 mb-2 overflow-visible" data-testid="card-metadata">
+    <Card className="mx-6 mt-6 mb-2" data-testid="card-metadata">
       <button
         className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left"
         onClick={() => setExpanded(!expanded)}
@@ -199,7 +199,7 @@ export default function DocumentView() {
           {docPanelVisible && (
             <>
               <ResizablePanel defaultSize={55} minSize={25} data-testid="panel-document">
-                <div className="h-full overflow-y-auto">
+                <div className="h-full overflow-y-auto overflow-x-hidden">
                   <MetadataPanel doc={doc} />
                   <div className="max-w-3xl mx-auto px-6 py-8">
                     <article className="prose prose-slate dark:prose-invert lg:prose-lg max-w-none prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-2 prose-th:bg-muted prose-td:border prose-td:border-border prose-td:p-2" data-testid="article-doc-content">
