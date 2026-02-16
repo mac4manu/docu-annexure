@@ -483,23 +483,20 @@ All API routes (except `/api/auth/*` and `/api/version`) use the `isAuthenticate
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/confidence/metrics` | User's confidence metrics |
-| GET | `/api/admin/metrics` | Admin: all-user metrics |
-| GET | `/api/admin/check` | Check if user is admin |
-| GET | `/api/admin/ratings/metrics` | Admin: all-user rating metrics |
-| GET | `/api/admin/confidence/metrics` | Admin: all-user confidence metrics |
+| GET | Admin-only routes | Platform-wide metrics (admin access required) |
 
 ### Auth
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/auth/user` | Get current user |
 | GET | `/api/login` | Initiate login |
-| GET | `/api/callback` | OAuth callback |
 | GET | `/api/logout` | Log out |
+| GET | OAuth callback route | Handles OAuth redirect (server-configured) |
 
 ### System
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/version` | App version hash (for update detection) |
+| GET | `/api/version` | App version identifier (for update detection) |
 
 ---
 
@@ -518,8 +515,8 @@ All API routes (except `/api/auth/*` and `/api/version`) use the `isAuthenticate
 | Authentication | Replit OAuth 2.0 / OIDC via Passport.js |
 | Authorization | Email allowlist for closed evaluation |
 | Session Security | PostgreSQL-backed sessions, secure cookies |
-| File Validation | Magic byte signature verification before processing |
-| Upload Limits | 50 MB file size, 20 documents per user |
+| File Validation | Binary file signature verification before processing |
+| Upload Limits | Configurable file size and per-user document limits |
 | Route Protection | `isAuthenticated` middleware on all API routes |
 | Input Validation | Zod schemas for request body validation |
 | Token Refresh | Automatic OAuth token refresh on expiry |
