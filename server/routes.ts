@@ -403,7 +403,7 @@ Be precise. If a field cannot be determined, use null. For DOI, look for pattern
   };
 }
 
-function basicTextToMarkdown(rawText: string): string {
+function cleanText(rawText: string): string {
   let text = rawText.trim();
   text = text.replace(/\f/g, "\n\n---\n\n");
   text = text.replace(/\r\n/g, "\n");
@@ -412,19 +412,29 @@ function basicTextToMarkdown(rawText: string): string {
   return text;
 }
 
+function needsAIFormatting(rawText: string): { needed: boolean; reason: string } {
+  const hasTablePatterns = /(\|.*\|.*\|)|(\+[-+]+\+)|(┌|├|└|│|─)|(\t.*\t.*\t)/.test(rawText);
+  if (hasTablePatterns) return { needed: true, reason: "tables detected" };
+
+  const hasMathSymbols = /[∑∫∂√∞≠≈±×÷∈∀∃∇∆λσμπ]|\\frac|\\sum|\\int|\\sqrt|\$\$/.test(rawText);
+  if (hasMathSymbols) return { needed: true, reason: "math formulas detected" };
+
+  const lines = rawText.split("\n").filter(l => l.trim().length > 0);
+  const avgLineLen = rawText.trim().length / Math.max(lines.length, 1);
+  if (avgLineLen < 30 && lines.length > 20) return { needed: true, reason: "fragmented text layout" };
+
+  return { needed: false, reason: "clean text" };
+}
+
 async function formatTextToMarkdown(rawText: string): Promise<string> {
-  const charCount = rawText.trim().length;
-  if (charCount > 2000 && charCount < 100000) {
-    const lines = rawText.split("\n").filter(l => l.trim().length > 0);
-    const avgLineLen = charCount / Math.max(lines.length, 1);
-    const hasParagraphs = avgLineLen > 60;
-    const hasStructure = /^(#{1,6}\s|[-*]\s|\d+\.\s)/m.test(rawText);
-    if (hasParagraphs || hasStructure) {
-      console.log("Text is well-structured, skipping AI formatting");
-      return basicTextToMarkdown(rawText);
-    }
+  const check = needsAIFormatting(rawText);
+
+  if (!check.needed) {
+    console.log(`Skipping AI formatting: ${check.reason}`);
+    return cleanText(rawText);
   }
 
+  console.log(`Using AI formatting: ${check.reason}`);
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-5.2",
@@ -443,7 +453,7 @@ async function formatTextToMarkdown(rawText: string): Promise<string> {
     return response.choices[0]?.message?.content || rawText;
   } catch (e) {
     console.error("Formatting error, using raw text:", e);
-    return basicTextToMarkdown(rawText);
+    return cleanText(rawText);
   }
 }
 
