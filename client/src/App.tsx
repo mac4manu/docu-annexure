@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone, ShieldX } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone, ShieldX, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -41,6 +41,7 @@ function HeaderNav() {
   const isMetrics = location === "/metrics";
   const isHowTo = location === "/how-to-use";
   const isChangelog = location === "/changelog";
+  const isPrivacy = location === "/privacy";
 
   const navItems = [
     { href: "/", label: "Documents", icon: FileText, active: isDocuments, testId: "nav-header-documents" },
@@ -48,6 +49,7 @@ function HeaderNav() {
     { href: "/metrics", label: "Metrics", icon: BarChart3, active: isMetrics, testId: "nav-header-metrics" },
     { href: "/how-to-use", label: "How to Use", icon: HelpCircle, active: isHowTo, testId: "nav-header-howto" },
     { href: "/changelog", label: "What's New", icon: Megaphone, active: isChangelog, testId: "nav-header-changelog" },
+    { href: "/privacy", label: "Privacy", icon: Shield, active: isPrivacy, testId: "nav-header-privacy" },
   ];
 
   return (
@@ -118,6 +120,17 @@ function AuthenticatedApp() {
       <main className="flex-1 overflow-hidden min-h-0">
         <Router />
       </main>
+      <footer className="flex-none border-t border-border py-3 px-4" data-testid="footer-app">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <span className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} DocuAnnexure</span>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
+              Privacy & Data Policy
+            </Link>
+            <span className="text-xs text-muted-foreground">Document inference & knowledge chat</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
