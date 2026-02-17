@@ -59,6 +59,7 @@ export interface IStorage {
   getDocument(id: number, userId: string): Promise<Document | undefined>;
   createDocument(doc: InsertDocument): Promise<Document>;
   deleteDocument(id: number, userId: string): Promise<void>;
+  updateDocumentMetadata(id: number, metadata: { doi: string | null; docTitle: string | null; authors: string | null; journal: string | null; publishYear: number | null; abstract: string | null; keywords: string | null }): Promise<void>;
 
   getAllConversations(userId: string): Promise<Conversation[]>;
   getConversation(id: number, userId: string): Promise<(Conversation & { messages: Message[] }) | undefined>;
@@ -100,6 +101,18 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDocument(id: number, userId: string): Promise<void> {
     await db.delete(documents).where(and(eq(documents.id, id), eq(documents.userId, userId)));
+  }
+
+  async updateDocumentMetadata(id: number, metadata: { doi: string | null; docTitle: string | null; authors: string | null; journal: string | null; publishYear: number | null; abstract: string | null; keywords: string | null }): Promise<void> {
+    await db.update(documents).set({
+      doi: metadata.doi,
+      docTitle: metadata.docTitle,
+      authors: metadata.authors,
+      journal: metadata.journal,
+      publishYear: metadata.publishYear,
+      abstract: metadata.abstract,
+      keywords: metadata.keywords,
+    }).where(eq(documents.id, id));
   }
 
   async getAllConversations(userId: string): Promise<Conversation[]> {

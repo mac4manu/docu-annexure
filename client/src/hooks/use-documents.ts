@@ -36,7 +36,7 @@ export function useUploadDocument() {
     mutationFn: async (formData: FormData) => {
       const res = await fetch(api.documents.upload.path, {
         method: api.documents.upload.method,
-        body: formData, // FormData automatically sets multipart/form-data boundary
+        body: formData,
       });
       
       if (!res.ok) {
@@ -50,6 +50,12 @@ export function useUploadDocument() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.documents.list.path] });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [api.documents.list.path] });
+      }, 5000);
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [api.documents.list.path] });
+      }, 12000);
     },
   });
 }

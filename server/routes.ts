@@ -403,7 +403,28 @@ Be precise. If a field cannot be determined, use null. For DOI, look for pattern
   };
 }
 
+function basicTextToMarkdown(rawText: string): string {
+  let text = rawText.trim();
+  text = text.replace(/\f/g, "\n\n---\n\n");
+  text = text.replace(/\r\n/g, "\n");
+  text = text.replace(/\n{4,}/g, "\n\n\n");
+  text = text.replace(/[ \t]+$/gm, "");
+  return text;
+}
+
 async function formatTextToMarkdown(rawText: string): Promise<string> {
+  const charCount = rawText.trim().length;
+  if (charCount > 2000 && charCount < 100000) {
+    const lines = rawText.split("\n").filter(l => l.trim().length > 0);
+    const avgLineLen = charCount / Math.max(lines.length, 1);
+    const hasParagraphs = avgLineLen > 60;
+    const hasStructure = /^(#{1,6}\s|[-*]\s|\d+\.\s)/m.test(rawText);
+    if (hasParagraphs || hasStructure) {
+      console.log("Text is well-structured, skipping AI formatting");
+      return basicTextToMarkdown(rawText);
+    }
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-5.2",
@@ -422,7 +443,7 @@ async function formatTextToMarkdown(rawText: string): Promise<string> {
     return response.choices[0]?.message?.content || rawText;
   } catch (e) {
     console.error("Formatting error, using raw text:", e);
-    return rawText;
+    return basicTextToMarkdown(rawText);
   }
 }
 
@@ -642,10 +663,6 @@ export async function registerRoutes(
       cleanupFiles(cleanupList);
 
       const finalContent = content || "No content extracted.";
-      console.log("Extracting document metadata...");
-      const metadata = await extractDocumentMetadata(finalContent);
-      if (metadata.doi) console.log(`DOI found: ${metadata.doi}`);
-      if (metadata.docTitle) console.log(`Document title: ${metadata.docTitle}`);
 
       const doc = await storage.createDocument({
         title: originalFilename,
@@ -653,16 +670,29 @@ export async function registerRoutes(
         content: finalContent,
         fileType: getFileType(fileType),
         userId: getUserId(req),
-        doi: metadata.doi,
-        docTitle: metadata.docTitle,
-        authors: metadata.authors,
-        journal: metadata.journal,
-        publishYear: metadata.publishYear,
-        abstract: metadata.abstract,
-        keywords: metadata.keywords,
+        doi: null,
+        docTitle: null,
+        authors: null,
+        journal: null,
+        publishYear: null,
+        abstract: null,
+        keywords: null,
       });
 
       res.status(201).json(doc);
+
+      (async () => {
+        try {
+          console.log(`Background metadata extraction for doc ${doc.id}...`);
+          const metadata = await extractDocumentMetadata(finalContent);
+          if (metadata.doi) console.log(`DOI found: ${metadata.doi}`);
+          if (metadata.docTitle) console.log(`Document title: ${metadata.docTitle}`);
+          await storage.updateDocumentMetadata(doc.id, metadata);
+          console.log(`Metadata saved for doc ${doc.id}`);
+        } catch (e) {
+          console.error(`Background metadata extraction failed for doc ${doc.id}:`, e);
+        }
+      })();
     } catch (err) {
       console.error("Upload error:", err);
       cleanupFiles(cleanupList);
