@@ -6,7 +6,7 @@ import {
   type Message, type InsertMessage,
   type MessageRating, type InsertMessageRating
 } from "@shared/schema";
-import { users } from "@shared/models/auth";
+import { users, allowedEmails, type AllowedEmail } from "@shared/models/auth";
 import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
 
 export interface MetricsData {
@@ -79,6 +79,11 @@ export interface IStorage {
 
   getMetrics(userId: string): Promise<MetricsData>;
   getAdminMetrics(): Promise<AdminMetricsData>;
+
+  getAllowedEmails(): Promise<AllowedEmail[]>;
+  isEmailAllowed(email: string): Promise<boolean>;
+  addAllowedEmail(email: string): Promise<AllowedEmail>;
+  removeAllowedEmail(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -471,6 +476,24 @@ export class DatabaseStorage implements IStorage {
       uploadsLastWeek: Number(trend.last_week),
       userBreakdown,
     };
+  }
+
+  async getAllowedEmails(): Promise<AllowedEmail[]> {
+    return db.select().from(allowedEmails).orderBy(desc(allowedEmails.addedAt));
+  }
+
+  async isEmailAllowed(email: string): Promise<boolean> {
+    const [row] = await db.select().from(allowedEmails).where(eq(allowedEmails.email, email.toLowerCase()));
+    return !!row;
+  }
+
+  async addAllowedEmail(email: string): Promise<AllowedEmail> {
+    const [row] = await db.insert(allowedEmails).values({ email: email.toLowerCase() }).returning();
+    return row;
+  }
+
+  async removeAllowedEmail(id: number): Promise<void> {
+    await db.delete(allowedEmails).where(eq(allowedEmails.id, id));
   }
 }
 

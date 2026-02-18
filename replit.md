@@ -56,7 +56,8 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-15: Increased document upload limit from 3 to 10
 - 2026-02-15: Added version check banner that detects new publishes and prompts users to refresh
 - 2026-02-15: Added "What's New" changelog page at /changelog with timeline layout and release notes
-- 2026-02-15: Added email allowlist for closed evaluation phase (8 approved users), with Access Restricted page for unauthorized users
+- 2026-02-15: Added email allowlist for closed evaluation phase, with Access Restricted page for unauthorized users
+- 2026-02-18: Moved allowed emails from hardcoded array to database (allowed_emails table), added admin User Management page at /admin/users for adding/removing users without republishing
 - 2026-02-15: Added AI confidence score feature: GPT evaluates its own response confidence (0-100%), stored in messages.confidenceScore column, displayed as color-coded badge on chat responses, with avg confidence metrics on Metrics page (personal + admin)
 - 2026-02-15: Added confidence metrics API routes: /api/confidence/metrics (personal), /api/admin/confidence/metrics (admin)
 - 2026-02-16: Upgraded DOCX extraction to vision-based: LibreOffice converts DOCX→PDF, then pdftoppm+GPT vision extracts tables, figures, images (mammoth/officeParser as fallback)

@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone, ShieldX, Shield } from "lucide-react";
+import { FileText, MessagesSquare, BarChart3, HelpCircle, LogOut, Loader2, FlaskConical, Megaphone, ShieldX, Shield, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -16,8 +16,10 @@ import Landing from "@/pages/Landing";
 import HowToUse from "@/pages/HowToUse";
 import Changelog from "@/pages/Changelog";
 import Privacy from "@/pages/Privacy";
+import UserManagement from "@/pages/UserManagement";
 import VersionBanner from "@/components/VersionBanner";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 function Router() {
   return (
@@ -29,6 +31,7 @@ function Router() {
       <Route path="/how-to-use" component={HowToUse} />
       <Route path="/changelog" component={Changelog} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/admin/users" component={UserManagement} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -42,6 +45,11 @@ function HeaderNav() {
   const isHowTo = location === "/how-to-use";
   const isChangelog = location === "/changelog";
   const isPrivacy = location === "/privacy";
+  const isAdminUsers = location === "/admin/users";
+
+  const { data: adminCheck } = useQuery<{ isAdmin: boolean }>({
+    queryKey: ["/api/admin/check"],
+  });
 
   const navItems = [
     { href: "/", label: "Documents", icon: FileText, active: isDocuments, testId: "nav-header-documents" },
@@ -50,6 +58,7 @@ function HeaderNav() {
     { href: "/how-to-use", label: "How to Use", icon: HelpCircle, active: isHowTo, testId: "nav-header-howto" },
     { href: "/changelog", label: "What's New", icon: Megaphone, active: isChangelog, testId: "nav-header-changelog" },
     { href: "/privacy", label: "Privacy", icon: Shield, active: isPrivacy, testId: "nav-header-privacy" },
+    ...(adminCheck?.isAdmin ? [{ href: "/admin/users", label: "Users", icon: Users, active: isAdminUsers, testId: "nav-header-admin-users" }] : []),
   ];
 
   return (

@@ -746,6 +746,53 @@ export async function registerRoutes(
     res.json({ isAdmin: ADMIN_USER_IDS.includes(getUserId(req)) });
   });
 
+  app.get("/api/admin/allowed-emails", isAuthenticated, async (req, res) => {
+    if (!ADMIN_USER_IDS.includes(getUserId(req))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const emails = await storage.getAllowedEmails();
+      res.json(emails);
+    } catch (error) {
+      console.error("Allowed emails error:", error);
+      res.status(500).json({ message: "Failed to fetch allowed emails" });
+    }
+  });
+
+  app.post("/api/admin/allowed-emails", isAuthenticated, async (req, res) => {
+    if (!ADMIN_USER_IDS.includes(getUserId(req))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const { email } = req.body;
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return res.status(400).json({ message: "Valid email address is required" });
+    }
+    try {
+      const existing = await storage.isEmailAllowed(email);
+      if (existing) {
+        return res.status(409).json({ message: "Email is already in the allowed list" });
+      }
+      const result = await storage.addAllowedEmail(email);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Add allowed email error:", error);
+      res.status(500).json({ message: "Failed to add email" });
+    }
+  });
+
+  app.delete("/api/admin/allowed-emails/:id", isAuthenticated, async (req, res) => {
+    if (!ADMIN_USER_IDS.includes(getUserId(req))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      await storage.removeAllowedEmail(Number(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Remove allowed email error:", error);
+      res.status(500).json({ message: "Failed to remove email" });
+    }
+  });
+
   app.post("/api/messages/:id/rate", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

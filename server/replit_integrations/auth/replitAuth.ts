@@ -7,6 +7,7 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { authStorage } from "./storage";
+import { storage } from "../../storage";
 
 const getOidcConfig = memoize(
   async () => {
@@ -134,15 +135,6 @@ export async function setupAuth(app: Express) {
   });
 }
 
-const ALLOWED_EMAILS = [
-  "mailbox4manu@gmail.com",
-  "githageorge@gmail.com",
-  "githa.george@springernature.com",
-  "sabithastfrancis@gmail.com",
-  "neenamanu2010@gmail.com",
-  "hamedkhosravi181@gmail.com",
-];
-
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
@@ -151,7 +143,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   const email = user.claims?.email?.toLowerCase();
-  if (!email || !ALLOWED_EMAILS.includes(email)) {
+  if (!email) {
+    return res.status(403).json({ message: "Access restricted. Your account is not authorized to use this application." });
+  }
+
+  const allowed = await storage.isEmailAllowed(email);
+  if (!allowed) {
     return res.status(403).json({ message: "Access restricted. Your account is not authorized to use this application." });
   }
 
