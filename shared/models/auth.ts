@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
@@ -25,5 +25,12 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const allowedEmails = pgTable("allowed_emails", {
+  id: serial("id").primaryKey(),
+  email: varchar("email").notNull().unique(),
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type AllowedEmail = typeof allowedEmails.$inferSelect;
