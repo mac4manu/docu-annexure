@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { storage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -76,6 +77,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await storage.seedAllowedEmails();
   await setupAuth(app);
   registerAuthRoutes(app);
   await registerRoutes(httpServer, app);

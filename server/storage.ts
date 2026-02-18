@@ -495,6 +495,25 @@ export class DatabaseStorage implements IStorage {
   async removeAllowedEmail(id: number): Promise<void> {
     await db.delete(allowedEmails).where(eq(allowedEmails.id, id));
   }
+
+  async seedAllowedEmails(): Promise<void> {
+    const existing = await db.select().from(allowedEmails);
+    if (existing.length > 0) return;
+
+    const defaultEmails = [
+      "mailbox4manu@gmail.com",
+      "githageorge@gmail.com",
+      "githa.george@springernature.com",
+      "sabithastfrancis@gmail.com",
+      "neenamanu2010@gmail.com",
+      "hamedkhosravi181@gmail.com",
+    ];
+
+    for (const email of defaultEmails) {
+      await db.insert(allowedEmails).values({ email: email.toLowerCase() }).onConflictDoNothing();
+    }
+    console.log(`Seeded ${defaultEmails.length} allowed emails`);
+  }
 }
 
 export const storage = new DatabaseStorage();
