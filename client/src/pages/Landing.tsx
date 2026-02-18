@@ -241,7 +241,7 @@ export default function Landing() {
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
               Privacy & Data Policy
             </Link>
-            <span className="text-xs text-muted-foreground">Document inference & knowledge chat</span>
+            <span className="text-xs text-muted-foreground" data-testid="text-footer-built-by">Built by Manu Balakrishnan</span>
           </div>
         </div>
       </footer>
