@@ -24,6 +24,19 @@ const APP_VERSION = crypto.randomBytes(8).toString("hex");
 
 const CHANGELOG_ENTRIES = [
   {
+    version: "1.0.0",
+    date: "2026-02-19",
+    title: "Admin User Management & Reliability Fixes",
+    changes: [
+      "Added admin User Management page for adding and removing authorized users without republishing",
+      "Moved email allowlist from hardcoded values to database for dynamic access control",
+      "Fixed Excel file extraction — replaced broken parser with reliable XLSX library",
+      "Added auto-seed mechanism to ensure admin access on fresh deployments",
+      "Added 'Built by' credit in app footer",
+      "Privacy & Data Policy page now accessible without login",
+    ],
+  },
+  {
     version: "0.9.8",
     date: "2026-02-16",
     title: "Document Metadata & Upload Limit",
