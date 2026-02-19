@@ -8,6 +8,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const officeParser = require("officeparser");
 import mammoth from "mammoth";
+import * as XLSX from "xlsx";
 
 import OpenAI from "openai";
 import fs from "fs";
@@ -595,9 +596,18 @@ export async function registerRoutes(
       } else if (fileType.includes("spreadsheet") || fileType.includes("excel")) {
         let rawText = "";
         try {
-          rawText = await officeParser.parseOfficeAsync(filePath);
+          const workbook = XLSX.readFile(filePath);
+          const parts: string[] = [];
+          for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            const csv = XLSX.utils.sheet_to_csv(sheet);
+            if (csv && csv.trim().length > 0) {
+              parts.push(`## ${sheetName}\n\n${csv}`);
+            }
+          }
+          rawText = parts.join("\n\n");
         } catch (e) {
-          console.error("Excel officeParser error:", e);
+          console.error("Excel XLSX parse error:", e);
           rawText = "";
         }
 
