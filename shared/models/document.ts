@@ -9,6 +9,8 @@ export const documents = pgTable("documents", {
   originalFilename: text("original_filename").notNull(),
   content: text("content").notNull(),
   fileType: text("file_type").notNull(),
+  complexity: text("complexity").default("simple"),
+  pageCount: integer("page_count"),
   userId: varchar("user_id"),
   doi: text("doi"),
   docTitle: text("doc_title"),

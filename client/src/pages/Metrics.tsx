@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Minus, Search, Clock, Gauge } from "lucide-react";
+import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Minus, Search, Clock, Gauge, Layers, Eye, Type, Table2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface MetricsData {
@@ -13,6 +13,8 @@ interface MetricsData {
   aiMessages: number;
   avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
+  documentsByComplexity: { complexity: string; count: number }[];
+  totalPages: number;
   recentDocuments: { id: number; title: string; fileType: string; createdAt: string }[];
   recentConversations: { id: number; title: string; createdAt: string; messageCount: number }[];
   mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
@@ -43,6 +45,8 @@ interface AdminMetricsData {
   aiMessages: number;
   avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
+  documentsByComplexity: { complexity: string; count: number }[];
+  totalPages: number;
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
   mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   uploadsThisWeek: number;
@@ -236,6 +240,64 @@ const FILE_TYPE_COLORS: Record<string, string> = {
 };
 
 const BAR_COLORS = ["hsl(246, 80%, 60%)", "hsl(200, 70%, 50%)", "hsl(150, 60%, 45%)", "hsl(30, 80%, 55%)", "hsl(330, 70%, 55%)"];
+
+const COMPLEXITY_CONFIG: Record<string, { label: string; description: string; icon: typeof Eye; color: string; barColor: string }> = {
+  complex: { label: "Complex", description: "AI Vision extraction (tables, images, formulas)", icon: Eye, color: "text-purple-600 dark:text-purple-400", barColor: "bg-purple-500 dark:bg-purple-400" },
+  structured: { label: "Structured", description: "Spreadsheet data with tables and formulas", icon: Table2, color: "text-green-600 dark:text-green-400", barColor: "bg-green-500 dark:bg-green-400" },
+  simple: { label: "Simple", description: "Text-based extraction", icon: Type, color: "text-blue-600 dark:text-blue-400", barColor: "bg-blue-500 dark:bg-blue-400" },
+};
+
+function DocumentComplexityCard({ documentsByComplexity, totalDocuments, totalPages }: { documentsByComplexity: { complexity: string; count: number }[]; totalDocuments: number; totalPages: number }) {
+  return (
+    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-doc-complexity">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Document Complexity</span>
+        </div>
+        {totalPages > 0 && (
+          <span className="text-[10px] text-muted-foreground">{totalPages} total pages</span>
+        )}
+      </div>
+      <div className="px-4 py-3">
+        {documentsByComplexity.length > 0 ? (
+          <div className="space-y-3">
+            {["complex", "structured", "simple"].map(key => {
+              const entry = documentsByComplexity.find(d => d.complexity === key);
+              if (!entry) return null;
+              const config = COMPLEXITY_CONFIG[key] || COMPLEXITY_CONFIG.simple;
+              const Icon = config.icon;
+              const pct = totalDocuments > 0 ? Math.round((entry.count / totalDocuments) * 100) : 0;
+              return (
+                <div key={key} data-testid={`complexity-${key}`}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2">
+                      <Icon className={`w-3.5 h-3.5 ${config.color}`} />
+                      <span className="text-sm font-medium">{config.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{entry.count}</span>
+                      <span className="text-[10px] text-muted-foreground">({pct}%)</span>
+                    </div>
+                  </div>
+                  <div className="bg-muted rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${config.barColor}`}
+                      style={{ width: `${Math.max(pct, 4)}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{config.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function MostQueriedSection({ docs }: { docs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[] }) {
   const maxCount = Math.max(...docs.map(d => d.queryCount), 1);
@@ -450,6 +512,7 @@ function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metric
           )}
         </ChartCard>
 
+        <DocumentComplexityCard documentsByComplexity={metrics.documentsByComplexity} totalDocuments={metrics.totalDocuments} totalPages={metrics.totalPages} />
         {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
         {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
       </div>
@@ -578,6 +641,7 @@ function AdminMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: 
           )}
         </ChartCard>
 
+        <DocumentComplexityCard documentsByComplexity={metrics.documentsByComplexity} totalDocuments={metrics.totalDocuments} totalPages={metrics.totalPages} />
         {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
         {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
       </div>

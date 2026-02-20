@@ -17,6 +17,8 @@ export interface MetricsData {
   aiMessages: number;
   avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
+  documentsByComplexity: { complexity: string; count: number }[];
+  totalPages: number;
   recentDocuments: { id: number; title: string; fileType: string; createdAt: Date }[];
   recentConversations: { id: number; title: string; createdAt: Date; messageCount: number }[];
   mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
@@ -47,6 +49,8 @@ export interface AdminMetricsData {
   aiMessages: number;
   avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
+  documentsByComplexity: { complexity: string; count: number }[];
+  totalPages: number;
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
   mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   uploadsThisWeek: number;
@@ -267,6 +271,17 @@ export class DatabaseStorage implements IStorage {
       .where(userFilter)
       .groupBy(documents.fileType);
 
+    const docsByComplexity = await db
+      .select({ complexity: documents.complexity, count: count() })
+      .from(documents)
+      .where(userFilter)
+      .groupBy(documents.complexity);
+
+    const totalPagesResult = await db.execute(sql`
+      SELECT COALESCE(SUM(page_count), 0) as total_pages FROM documents WHERE user_id = ${userId}
+    `);
+    const totalPages = Number((totalPagesResult.rows[0] as any)?.total_pages || 0);
+
     const recentDocs = await db
       .select({
         id: documents.id,
@@ -356,6 +371,8 @@ export class DatabaseStorage implements IStorage {
       aiMessages: aiMsgs,
       avgMessagesPerChat,
       documentsByType: docsByType.map(r => ({ type: r.type, count: Number(r.count) })),
+      documentsByComplexity: docsByComplexity.map(r => ({ complexity: r.complexity || "simple", count: Number(r.count) })),
+      totalPages,
       recentDocuments: recentDocs,
       recentConversations: recentConvsWithCounts,
       mostQueriedDocs,
@@ -375,6 +392,16 @@ export class DatabaseStorage implements IStorage {
       .select({ type: documents.fileType, count: count() })
       .from(documents)
       .groupBy(documents.fileType);
+
+    const docsByComplexity = await db
+      .select({ complexity: documents.complexity, count: count() })
+      .from(documents)
+      .groupBy(documents.complexity);
+
+    const totalPagesResult = await db.execute(sql`
+      SELECT COALESCE(SUM(page_count), 0) as total_pages FROM documents
+    `);
+    const totalPages = Number((totalPagesResult.rows[0] as any)?.total_pages || 0);
 
     const activityRows = await db.execute(sql`
       SELECT 
@@ -478,6 +505,8 @@ export class DatabaseStorage implements IStorage {
       totalMessages: totalMsgs,
       userMessages: Number(userMsgCount.count),
       aiMessages: Number(aiMsgCount.count),
+      documentsByComplexity: docsByComplexity.map(r => ({ complexity: r.complexity || "simple", count: Number(r.count) })),
+      totalPages,
       avgMessagesPerChat,
       documentsByType: docsByType.map(r => ({ type: r.type, count: Number(r.count) })),
       activityByDay,

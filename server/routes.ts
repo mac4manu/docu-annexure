@@ -561,6 +561,8 @@ export async function registerRoutes(
 
     try {
       let content = "";
+      let complexity = "simple";
+      let pageCount: number | null = null;
       console.log(`Processing file: ${originalFilename} (${fileType})`);
 
       if (!ALLOWED_MIMETYPES.has(fileType)) {
@@ -585,9 +587,11 @@ export async function registerRoutes(
         const hasLowTextDensity = textPerPage < 200;
         const isComplex = hasTablePatterns || hasMathSymbols || hasLowTextDensity;
 
+        pageCount = pageCountMatch;
         console.log(`PDF analysis: ${pageCountMatch} pages, ${Math.round(textPerPage)} chars/page, complex=${isComplex} (tables=${hasTablePatterns}, math=${hasMathSymbols}, lowDensity=${hasLowTextDensity})`);
 
         if (isComplex) {
+          complexity = "complex";
           console.log("Using advanced vision-based extraction");
           const imagePaths = await convertPdfToImages(filePath);
           const imageDir = path.dirname(imagePaths[0] || "");
@@ -607,9 +611,11 @@ export async function registerRoutes(
           }
         }
       } else if (fileType.includes("spreadsheet") || fileType.includes("excel")) {
+        complexity = "structured";
         let rawText = "";
         try {
           const workbook = XLSX.readFile(filePath);
+          pageCount = workbook.SheetNames.length;
           const parts: string[] = [];
           for (const sheetName of workbook.SheetNames) {
             const sheet = workbook.Sheets[sheetName];
@@ -641,10 +647,12 @@ export async function registerRoutes(
           const imagePaths = await convertPdfToImages(pdfPath);
           const imageDir = path.dirname(imagePaths[0] || "");
           if (imageDir) cleanupList.push(imageDir);
+          pageCount = imagePaths.length || null;
 
           if (imagePaths.length > 0) {
             content = await extractMarkdownFromImages(imagePaths);
             visionSuccess = true;
+            complexity = "complex";
             console.log(`Vision extraction completed: ${content.length} chars from ${imagePaths.length} pages`);
           }
         } catch (e) {
@@ -702,6 +710,8 @@ export async function registerRoutes(
         originalFilename,
         content: finalContent,
         fileType: getFileType(fileType),
+        complexity,
+        pageCount,
         userId: getUserId(req),
         doi: null,
         docTitle: null,
