@@ -66,6 +66,8 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-16: Added metadata panel on DocumentView page (collapsible card with DOI link, authors, keywords badges)
 - 2026-02-16: Document cards show academic title, authors, DOI badge, journal/year instead of just filename
 - 2026-02-16: Added Privacy & Data Policy page at /privacy (accessible without login) with disclaimer section on landing page
+- 2026-02-20: Replaced AI Quality card with Agent Evaluation section on Metrics page: confidence distribution (High/Medium/Low buckets), rating trend (6-week stacked bars), plus accuracy and confidence summaries
+- 2026-02-20: Added API routes: /api/confidence/distribution, /api/admin/confidence/distribution, /api/ratings/trend, /api/admin/ratings/trend
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000
