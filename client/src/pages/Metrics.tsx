@@ -15,7 +15,7 @@ interface MetricsData {
   documentsByType: { type: string; count: number }[];
   recentDocuments: { id: number; title: string; fileType: string; createdAt: string }[];
   recentConversations: { id: number; title: string; createdAt: string; messageCount: number }[];
-  mostQueriedDocs: { id: number; title: string; queryCount: number }[];
+  mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
   uploadsThisWeek: number;
   uploadsLastWeek: number;
@@ -44,7 +44,7 @@ interface AdminMetricsData {
   avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
-  mostQueriedDocs: { id: number; title: string; queryCount: number }[];
+  mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   uploadsThisWeek: number;
   uploadsLastWeek: number;
   userBreakdown: AdminUserMetrics[];
@@ -227,6 +227,161 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
+const FILE_TYPE_COLORS: Record<string, string> = {
+  pdf: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  doc: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  ppt: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  xlsx: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  other: "bg-muted text-muted-foreground",
+};
+
+const BAR_COLORS = ["hsl(246, 80%, 60%)", "hsl(200, 70%, 50%)", "hsl(150, 60%, 45%)", "hsl(30, 80%, 55%)", "hsl(330, 70%, 55%)"];
+
+function MostQueriedSection({ docs }: { docs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[] }) {
+  const maxCount = Math.max(...docs.map(d => d.queryCount), 1);
+  return (
+    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-most-queried">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Search className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Most Queried Documents</span>
+        </div>
+        {docs.length > 0 && (
+          <span className="text-[10px] text-muted-foreground">{docs.reduce((s, d) => s + d.queryCount, 0)} total chats</span>
+        )}
+      </div>
+      <div className="px-4 py-3">
+        {docs.length > 0 ? (
+          <div className="space-y-3">
+            {docs.map((doc, idx) => {
+              const barWidth = Math.max((doc.queryCount / maxCount) * 100, 8);
+              const typeKey = doc.fileType?.includes("pdf") ? "pdf"
+                : doc.fileType?.includes("word") || doc.fileType?.includes("msword") ? "doc"
+                : doc.fileType?.includes("presentation") || doc.fileType?.includes("powerpoint") ? "ppt"
+                : doc.fileType?.includes("spreadsheet") || doc.fileType?.includes("excel") ? "xlsx"
+                : "other";
+              const typeLabel = TYPE_LABELS[typeKey] || "File";
+              const typeColor = FILE_TYPE_COLORS[typeKey] || FILE_TYPE_COLORS.other;
+              return (
+                <div key={doc.id} data-testid={`text-queried-doc-${doc.id}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-muted-foreground w-4 shrink-0">#{idx + 1}</span>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${typeColor} shrink-0`}>{typeLabel}</span>
+                    <span className="text-sm truncate flex-1 font-medium">{doc.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2 ml-6">
+                    <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${barWidth}%`, background: BAR_COLORS[idx % BAR_COLORS.length] }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-semibold">{doc.queryCount}</span>
+                      <span className="text-[10px] text-muted-foreground">chat{doc.queryCount !== 1 ? "s" : ""}</span>
+                      <span className="text-muted-foreground/40 text-[10px]">|</span>
+                      <span className="text-[10px] text-muted-foreground">{doc.totalMessages} Q</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No documents queried yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UserBreakdownSection({ userBreakdown, totalDocuments, totalMessages }: { userBreakdown: AdminUserMetrics[]; totalDocuments: number; totalMessages: number }) {
+  const activeUsers = userBreakdown.filter(u => u.status === "active").length;
+  const loginOnlyUsers = userBreakdown.filter(u => u.status === "logged_in_only").length;
+  const maxEngagement = Math.max(...userBreakdown.map(u => u.documentCount + u.questionsAsked), 1);
+
+  return (
+    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-user-breakdown">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Users className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">User Breakdown</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="default" className="text-[10px] no-default-hover-elevate no-default-active-elevate">{activeUsers} active</Badge>
+          <Badge variant="secondary" className="text-[10px] no-default-hover-elevate no-default-active-elevate">{loginOnlyUsers} login only</Badge>
+        </div>
+      </div>
+      <div className="px-4 py-3">
+        <div className="space-y-3">
+          {userBreakdown.map((user) => {
+            const engagement = user.documentCount + user.questionsAsked;
+            const engagementPct = Math.max((engagement / maxEngagement) * 100, 4);
+            const engagementLevel = engagement >= 20 ? "High" : engagement >= 5 ? "Medium" : engagement > 0 ? "Low" : "None";
+            const engagementColor = engagement >= 20 ? "text-green-600 dark:text-green-400"
+              : engagement >= 5 ? "text-yellow-600 dark:text-yellow-400"
+              : engagement > 0 ? "text-orange-600 dark:text-orange-400"
+              : "text-muted-foreground";
+            const barColor = engagement >= 20 ? "bg-green-500 dark:bg-green-400"
+              : engagement >= 5 ? "bg-yellow-500 dark:bg-yellow-400"
+              : engagement > 0 ? "bg-orange-500 dark:bg-orange-400"
+              : "bg-muted-foreground/30";
+
+            return (
+              <div key={user.userId} className="border-b border-border/30 pb-2.5 last:border-0 last:pb-0" data-testid={`row-user-${user.userId}`}>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="w-3 h-3 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium block truncate">{user.name}</span>
+                      {user.email && <span className="text-[10px] text-muted-foreground block truncate">{user.email}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant={user.status === "active" ? "default" : "secondary"} className="text-[10px] no-default-hover-elevate no-default-active-elevate" data-testid={`badge-status-${user.userId}`}>
+                      {user.status === "active" ? "Active" : "Login Only"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="ml-8 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${engagementPct}%` }} />
+                    </div>
+                    <span className={`text-[10px] font-medium ${engagementColor} w-10 text-right`}>{engagementLevel}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <FileText className="w-2.5 h-2.5" />
+                      {user.documentCount} doc{user.documentCount !== 1 ? "s" : ""}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessagesSquare className="w-2.5 h-2.5" />
+                      {user.conversationCount} chat{user.conversationCount !== 1 ? "s" : ""}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-2.5 h-2.5" />
+                      {user.questionsAsked} Q / {user.aiResponses} A
+                    </span>
+                    {user.lastActive && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
+                        {timeAgo(user.lastActive)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: MetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
   const pieData = metrics.documentsByType.map(d => ({
     name: TYPE_LABELS[d.type] || d.type,
@@ -300,27 +455,7 @@ function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metric
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-most-queried">
-          <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Most Queried Documents</span>
-          </div>
-          <div className="px-4 py-3">
-            {metrics.mostQueriedDocs.length > 0 ? (
-              <div className="space-y-2">
-                {metrics.mostQueriedDocs.map((doc, idx) => (
-                  <div key={doc.id} className="flex items-center gap-2.5 text-sm" data-testid={`text-queried-doc-${doc.id}`}>
-                    <span className="text-xs text-muted-foreground font-medium w-4 shrink-0">{idx + 1}.</span>
-                    <span className="truncate flex-1">{doc.title}</span>
-                    <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">{doc.queryCount} chat{doc.queryCount !== 1 ? "s" : ""}</Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No documents queried yet</p>
-            )}
-          </div>
-        </div>
+        <MostQueriedSection docs={metrics.mostQueriedDocs} />
 
         <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-recent-docs">
           <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
@@ -448,71 +583,8 @@ function AdminMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-most-queried">
-          <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Most Queried Documents</span>
-          </div>
-          <div className="px-4 py-3">
-            {metrics.mostQueriedDocs.length > 0 ? (
-              <div className="space-y-2">
-                {metrics.mostQueriedDocs.map((doc, idx) => (
-                  <div key={doc.id} className="flex items-center gap-2.5 text-sm" data-testid={`text-queried-doc-${doc.id}`}>
-                    <span className="text-xs text-muted-foreground font-medium w-4 shrink-0">{idx + 1}.</span>
-                    <span className="truncate flex-1">{doc.title}</span>
-                    <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">{doc.queryCount} chat{doc.queryCount !== 1 ? "s" : ""}</Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No documents queried yet</p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-user-breakdown">
-          <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-            <Users className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">User Breakdown</span>
-          </div>
-          <div className="px-4 py-3">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm" data-testid="table-user-breakdown">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-1.5 pr-3 font-medium text-muted-foreground text-xs">User</th>
-                    <th className="text-left py-1.5 pr-3 font-medium text-muted-foreground text-xs">Status</th>
-                    <th className="text-right py-1.5 pr-3 font-medium text-muted-foreground text-xs">Docs</th>
-                    <th className="text-right py-1.5 pr-3 font-medium text-muted-foreground text-xs">Chats</th>
-                    <th className="text-right py-1.5 pr-3 font-medium text-muted-foreground text-xs">Q&A</th>
-                    <th className="text-right py-1.5 font-medium text-muted-foreground text-xs">Last Active</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.userBreakdown.map((user) => (
-                    <tr key={user.userId} className="border-b border-border/50" data-testid={`row-user-${user.userId}`}>
-                      <td className="py-1.5 pr-3">
-                        <div className="font-medium text-xs">{user.name}</div>
-                        {user.email && <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{user.email}</div>}
-                      </td>
-                      <td className="py-1.5 pr-3">
-                        <Badge variant={user.status === "active" ? "default" : "secondary"} className="text-[10px] no-default-hover-elevate no-default-active-elevate" data-testid={`badge-status-${user.userId}`}>
-                          {user.status === "active" ? "Active" : "Login Only"}
-                        </Badge>
-                      </td>
-                      <td className="py-1.5 pr-3 text-right text-xs">{user.documentCount}</td>
-                      <td className="py-1.5 pr-3 text-right text-xs">{user.conversationCount}</td>
-                      <td className="py-1.5 pr-3 text-right text-xs">{user.questionsAsked}/{user.aiResponses}</td>
-                      <td className="py-1.5 text-right text-muted-foreground text-[10px]">
-                        {user.lastActive ? timeAgo(user.lastActive) : "Never"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <MostQueriedSection docs={metrics.mostQueriedDocs} />
+        <UserBreakdownSection userBreakdown={metrics.userBreakdown} totalDocuments={metrics.totalDocuments} totalMessages={metrics.totalMessages} />
       </div>
     </>
   );

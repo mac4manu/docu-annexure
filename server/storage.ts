@@ -19,7 +19,7 @@ export interface MetricsData {
   documentsByType: { type: string; count: number }[];
   recentDocuments: { id: number; title: string; fileType: string; createdAt: Date }[];
   recentConversations: { id: number; title: string; createdAt: Date; messageCount: number }[];
-  mostQueriedDocs: { id: number; title: string; queryCount: number }[];
+  mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
   uploadsThisWeek: number;
   uploadsLastWeek: number;
@@ -48,7 +48,7 @@ export interface AdminMetricsData {
   avgMessagesPerChat: number;
   documentsByType: { type: string; count: number }[];
   activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
-  mostQueriedDocs: { id: number; title: string; queryCount: number }[];
+  mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   uploadsThisWeek: number;
   uploadsLastWeek: number;
   userBreakdown: AdminUserMetrics[];
@@ -322,18 +322,23 @@ export class DatabaseStorage implements IStorage {
     const avgMessagesPerChat = totalConversations > 0 ? Math.round((totalMsgs / totalConversations) * 10) / 10 : 0;
 
     const mostQueriedRows = await db.execute(sql`
-      SELECT d.id, d.title, COUNT(c.id) as query_count
+      SELECT d.id, d.title, d.file_type, COUNT(DISTINCT c.id) as query_count,
+        COALESCE((SELECT COUNT(*) FROM messages m WHERE m.conversation_id IN (
+          SELECT c2.id FROM conversations c2 WHERE c2.document_id = d.id OR d.id = ANY(COALESCE(c2.document_ids, ARRAY[]::int[]))
+        ) AND m.role = 'user'), 0) as total_messages
       FROM documents d
       INNER JOIN conversations c ON (c.document_id = d.id OR d.id = ANY(COALESCE(c.document_ids, ARRAY[]::int[])))
       WHERE d.user_id = ${userId} AND (c.document_id IS NOT NULL OR c.document_ids IS NOT NULL)
-      GROUP BY d.id, d.title
+      GROUP BY d.id, d.title, d.file_type
       ORDER BY query_count DESC
       LIMIT 5
     `);
-    const mostQueriedDocs = (mostQueriedRows.rows as Array<{ id: number; title: string; query_count: string }>).map(r => ({
+    const mostQueriedDocs = (mostQueriedRows.rows as Array<{ id: number; title: string; file_type: string; query_count: string; total_messages: string }>).map(r => ({
       id: r.id,
       title: r.title,
       queryCount: Number(r.query_count),
+      fileType: r.file_type,
+      totalMessages: Number(r.total_messages),
     }));
 
     const uploadTrendRows = await db.execute(sql`
@@ -397,18 +402,23 @@ export class DatabaseStorage implements IStorage {
     const avgMessagesPerChat = totalConvCount > 0 ? Math.round((totalMsgs / totalConvCount) * 10) / 10 : 0;
 
     const mostQueriedRows = await db.execute(sql`
-      SELECT d.id, d.title, COUNT(c.id) as query_count
+      SELECT d.id, d.title, d.file_type, COUNT(DISTINCT c.id) as query_count,
+        COALESCE((SELECT COUNT(*) FROM messages m WHERE m.conversation_id IN (
+          SELECT c2.id FROM conversations c2 WHERE c2.document_id = d.id OR d.id = ANY(COALESCE(c2.document_ids, ARRAY[]::int[]))
+        ) AND m.role = 'user'), 0) as total_messages
       FROM documents d
       INNER JOIN conversations c ON (c.document_id = d.id OR d.id = ANY(COALESCE(c.document_ids, ARRAY[]::int[])))
       WHERE (c.document_id IS NOT NULL OR c.document_ids IS NOT NULL)
-      GROUP BY d.id, d.title
+      GROUP BY d.id, d.title, d.file_type
       ORDER BY query_count DESC
       LIMIT 5
     `);
-    const mostQueriedDocs = (mostQueriedRows.rows as Array<{ id: number; title: string; query_count: string }>).map(r => ({
+    const mostQueriedDocs = (mostQueriedRows.rows as Array<{ id: number; title: string; file_type: string; query_count: string; total_messages: string }>).map(r => ({
       id: r.id,
       title: r.title,
       queryCount: Number(r.query_count),
+      fileType: r.file_type,
+      totalMessages: Number(r.total_messages),
     }));
 
     const uploadTrendRows = await db.execute(sql`
