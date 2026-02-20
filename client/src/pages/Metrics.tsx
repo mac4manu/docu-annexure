@@ -56,7 +56,6 @@ interface ConfidenceMetrics {
   totalScored: number;
 }
 
-
 function timeAgo(dateStr: string) {
   const now = new Date();
   const date = new Date(dateStr);
@@ -71,7 +70,10 @@ function timeAgo(dateStr: string) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function StatCard({ title, value, icon: Icon, subtitle }: { title: string; value: string | number; icon: typeof FileText; subtitle?: string }) {
+function StatCard({ title, value, icon: Icon, subtitle, trend }: { title: string; value: string | number; icon: typeof FileText; subtitle?: string; trend?: { value: number; label: string } }) {
+  const TrendIcon = trend ? (trend.value > 0 ? TrendingUp : trend.value < 0 ? TrendingDown : Minus) : null;
+  const trendColor = trend ? (trend.value > 0 ? "text-green-600 dark:text-green-400" : trend.value < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground") : "";
+
   return (
     <div className="rounded-md border border-border bg-card overflow-hidden" data-testid={`card-stat-${title.toLowerCase().replace(/\s/g, "-")}`}>
       <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
@@ -81,105 +83,12 @@ function StatCard({ title, value, icon: Icon, subtitle }: { title: string; value
       <div className="px-4 py-3">
         <div className="text-2xl font-bold" data-testid={`text-stat-${title.toLowerCase().replace(/\s/g, "-")}`}>{value}</div>
         {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
-
-function UploadTrendCard({ thisWeek, lastWeek }: { thisWeek: number; lastWeek: number }) {
-  const diff = thisWeek - lastWeek;
-  const TrendIcon = diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus;
-  const trendColor = diff > 0 ? "text-green-600 dark:text-green-400" : diff < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground";
-  const trendLabel = diff > 0 ? `+${diff} vs prior 7 days` : diff < 0 ? `${diff} vs prior 7 days` : "Same as prior 7 days";
-
-  return (
-    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-upload-trend">
-      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Upload Trend</span>
-        <TrendIcon className={`w-3.5 h-3.5 ${trendColor}`} />
-      </div>
-      <div className="px-4 py-3">
-        <div className="text-2xl font-bold">{thisWeek}</div>
-        <p className={`text-xs mt-1 ${trendColor}`}>{trendLabel}</p>
-      </div>
-    </div>
-  );
-}
-
-function RatingCard({ ratingMetrics }: { ratingMetrics: RatingMetrics }) {
-  const accuracy = ratingMetrics.total > 0
-    ? Math.round((ratingMetrics.thumbsUp / ratingMetrics.total) * 100)
-    : 0;
-
-  return (
-    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-ai-accuracy">
-      <div className="px-4 py-2.5 border-b border-border bg-muted/20">
-        <span className="text-xs font-medium text-muted-foreground">AI Response Accuracy</span>
-      </div>
-      <div className="px-4 py-3">
-        <div className="flex flex-col items-center gap-2.5">
-          <div className="text-3xl font-bold" data-testid="text-accuracy-percentage">
-            {ratingMetrics.total > 0 ? `${accuracy}%` : "N/A"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Based on {ratingMetrics.total} rating{ratingMetrics.total !== 1 ? "s" : ""}
+        {trend && TrendIcon && (
+          <p className={`text-xs mt-1 flex items-center gap-1 ${trendColor}`}>
+            <TrendIcon className="w-3 h-3" />
+            {trend.label}
           </p>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5">
-              <ThumbsUp className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-              <span className="font-medium" data-testid="text-thumbs-up-count">{ratingMetrics.thumbsUp}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ThumbsDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-              <span className="font-medium" data-testid="text-thumbs-down-count">{ratingMetrics.thumbsDown}</span>
-            </div>
-          </div>
-          {ratingMetrics.total > 0 && (
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div
-                className="h-full bg-green-600 dark:bg-green-400 rounded-full transition-all"
-                style={{ width: `${accuracy}%` }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfidenceCard({ confidenceMetrics }: { confidenceMetrics: ConfidenceMetrics }) {
-  const score = confidenceMetrics.avgConfidence;
-  const scoreColor = score >= 80 ? "text-green-600 dark:text-green-400"
-    : score >= 50 ? "text-yellow-600 dark:text-yellow-400"
-    : "text-red-600 dark:text-red-400";
-  const barColor = score >= 80 ? "bg-green-600 dark:bg-green-400"
-    : score >= 50 ? "bg-yellow-600 dark:bg-yellow-400"
-    : "bg-red-600 dark:bg-red-400";
-
-  return (
-    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-ai-confidence">
-      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">AI Confidence Score</span>
-        <Gauge className="w-3.5 h-3.5 text-muted-foreground" />
-      </div>
-      <div className="px-4 py-3">
-        <div className="flex flex-col items-center gap-2.5">
-          <div className={`text-3xl font-bold ${scoreColor}`} data-testid="text-confidence-score">
-            {confidenceMetrics.totalScored > 0 ? `${score}%` : "N/A"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Avg across {confidenceMetrics.totalScored} response{confidenceMetrics.totalScored !== 1 ? "s" : ""}
-          </p>
-          {confidenceMetrics.totalScored > 0 && (
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-full ${barColor} rounded-full transition-all`}
-                style={{ width: `${score}%` }}
-              />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -200,7 +109,6 @@ function SummaryLine({ metrics }: { metrics: MetricsData | AdminMetricsData }) {
   );
 }
 
-
 const COMPLEXITY_CONFIG: Record<string, { label: string; description: string; icon: typeof Eye; color: string; barColor: string }> = {
   complex: { label: "Complex", description: "AI Vision extraction (tables, images, formulas)", icon: Eye, color: "text-purple-600 dark:text-purple-400", barColor: "bg-purple-500 dark:bg-purple-400" },
   structured: { label: "Structured", description: "Spreadsheet data with tables and formulas", icon: Table2, color: "text-green-600 dark:text-green-400", barColor: "bg-green-500 dark:bg-green-400" },
@@ -209,7 +117,7 @@ const COMPLEXITY_CONFIG: Record<string, { label: string; description: string; ic
 
 function DocumentComplexityCard({ documentsByComplexity, totalDocuments, totalPages }: { documentsByComplexity: { complexity: string; count: number }[]; totalDocuments: number; totalPages: number }) {
   return (
-    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-doc-complexity">
+    <div className="rounded-md border border-border bg-card overflow-hidden h-full" data-testid="card-doc-complexity">
       <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-muted-foreground" />
@@ -259,8 +167,90 @@ function DocumentComplexityCard({ documentsByComplexity, totalDocuments, totalPa
   );
 }
 
+function AIQualityCard({ ratingMetrics, confidenceMetrics }: { ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
+  const accuracy = ratingMetrics && ratingMetrics.total > 0
+    ? Math.round((ratingMetrics.thumbsUp / ratingMetrics.total) * 100)
+    : null;
 
-function UserBreakdownSection({ userBreakdown, totalDocuments, totalMessages }: { userBreakdown: AdminUserMetrics[]; totalDocuments: number; totalMessages: number }) {
+  const score = confidenceMetrics?.avgConfidence ?? null;
+  const scoreColor = score !== null ? (score >= 80 ? "text-green-600 dark:text-green-400" : score >= 50 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400") : "";
+  const confidenceBarColor = score !== null ? (score >= 80 ? "bg-green-600 dark:bg-green-400" : score >= 50 ? "bg-yellow-600 dark:bg-yellow-400" : "bg-red-600 dark:bg-red-400") : "";
+
+  const hasRatings = ratingMetrics && ratingMetrics.total > 0;
+  const hasConfidence = confidenceMetrics && confidenceMetrics.totalScored > 0;
+
+  if (!ratingMetrics && !confidenceMetrics) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-card overflow-hidden h-full" data-testid="card-ai-quality">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Gauge className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">AI Quality</span>
+        </div>
+      </div>
+      <div className="px-4 py-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2.5" data-testid="section-accuracy">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Response Accuracy</span>
+            <div className="text-2xl font-bold" data-testid="text-accuracy-percentage">
+              {hasRatings ? `${accuracy}%` : "N/A"}
+            </div>
+            {hasRatings ? (
+              <>
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <ThumbsUp className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                    <span className="font-medium" data-testid="text-thumbs-up-count">{ratingMetrics.thumbsUp}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <ThumbsDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                    <span className="font-medium" data-testid="text-thumbs-down-count">{ratingMetrics.thumbsDown}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-green-600 dark:bg-green-400 rounded-full transition-all"
+                    style={{ width: `${accuracy}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {ratingMetrics.total} rating{ratingMetrics.total !== 1 ? "s" : ""}
+                </p>
+              </>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">No ratings yet</p>
+            )}
+          </div>
+
+          <div className="space-y-2.5 border-l border-border pl-4" data-testid="section-confidence">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Confidence Score</span>
+            <div className={`text-2xl font-bold ${hasConfidence ? scoreColor : ""}`} data-testid="text-confidence-score">
+              {hasConfidence ? `${score}%` : "N/A"}
+            </div>
+            {hasConfidence ? (
+              <>
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full ${confidenceBarColor} rounded-full transition-all`}
+                    style={{ width: `${score}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Avg across {confidenceMetrics.totalScored} response{confidenceMetrics.totalScored !== 1 ? "s" : ""}
+                </p>
+              </>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">No scored responses yet</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UserBreakdownSection({ userBreakdown }: { userBreakdown: AdminUserMetrics[] }) {
   const activeUsers = userBreakdown.filter(u => u.status === "active").length;
   const loginOnlyUsers = userBreakdown.filter(u => u.status === "logged_in_only").length;
   const maxEngagement = Math.max(...userBreakdown.map(u => u.documentCount + u.questionsAsked), 1);
@@ -348,48 +338,50 @@ function UserBreakdownSection({ userBreakdown, totalDocuments, totalMessages }: 
 }
 
 function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: MetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
+  const uploadDiff = metrics.uploadsThisWeek - metrics.uploadsLastWeek;
+  const uploadLabel = uploadDiff > 0 ? `+${uploadDiff} vs last week` : uploadDiff < 0 ? `${uploadDiff} vs last week` : "Same as last week";
+
   return (
     <>
       <SummaryLine metrics={metrics} />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatCard title="Documents" value={metrics.totalDocuments} icon={FileText} />
-        <StatCard title="Conversations" value={metrics.totalConversations} icon={MessagesSquare} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard title="Documents" value={metrics.totalDocuments} icon={FileText} trend={{ value: uploadDiff, label: uploadLabel }} />
+        <StatCard title="Conversations" value={metrics.totalConversations} icon={MessagesSquare} subtitle={`${metrics.avgMessagesPerChat} msgs/chat avg`} />
         <StatCard title="Questions Asked" value={metrics.userMessages} icon={User} subtitle={`${metrics.totalMessages} total messages`} />
-        <StatCard title="Avg per Chat" value={metrics.avgMessagesPerChat} icon={MessageSquare} subtitle="messages per conversation" />
-        <UploadTrendCard thisWeek={metrics.uploadsThisWeek} lastWeek={metrics.uploadsLastWeek} />
+        <StatCard title="AI Responses" value={metrics.aiMessages} icon={MessageSquare} subtitle={`${metrics.totalMessages - metrics.userMessages - metrics.aiMessages >= 0 ? metrics.aiMessages : metrics.totalMessages - metrics.userMessages} generated`} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <DocumentComplexityCard documentsByComplexity={metrics.documentsByComplexity} totalDocuments={metrics.totalDocuments} totalPages={metrics.totalPages} />
-        {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
-        {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
+        <AIQualityCard ratingMetrics={ratingMetrics} confidenceMetrics={confidenceMetrics} />
       </div>
     </>
   );
 }
 
 function AdminMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: AdminMetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
+  const uploadDiff = metrics.uploadsThisWeek - metrics.uploadsLastWeek;
+  const uploadLabel = uploadDiff > 0 ? `+${uploadDiff} vs last week` : uploadDiff < 0 ? `${uploadDiff} vs last week` : "Same as last week";
+
   return (
     <>
       <SummaryLine metrics={metrics} />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         <StatCard title="Total Users" value={metrics.totalUsers} icon={Users} />
-        <StatCard title="Documents" value={metrics.totalDocuments} icon={FileText} />
-        <StatCard title="Conversations" value={metrics.totalConversations} icon={MessagesSquare} />
-        <StatCard title="Questions Asked" value={metrics.userMessages} icon={User} subtitle={`${metrics.totalMessages} total msgs`} />
-        <StatCard title="Avg per Chat" value={metrics.avgMessagesPerChat} icon={MessageSquare} subtitle="messages per conversation" />
-        <UploadTrendCard thisWeek={metrics.uploadsThisWeek} lastWeek={metrics.uploadsLastWeek} />
+        <StatCard title="Documents" value={metrics.totalDocuments} icon={FileText} trend={{ value: uploadDiff, label: uploadLabel }} />
+        <StatCard title="Conversations" value={metrics.totalConversations} icon={MessagesSquare} subtitle={`${metrics.avgMessagesPerChat} msgs/chat avg`} />
+        <StatCard title="Questions Asked" value={metrics.userMessages} icon={User} subtitle={`${metrics.totalMessages} total messages`} />
+        <StatCard title="AI Responses" value={metrics.aiMessages} icon={MessageSquare} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <DocumentComplexityCard documentsByComplexity={metrics.documentsByComplexity} totalDocuments={metrics.totalDocuments} totalPages={metrics.totalPages} />
-        {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
-        {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
+        <AIQualityCard ratingMetrics={ratingMetrics} confidenceMetrics={confidenceMetrics} />
       </div>
 
-      <UserBreakdownSection userBreakdown={metrics.userBreakdown} totalDocuments={metrics.totalDocuments} totalMessages={metrics.totalMessages} />
+      <UserBreakdownSection userBreakdown={metrics.userBreakdown} />
     </>
   );
 }
