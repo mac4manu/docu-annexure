@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquare, MessagesSquare, Bot, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Minus, Search, Clock, Gauge, Layers, Eye, Type, Table2 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { FileText, MessageSquare, MessagesSquare, User, Users, BarChart3, Loader2, Shield, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Minus, Clock, Gauge, Layers, Eye, Type, Table2 } from "lucide-react";
 
 interface MetricsData {
   totalDocuments: number;
@@ -12,13 +11,8 @@ interface MetricsData {
   userMessages: number;
   aiMessages: number;
   avgMessagesPerChat: number;
-  documentsByType: { type: string; count: number }[];
   documentsByComplexity: { complexity: string; count: number }[];
   totalPages: number;
-  recentDocuments: { id: number; title: string; fileType: string; createdAt: string }[];
-  recentConversations: { id: number; title: string; createdAt: string; messageCount: number }[];
-  mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
-  activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
   uploadsThisWeek: number;
   uploadsLastWeek: number;
 }
@@ -44,11 +38,8 @@ interface AdminMetricsData {
   userMessages: number;
   aiMessages: number;
   avgMessagesPerChat: number;
-  documentsByType: { type: string; count: number }[];
   documentsByComplexity: { complexity: string; count: number }[];
   totalPages: number;
-  activityByDay: { date: string; documents: number; conversations: number; messages: number }[];
-  mostQueriedDocs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[];
   uploadsThisWeek: number;
   uploadsLastWeek: number;
   userBreakdown: AdminUserMetrics[];
@@ -65,15 +56,6 @@ interface ConfidenceMetrics {
   totalScored: number;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  pdf: "PDF",
-  doc: "Word",
-  ppt: "PowerPoint",
-  xlsx: "Excel",
-  other: "Other",
-};
-
-const PIE_COLORS = ["hsl(246, 80%, 60%)", "hsl(200, 70%, 50%)", "hsl(150, 60%, 45%)", "hsl(30, 80%, 55%)"];
 
 function timeAgo(dateStr: string) {
   const now = new Date();
@@ -218,28 +200,6 @@ function SummaryLine({ metrics }: { metrics: MetricsData | AdminMetricsData }) {
   );
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-border bg-card overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-border bg-muted/20">
-        <span className="text-xs font-medium text-muted-foreground">{title}</span>
-      </div>
-      <div className="px-4 py-3">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-const FILE_TYPE_COLORS: Record<string, string> = {
-  pdf: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  doc: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  ppt: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-  xlsx: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  other: "bg-muted text-muted-foreground",
-};
-
-const BAR_COLORS = ["hsl(246, 80%, 60%)", "hsl(200, 70%, 50%)", "hsl(150, 60%, 45%)", "hsl(30, 80%, 55%)", "hsl(330, 70%, 55%)"];
 
 const COMPLEXITY_CONFIG: Record<string, { label: string; description: string; icon: typeof Eye; color: string; barColor: string }> = {
   complex: { label: "Complex", description: "AI Vision extraction (tables, images, formulas)", icon: Eye, color: "text-purple-600 dark:text-purple-400", barColor: "bg-purple-500 dark:bg-purple-400" },
@@ -299,63 +259,6 @@ function DocumentComplexityCard({ documentsByComplexity, totalDocuments, totalPa
   );
 }
 
-function MostQueriedSection({ docs }: { docs: { id: number; title: string; queryCount: number; fileType: string; totalMessages: number }[] }) {
-  const maxCount = Math.max(...docs.map(d => d.queryCount), 1);
-  return (
-    <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-most-queried">
-      <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Search className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Most Queried Documents</span>
-        </div>
-        {docs.length > 0 && (
-          <span className="text-[10px] text-muted-foreground">{docs.reduce((s, d) => s + d.queryCount, 0)} total chats</span>
-        )}
-      </div>
-      <div className="px-4 py-3">
-        {docs.length > 0 ? (
-          <div className="space-y-3">
-            {docs.map((doc, idx) => {
-              const barWidth = Math.max((doc.queryCount / maxCount) * 100, 8);
-              const typeKey = doc.fileType?.includes("pdf") ? "pdf"
-                : doc.fileType?.includes("word") || doc.fileType?.includes("msword") ? "doc"
-                : doc.fileType?.includes("presentation") || doc.fileType?.includes("powerpoint") ? "ppt"
-                : doc.fileType?.includes("spreadsheet") || doc.fileType?.includes("excel") ? "xlsx"
-                : "other";
-              const typeLabel = TYPE_LABELS[typeKey] || "File";
-              const typeColor = FILE_TYPE_COLORS[typeKey] || FILE_TYPE_COLORS.other;
-              return (
-                <div key={doc.id} data-testid={`text-queried-doc-${doc.id}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-muted-foreground w-4 shrink-0">#{idx + 1}</span>
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${typeColor} shrink-0`}>{typeLabel}</span>
-                    <span className="text-sm truncate flex-1 font-medium">{doc.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2 ml-6">
-                    <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${barWidth}%`, background: BAR_COLORS[idx % BAR_COLORS.length] }}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-semibold">{doc.queryCount}</span>
-                      <span className="text-[10px] text-muted-foreground">chat{doc.queryCount !== 1 ? "s" : ""}</span>
-                      <span className="text-muted-foreground/40 text-[10px]">|</span>
-                      <span className="text-[10px] text-muted-foreground">{doc.totalMessages} Q</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No documents queried yet</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function UserBreakdownSection({ userBreakdown, totalDocuments, totalMessages }: { userBreakdown: AdminUserMetrics[]; totalDocuments: number; totalMessages: number }) {
   const activeUsers = userBreakdown.filter(u => u.status === "active").length;
@@ -445,11 +348,6 @@ function UserBreakdownSection({ userBreakdown, totalDocuments, totalMessages }: 
 }
 
 function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: MetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
-  const pieData = metrics.documentsByType.map(d => ({
-    name: TYPE_LABELS[d.type] || d.type,
-    value: d.count,
-  }));
-
   return (
     <>
       <SummaryLine metrics={metrics} />
@@ -462,122 +360,16 @@ function PersonalMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metric
         <UploadTrendCard thisWeek={metrics.uploadsThisWeek} lastWeek={metrics.uploadsLastWeek} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <ChartCard title="Activity (Last 7 Days)">
-          {metrics.activityByDay.some(d => d.documents > 0 || d.conversations > 0 || d.messages > 0) ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={metrics.activityByDay} barGap={2}>
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={25} />
-                <Tooltip contentStyle={{ borderRadius: "6px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: "11px" }} />
-                <Bar dataKey="documents" name="Docs" fill="hsl(246, 80%, 60%)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="conversations" name="Chats" fill="hsl(200, 70%, 50%)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="messages" name="Msgs" fill="hsl(150, 60%, 45%)" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
-              No activity in the last 7 days
-            </div>
-          )}
-        </ChartCard>
-
-        <ChartCard title="Document Types">
-          {pieData.length > 0 ? (
-            <div className="flex flex-col items-center">
-              <ResponsiveContainer width="100%" height={140}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={3} dataKey="value">
-                    {pieData.map((_entry, index) => (
-                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: "6px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: "11px" }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap justify-center gap-3 mt-1">
-                {pieData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[index % PIE_COLORS.length] }} />
-                    <span className="text-muted-foreground">{entry.name}</span>
-                    <span className="font-medium">{entry.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="h-[140px] flex items-center justify-center text-sm text-muted-foreground">
-              No documents uploaded yet
-            </div>
-          )}
-        </ChartCard>
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <DocumentComplexityCard documentsByComplexity={metrics.documentsByComplexity} totalDocuments={metrics.totalDocuments} totalPages={metrics.totalPages} />
         {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
         {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <MostQueriedSection docs={metrics.mostQueriedDocs} />
-
-        <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-recent-docs">
-          <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Recent Documents</span>
-          </div>
-          <div className="px-4 py-3">
-            {metrics.recentDocuments.length > 0 ? (
-              <div className="space-y-2">
-                {metrics.recentDocuments.map(doc => (
-                  <div key={doc.id} className="flex items-center gap-2.5 text-sm" data-testid={`text-recent-doc-${doc.id}`}>
-                    <span className="truncate flex-1">{doc.title}</span>
-                    <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {timeAgo(doc.createdAt)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No documents yet</p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-md border border-border bg-card overflow-hidden" data-testid="card-recent-convos">
-          <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-            <MessagesSquare className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Recent Conversations</span>
-          </div>
-          <div className="px-4 py-3">
-            {metrics.recentConversations.length > 0 ? (
-              <div className="space-y-2">
-                {metrics.recentConversations.map(conv => (
-                  <div key={conv.id} className="flex items-center gap-2.5 text-sm" data-testid={`text-recent-conv-${conv.id}`}>
-                    <span className="truncate flex-1">{conv.title}</span>
-                    <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {timeAgo(conv.createdAt)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No conversations yet</p>
-            )}
-          </div>
-        </div>
       </div>
     </>
   );
 }
 
 function AdminMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: AdminMetricsData; ratingMetrics?: RatingMetrics; confidenceMetrics?: ConfidenceMetrics }) {
-  const pieData = metrics.documentsByType.map(d => ({
-    name: TYPE_LABELS[d.type] || d.type,
-    value: d.count,
-  }));
-
   return (
     <>
       <SummaryLine metrics={metrics} />
@@ -591,65 +383,13 @@ function AdminMetrics({ metrics, ratingMetrics, confidenceMetrics }: { metrics: 
         <UploadTrendCard thisWeek={metrics.uploadsThisWeek} lastWeek={metrics.uploadsLastWeek} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <ChartCard title="Platform Activity (Last 7 Days)">
-          {metrics.activityByDay.some(d => d.documents > 0 || d.conversations > 0 || d.messages > 0) ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={metrics.activityByDay} barGap={2}>
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={25} />
-                <Tooltip contentStyle={{ borderRadius: "6px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: "11px" }} />
-                <Bar dataKey="documents" name="Docs" fill="hsl(246, 80%, 60%)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="conversations" name="Chats" fill="hsl(200, 70%, 50%)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="messages" name="Msgs" fill="hsl(150, 60%, 45%)" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
-              No activity in the last 7 days
-            </div>
-          )}
-        </ChartCard>
-
-        <ChartCard title="Document Types">
-          {pieData.length > 0 ? (
-            <div className="flex flex-col items-center">
-              <ResponsiveContainer width="100%" height={140}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={3} dataKey="value">
-                    {pieData.map((_entry, index) => (
-                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: "6px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: "11px" }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap justify-center gap-3 mt-1">
-                {pieData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[index % PIE_COLORS.length] }} />
-                    <span className="text-muted-foreground">{entry.name}</span>
-                    <span className="font-medium">{entry.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="h-[140px] flex items-center justify-center text-sm text-muted-foreground">
-              No documents uploaded yet
-            </div>
-          )}
-        </ChartCard>
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <DocumentComplexityCard documentsByComplexity={metrics.documentsByComplexity} totalDocuments={metrics.totalDocuments} totalPages={metrics.totalPages} />
         {ratingMetrics && <RatingCard ratingMetrics={ratingMetrics} />}
         {confidenceMetrics && <ConfidenceCard confidenceMetrics={confidenceMetrics} />}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <MostQueriedSection docs={metrics.mostQueriedDocs} />
-        <UserBreakdownSection userBreakdown={metrics.userBreakdown} totalDocuments={metrics.totalDocuments} totalMessages={metrics.totalMessages} />
-      </div>
+      <UserBreakdownSection userBreakdown={metrics.userBreakdown} totalDocuments={metrics.totalDocuments} totalMessages={metrics.totalMessages} />
     </>
   );
 }
