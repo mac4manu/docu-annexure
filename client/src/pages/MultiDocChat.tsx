@@ -491,12 +491,12 @@ export default function MultiDocChat() {
             <p className="text-sm text-muted-foreground max-w-md mb-1.5">
               AI can summarize, compare, extract data, and answer questions across your documents.
             </p>
-            <p className="text-xs text-muted-foreground/70 mb-5">
+            <p className="text-xs mb-5">
               {selectedCount === docCount
-                ? `All ${docCount} documents included`
+                ? <Badge variant="default" className="no-default-hover-elevate no-default-active-elevate text-[11px] font-medium">{`All ${docCount} documents included`}</Badge>
                 : selectedCount > 0
-                  ? `${selectedCount} of ${docCount} documents included \u2014 change with the picker above`
-                  : "No documents selected \u2014 use the picker above to choose which to include"}
+                  ? <span className="text-muted-foreground/70">{`${selectedCount} of ${docCount} documents included \u2014 change with the picker above`}</span>
+                  : <span className="text-muted-foreground/70">{"No documents selected \u2014 use the picker above to choose which to include"}</span>}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-w-2xl w-full">
