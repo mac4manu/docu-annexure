@@ -906,6 +906,54 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/confidence/distribution", isAuthenticated, async (req, res) => {
+    try {
+      const dist = await storage.getConfidenceDistribution(getUserId(req));
+      res.json(dist);
+    } catch (error) {
+      console.error("Confidence distribution error:", error);
+      res.status(500).json({ message: "Failed to fetch confidence distribution" });
+    }
+  });
+
+  app.get("/api/admin/confidence/distribution", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    if (!ADMIN_USER_IDS.includes(userId)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const dist = await storage.getAdminConfidenceDistribution();
+      res.json(dist);
+    } catch (error) {
+      console.error("Admin confidence distribution error:", error);
+      res.status(500).json({ message: "Failed to fetch admin confidence distribution" });
+    }
+  });
+
+  app.get("/api/ratings/trend", isAuthenticated, async (req, res) => {
+    try {
+      const trend = await storage.getRatingTrend(getUserId(req));
+      res.json(trend);
+    } catch (error) {
+      console.error("Rating trend error:", error);
+      res.status(500).json({ message: "Failed to fetch rating trend" });
+    }
+  });
+
+  app.get("/api/admin/ratings/trend", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    if (!ADMIN_USER_IDS.includes(userId)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const trend = await storage.getAdminRatingTrend();
+      res.json(trend);
+    } catch (error) {
+      console.error("Admin rating trend error:", error);
+      res.status(500).json({ message: "Failed to fetch admin rating trend" });
+    }
+  });
+
   // Chat
   app.get(api.conversations.list.path, isAuthenticated, async (req, res) => {
     const convs = await storage.getAllConversations(getUserId(req));

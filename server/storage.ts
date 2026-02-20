@@ -80,6 +80,10 @@ export interface IStorage {
   getAdminRatingMetrics(): Promise<{ thumbsUp: number; thumbsDown: number; total: number }>;
   getConfidenceMetrics(userId: string): Promise<{ avgConfidence: number; totalScored: number }>;
   getAdminConfidenceMetrics(): Promise<{ avgConfidence: number; totalScored: number }>;
+  getConfidenceDistribution(userId: string): Promise<{ high: number; medium: number; low: number; total: number }>;
+  getAdminConfidenceDistribution(): Promise<{ high: number; medium: number; low: number; total: number }>;
+  getRatingTrend(userId: string): Promise<{ week: string; thumbsUp: number; thumbsDown: number }[]>;
+  getAdminRatingTrend(): Promise<{ week: string; thumbsUp: number; thumbsDown: number }[]>;
 
   getMetrics(userId: string): Promise<MetricsData>;
   getAdminMetrics(): Promise<AdminMetricsData>;
@@ -240,6 +244,77 @@ export class DatabaseStorage implements IStorage {
       avgConfidence: row.avg_confidence ? Math.round(Number(row.avg_confidence)) : 0,
       totalScored: Number(row.total_scored),
     };
+  }
+
+  async getConfidenceDistribution(userId: string): Promise<{ high: number; medium: number; low: number; total: number }> {
+    const userConvIds = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.userId, userId));
+    const convIds = userConvIds.map(c => c.id);
+    if (convIds.length === 0) return { high: 0, medium: 0, low: 0, total: 0 };
+
+    const result = await db.execute(sql`
+      SELECT
+        COUNT(*) FILTER (WHERE confidence_score >= 80) as high,
+        COUNT(*) FILTER (WHERE confidence_score >= 50 AND confidence_score < 80) as medium,
+        COUNT(*) FILTER (WHERE confidence_score < 50) as low,
+        COUNT(*) as total
+      FROM messages
+      WHERE conversation_id IN (${sql.join(convIds.map(id => sql`${id}`), sql`, `)})
+        AND role = 'assistant'
+        AND confidence_score IS NOT NULL
+    `);
+    const row = result.rows[0] as any;
+    return { high: Number(row.high), medium: Number(row.medium), low: Number(row.low), total: Number(row.total) };
+  }
+
+  async getAdminConfidenceDistribution(): Promise<{ high: number; medium: number; low: number; total: number }> {
+    const result = await db.execute(sql`
+      SELECT
+        COUNT(*) FILTER (WHERE confidence_score >= 80) as high,
+        COUNT(*) FILTER (WHERE confidence_score >= 50 AND confidence_score < 80) as medium,
+        COUNT(*) FILTER (WHERE confidence_score < 50) as low,
+        COUNT(*) as total
+      FROM messages
+      WHERE role = 'assistant' AND confidence_score IS NOT NULL
+    `);
+    const row = result.rows[0] as any;
+    return { high: Number(row.high), medium: Number(row.medium), low: Number(row.low), total: Number(row.total) };
+  }
+
+  async getRatingTrend(userId: string): Promise<{ week: string; thumbsUp: number; thumbsDown: number }[]> {
+    const result = await db.execute(sql`
+      SELECT
+        TO_CHAR(DATE_TRUNC('week', mr.created_at), 'Mon DD') as week,
+        COUNT(*) FILTER (WHERE mr.rating = 'thumbs_up') as thumbs_up,
+        COUNT(*) FILTER (WHERE mr.rating = 'thumbs_down') as thumbs_down
+      FROM message_ratings mr
+      WHERE mr.user_id = ${userId}
+        AND mr.created_at >= NOW() - INTERVAL '6 weeks'
+      GROUP BY DATE_TRUNC('week', mr.created_at)
+      ORDER BY DATE_TRUNC('week', mr.created_at) ASC
+    `);
+    return result.rows.map((r: any) => ({
+      week: r.week,
+      thumbsUp: Number(r.thumbs_up),
+      thumbsDown: Number(r.thumbs_down),
+    }));
+  }
+
+  async getAdminRatingTrend(): Promise<{ week: string; thumbsUp: number; thumbsDown: number }[]> {
+    const result = await db.execute(sql`
+      SELECT
+        TO_CHAR(DATE_TRUNC('week', created_at), 'Mon DD') as week,
+        COUNT(*) FILTER (WHERE rating = 'thumbs_up') as thumbs_up,
+        COUNT(*) FILTER (WHERE rating = 'thumbs_down') as thumbs_down
+      FROM message_ratings
+      WHERE created_at >= NOW() - INTERVAL '6 weeks'
+      GROUP BY DATE_TRUNC('week', created_at)
+      ORDER BY DATE_TRUNC('week', created_at) ASC
+    `);
+    return result.rows.map((r: any) => ({
+      week: r.week,
+      thumbsUp: Number(r.thumbs_up),
+      thumbsDown: Number(r.thumbs_down),
+    }));
   }
 
   async getMetrics(userId: string): Promise<MetricsData> {
