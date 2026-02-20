@@ -64,8 +64,25 @@ export function UploadZone() {
     [upload, toast]
   );
 
+  const onDropRejected = useCallback(
+    (fileRejections: any[]) => {
+      setIsDragActive(false);
+      const rejection = fileRejections[0];
+      if (rejection) {
+        const ext = rejection.file?.name?.split(".").pop()?.toUpperCase() || "unknown";
+        toast({
+          title: "Unsupported File Type",
+          description: `".${ext.toLowerCase()}" files are not supported. Please upload PDF, Word (.doc/.docx), PowerPoint (.ppt/.pptx), or Excel (.xls/.xlsx) files.`,
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
+    onDropRejected,
     onDragEnter: () => setIsDragActive(true),
     onDragLeave: () => setIsDragActive(false),
     onDropAccepted: () => setIsDragActive(false),
