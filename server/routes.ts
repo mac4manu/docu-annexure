@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const officeParser = require("officeparser");
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
+import { EventEmitter } from "events";
 
 import OpenAI from "openai";
 import fs from "fs";
@@ -19,6 +20,13 @@ import { isAuthenticated } from "./replit_integrations/auth";
 import crypto from "crypto";
 
 const execFileAsync = promisify(execFile);
+
+const uploadProgress = new EventEmitter();
+uploadProgress.setMaxListeners(50);
+
+function emitProgress(userId: string, step: string, detail?: string) {
+  uploadProgress.emit(`progress:${userId}`, { step, detail });
+}
 
 const APP_VERSION = crypto.randomBytes(8).toString("hex");
 
@@ -540,6 +548,38 @@ export async function registerRoutes(
     res.json(doc);
   });
 
+  app.get("/api/upload/progress", isAuthenticated, (req, res) => {
+    const userId = getUserId(req);
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+    res.write("data: {\"step\":\"connected\"}\n\n");
+
+    const onProgress = (data: { step: string; detail?: string }) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+    uploadProgress.on(`progress:${userId}`, onProgress);
+
+    const heartbeat = setInterval(() => {
+      res.write(": heartbeat\n\n");
+    }, 15000);
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      res.end();
+    }, 5 * 60 * 1000);
+
+    const cleanup = () => {
+      uploadProgress.off(`progress:${userId}`, onProgress);
+      clearInterval(heartbeat);
+      clearTimeout(timeout);
+    };
+
+    req.on("close", cleanup);
+  });
+
   app.post(api.documents.upload.path, isAuthenticated, upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
@@ -565,6 +605,7 @@ export async function registerRoutes(
       let complexity = "simple";
       let pageCount: number | null = null;
       console.log(`Processing file: ${originalFilename} (${fileType})`);
+      emitProgress(userId, "analyzing", "Analyzing document structure...");
 
       if (!ALLOWED_MIMETYPES.has(fileType)) {
         cleanupFiles(cleanupList);
@@ -595,17 +636,21 @@ export async function registerRoutes(
 
         if (isComplex) {
           complexity = "complex";
+          emitProgress(userId, "complex_detected", `Complex document detected — ${pageCountMatch} pages with advanced content`);
           console.log("Using advanced vision-based extraction");
+          emitProgress(userId, "converting", `Converting ${pageCountMatch} pages to images...`);
           const imagePaths = await convertPdfToImages(filePath);
           const imageDir = path.dirname(imagePaths[0] || "");
           if (imageDir) cleanupList.push(imageDir);
 
           if (imagePaths.length > 0) {
+            emitProgress(userId, "extracting_vision", `Extracting content with AI vision (${imagePaths.length} pages)...`);
             content = await extractMarkdownFromImages(imagePaths);
           } else {
             content = rawText || "No pages found in PDF.";
           }
         } else {
+          emitProgress(userId, "extracting_text", `Extracting text from ${pageCountMatch} pages...`);
           console.log("Using basic text extraction with lightweight formatting");
           if (rawText && rawText.trim().length > 0) {
             content = await formatTextToMarkdown(rawText);
@@ -615,6 +660,7 @@ export async function registerRoutes(
         }
       } else if (fileType.includes("spreadsheet") || fileType.includes("excel")) {
         complexity = "structured";
+        emitProgress(userId, "extracting_text", "Reading spreadsheet data...");
         let rawText = "";
         try {
           const workbook = XLSX.readFile(filePath);
@@ -634,6 +680,7 @@ export async function registerRoutes(
         }
 
         if (rawText && rawText.trim().length > 0) {
+          emitProgress(userId, "formatting", "Formatting spreadsheet into structured markdown...");
           content = await formatExcelToMarkdown(rawText);
         } else {
           content = "No data could be extracted from this spreadsheet.";
@@ -643,16 +690,19 @@ export async function registerRoutes(
         let visionSuccess = false;
 
         try {
+          emitProgress(userId, "converting", "Converting Word document to PDF...");
           const pdfPath = await convertDocxToPdf(filePath);
           cleanupList.push(pdfPath);
           console.log("DOCX converted to PDF, extracting pages as images...");
 
+          emitProgress(userId, "converting", "Converting pages to images...");
           const imagePaths = await convertPdfToImages(pdfPath);
           const imageDir = path.dirname(imagePaths[0] || "");
           if (imageDir) cleanupList.push(imageDir);
           pageCount = imagePaths.length || null;
 
           if (imagePaths.length > 0) {
+            emitProgress(userId, "extracting_vision", `Extracting content with AI vision (${imagePaths.length} pages)...`);
             content = await extractMarkdownFromImages(imagePaths);
             visionSuccess = true;
             complexity = "complex";
@@ -663,6 +713,7 @@ export async function registerRoutes(
         }
 
         if (!visionSuccess) {
+          emitProgress(userId, "extracting_text", "Extracting text from Word document...");
           let rawText = "";
           try {
             console.log("Falling back to mammoth extraction for DOCX...");
@@ -690,6 +741,7 @@ export async function registerRoutes(
           }
         }
       } else {
+        emitProgress(userId, "extracting_text", "Extracting text from presentation...");
         let rawText = "";
         try {
           rawText = await officeParser.parseOfficeAsync(filePath);
@@ -705,6 +757,7 @@ export async function registerRoutes(
       }
 
       cleanupFiles(cleanupList);
+      emitProgress(userId, "saving", "Saving document...");
 
       const finalContent = content || "No content extracted.";
 
@@ -725,6 +778,7 @@ export async function registerRoutes(
         keywords: null,
       });
 
+      emitProgress(userId, "metadata", "Extracting metadata (title, authors, DOI)...");
       res.status(201).json(doc);
 
       (async () => {

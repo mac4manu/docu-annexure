@@ -1,58 +1,106 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, Loader2, CheckCircle } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle, Sparkles, FileText, Eye } from "lucide-react";
 import { useUploadDocument } from "@/hooks/use-documents";
 import { useToast } from "@/hooks/use-toast";
 
-const PROGRESS_STAGES = [
-  { label: "Uploading file...", duration: 1000 },
-  { label: "Analyzing document...", duration: 2000 },
-  { label: "Extracting content...", duration: 10000 },
-  { label: "Saving document...", duration: 3000 },
-];
+interface ProgressStep {
+  step: string;
+  detail: string;
+  done: boolean;
+}
+
+const STEP_CONFIG: Record<string, { icon: typeof FileText; label: string }> = {
+  analyzing: { icon: FileText, label: "Analyzing document" },
+  complex_detected: { icon: Sparkles, label: "Complex content detected" },
+  converting: { icon: FileText, label: "Converting pages" },
+  extracting_text: { icon: FileText, label: "Extracting text" },
+  extracting_vision: { icon: Eye, label: "AI vision extraction" },
+  formatting: { icon: FileText, label: "Formatting content" },
+  saving: { icon: FileText, label: "Saving document" },
+  metadata: { icon: Sparkles, label: "Extracting metadata" },
+};
 
 export function UploadZone() {
   const [isDragActive, setIsDragActive] = useState(false);
-  const [stageIndex, setStageIndex] = useState(0);
+  const [steps, setSteps] = useState<ProgressStep[]>([]);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const pendingEventsRef = useRef<{ step: string; detail?: string }[]>([]);
+  const sseReadyRef = useRef(false);
   const { mutate: upload, isPending } = useUploadDocument();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!isPending) {
-      setStageIndex(0);
-      return;
+  const cleanupSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
+    sseReadyRef.current = false;
+    pendingEventsRef.current = [];
+  }, []);
 
-    let timeoutId: ReturnType<typeof setTimeout>;
-    const advanceStage = (idx: number) => {
-      if (idx < PROGRESS_STAGES.length - 1) {
-        timeoutId = setTimeout(() => {
-          setStageIndex(idx + 1);
-          advanceStage(idx + 1);
-        }, PROGRESS_STAGES[idx].duration);
-      }
+  useEffect(() => {
+    return () => {
+      cleanupSSE();
     };
-
-    advanceStage(0);
-    return () => clearTimeout(timeoutId);
-  }, [isPending]);
+  }, [cleanupSSE]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
 
+      setSteps([{ step: "uploading", detail: `Uploading ${file.name}...`, done: false }]);
+      sseReadyRef.current = false;
+      pendingEventsRef.current = [];
+
+      cleanupSSE();
+      const es = new EventSource("/api/upload/progress", { withCredentials: true });
+      eventSourceRef.current = es;
+
+      const processEvent = (data: { step: string; detail?: string }) => {
+        if (data.step === "connected") return;
+        setSteps(prev => {
+          const updated = prev.map(s => ({ ...s, done: true }));
+          return [...updated, { step: data.step, detail: data.detail || data.step, done: false }];
+        });
+      };
+
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.step === "connected") {
+            sseReadyRef.current = true;
+            for (const pending of pendingEventsRef.current) {
+              processEvent(pending);
+            }
+            pendingEventsRef.current = [];
+            return;
+          }
+          processEvent(data);
+        } catch {}
+      };
+
+      es.onerror = () => {
+        cleanupSSE();
+      };
+
       const formData = new FormData();
       formData.append("file", file);
 
       upload(formData, {
         onSuccess: () => {
+          setSteps(prev => prev.map(s => ({ ...s, done: true })));
+          cleanupSSE();
+          setTimeout(() => setSteps([]), 1500);
           toast({
             title: "Success",
             description: "Document uploaded and converted successfully!",
           });
         },
         onError: (error) => {
+          cleanupSSE();
+          setSteps([]);
           toast({
             title: "Upload Failed",
             description: error.message,
@@ -61,7 +109,7 @@ export function UploadZone() {
         },
       });
     },
-    [upload, toast]
+    [upload, toast, cleanupSSE]
   );
 
   const onDropRejected = useCallback(
@@ -99,6 +147,8 @@ export function UploadZone() {
     disabled: isPending,
   });
 
+  const isProcessing = isPending || steps.length > 0;
+
   return (
     <div className="w-full" data-testid="upload-zone-container">
       <div
@@ -116,12 +166,12 @@ export function UploadZone() {
               ? "border-primary bg-primary/10 scale-[1.01] shadow-xl shadow-primary/10"
               : "border-primary/30 hover:border-primary hover:bg-primary/[0.07]"
           }
-          ${isPending ? "pointer-events-none cursor-wait" : ""}
+          ${isProcessing ? "pointer-events-none cursor-wait" : ""}
         `}
       >
         <input {...getInputProps()} data-testid="input-file-upload" />
 
-        {isPending ? (
+        {isProcessing ? (
           <div className="flex flex-col items-center justify-center gap-5">
             <div className="p-4 rounded-full bg-primary/10">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -133,28 +183,26 @@ export function UploadZone() {
               </h3>
 
               <div className="space-y-2">
-                {PROGRESS_STAGES.map((stage, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-center gap-2 text-sm transition-all duration-300 ${
-                      idx < stageIndex
-                        ? "text-muted-foreground"
-                        : idx === stageIndex
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground/40"
-                    }`}
-                    data-testid={`text-stage-${idx}`}
-                  >
-                    {idx < stageIndex ? (
-                      <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                    ) : idx === stageIndex ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border border-border shrink-0" />
-                    )}
-                    <span>{stage.label}</span>
-                  </div>
-                ))}
+                {steps.map((s, idx) => {
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-center gap-2 text-sm transition-all duration-300 ${
+                        s.done
+                          ? "text-muted-foreground"
+                          : "text-foreground font-medium"
+                      }`}
+                      data-testid={`text-stage-${idx}`}
+                    >
+                      {s.done ? (
+                        <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                      ) : (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                      )}
+                      <span>{s.detail}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               <p className="text-xs text-muted-foreground pt-1">
