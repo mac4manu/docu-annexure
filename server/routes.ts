@@ -278,7 +278,7 @@ async function extractBatch(imagePaths: string[], startIndex: number): Promise<s
 
   const response = await openai.chat.completions.create({
     model: "gpt-5.2",
-    max_completion_tokens: 8192,
+    max_completion_tokens: 16384,
     messages: [
       {
         role: "system",
@@ -294,7 +294,8 @@ Rules:
 - Keep the document structure and hierarchy intact
 - Preserve footnotes, endnotes, and bibliographic references
 - Separate pages with a horizontal rule (---)
-- Do NOT add any commentary — just output the extracted markdown`,
+- Do NOT add any commentary, disclaimers, or notes about truncation — just output the extracted markdown
+- Never say the text is truncated or that you cannot see remaining pages — extract only what is visible in the provided images`,
       },
       {
         role: "user",
