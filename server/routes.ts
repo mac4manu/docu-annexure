@@ -586,10 +586,12 @@ export async function registerRoutes(
         const hasTablePatterns = /(\|.*\|)|(\+[-+]+\+)|(┌|├|└|│|─)/.test(rawText);
         const hasMathSymbols = /[∑∫∂√∞≠≈±×÷∈∀∃∇∆λσμπ]|\\frac|\\sum|\\int|\\sqrt/.test(rawText);
         const hasLowTextDensity = textPerPage < 200;
-        const isComplex = hasTablePatterns || hasMathSymbols || hasLowTextDensity;
+        const isLongDocument = pageCountMatch >= 10;
+        const isAcademicPaper = /\b(abstract|references|doi|et\s+al\.|journal|proceedings)\b/i.test(rawText) && pageCountMatch >= 5;
+        const isComplex = hasTablePatterns || hasMathSymbols || hasLowTextDensity || isLongDocument || isAcademicPaper;
 
         pageCount = pageCountMatch;
-        console.log(`PDF analysis: ${pageCountMatch} pages, ${Math.round(textPerPage)} chars/page, complex=${isComplex} (tables=${hasTablePatterns}, math=${hasMathSymbols}, lowDensity=${hasLowTextDensity})`);
+        console.log(`PDF analysis: ${pageCountMatch} pages, ${Math.round(textPerPage)} chars/page, complex=${isComplex} (tables=${hasTablePatterns}, math=${hasMathSymbols}, lowDensity=${hasLowTextDensity}, longDoc=${isLongDocument}, academic=${isAcademicPaper})`);
 
         if (isComplex) {
           complexity = "complex";
