@@ -293,7 +293,7 @@ async function extractBatch(imagePaths: string[], startIndex: number, tokenLimit
       type: "image_url" as const,
       image_url: {
         url: `data:image/png;base64,${base64}`,
-        detail: "high" as const,
+        detail: "auto" as const,
       },
     };
   });
