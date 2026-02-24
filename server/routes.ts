@@ -270,30 +270,10 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   return files;
 }
 
-async function extractBatch(imagePaths: string[], startIndex: number): Promise<string> {
-  const imageContents: OpenAI.Chat.Completions.ChatCompletionContentPart[] = imagePaths.map((imgPath) => {
-    const base64 = fs.readFileSync(imgPath).toString("base64");
-    return {
-      type: "image_url" as const,
-      image_url: {
-        url: `data:image/png;base64,${base64}`,
-        detail: "auto" as const,
-      },
-    };
-  });
-
-  const pageNumbers = imagePaths.map((_, idx) => startIndex + idx + 1).join(", ");
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-5.2",
-    max_completion_tokens: 16384,
-    messages: [
-      {
-        role: "system",
-        content: `You are a document content extraction expert specializing in scientific, medical, and educational documents. Convert the provided document page images into well-structured Markdown.
+const VISION_SYSTEM_PROMPT = `You are a document content extraction expert specializing in scientific, medical, and educational documents. Convert the provided document page images into well-structured Markdown.
 
 Rules:
-- Extract ALL text content faithfully and accurately
+- Extract ALL text content faithfully and accurately — do not skip, summarize, or abbreviate any content
 - Reproduce tables using proper Markdown table syntax (| col1 | col2 |), preserving all data precisely — this is critical for scientific data tables, clinical results, and academic datasets
 - For mathematical formulas and equations, use LaTeX notation wrapped in $ for inline and $$ for block display
 - For chemical formulas, use proper notation (e.g., H₂O, CO₂) or LaTeX where complex
@@ -303,14 +283,37 @@ Rules:
 - Preserve footnotes, endnotes, and bibliographic references
 - Separate pages with a horizontal rule (---)
 - Do NOT add any commentary, disclaimers, or notes about truncation — just output the extracted markdown
-- Never say the text is truncated or that you cannot see remaining pages — extract only what is visible in the provided images`,
+- Never say the text is truncated or that you cannot see remaining pages — extract only what is visible in the provided images
+- CRITICAL: You must extract EVERY page completely. Do not stop mid-sentence or skip content between pages.`;
+
+async function extractBatch(imagePaths: string[], startIndex: number, tokenLimit: number = 16384): Promise<string> {
+  const imageContents: OpenAI.Chat.Completions.ChatCompletionContentPart[] = imagePaths.map((imgPath) => {
+    const base64 = fs.readFileSync(imgPath).toString("base64");
+    return {
+      type: "image_url" as const,
+      image_url: {
+        url: `data:image/png;base64,${base64}`,
+        detail: "high" as const,
+      },
+    };
+  });
+
+  const pageNumbers = imagePaths.map((_, idx) => startIndex + idx + 1).join(", ");
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: tokenLimit,
+    messages: [
+      {
+        role: "system",
+        content: VISION_SYSTEM_PROMPT,
       },
       {
         role: "user",
         content: [
           {
             type: "text",
-            text: `Extract the content from these document pages (pages ${pageNumbers}) into Markdown format.`,
+            text: `Extract the complete content from these document pages (pages ${pageNumbers}) into Markdown format. Extract every word on every page — do not skip or abbreviate anything.`,
           },
           ...imageContents,
         ],
@@ -318,18 +321,43 @@ Rules:
     ],
   });
 
-  return response.choices[0]?.message?.content || "";
+  const choice = response.choices[0];
+  const result = choice?.message?.content || "";
+  const finishReason = choice?.finish_reason;
+
+  if (finishReason === "length" && imagePaths.length > 1) {
+    console.log(`Batch pages ${pageNumbers} truncated (finish_reason=length, ${tokenLimit} tokens). Splitting into smaller batches...`);
+    const mid = Math.ceil(imagePaths.length / 2);
+    const firstHalf = imagePaths.slice(0, mid);
+    const secondHalf = imagePaths.slice(mid);
+    const higherLimit = Math.min(tokenLimit + 4096, 32768);
+
+    const [first, second] = await Promise.all([
+      extractBatch(firstHalf, startIndex, higherLimit),
+      extractBatch(secondHalf, startIndex + mid, higherLimit),
+    ]);
+    return first + "\n\n---\n\n" + second;
+  }
+
+  if (finishReason === "length") {
+    console.log(`Single page ${pageNumbers} truncated (finish_reason=length). Retrying with higher limit...`);
+    if (tokenLimit < 32768) {
+      return extractBatch(imagePaths, startIndex, 32768);
+    }
+  }
+
+  return result;
 }
 
 async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> {
   const maxPages = 30;
   const pages = imagePaths.slice(0, maxPages);
 
-  if (pages.length <= 5) {
+  if (pages.length <= 3) {
     return await extractBatch(pages, 0);
   }
 
-  const batchSize = 5;
+  const batchSize = 3;
   const batches: { paths: string[]; startIndex: number }[] = [];
   for (let i = 0; i < pages.length; i += batchSize) {
     batches.push({ paths: pages.slice(i, i + batchSize), startIndex: i });
