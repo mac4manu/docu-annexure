@@ -1,6 +1,14 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
+import { execSync } from "child_process";
+
+try {
+  console.log("pushing database schema...");
+  execSync("npx drizzle-kit push --force", { stdio: "inherit" });
+} catch (e) {
+  console.warn("db:push warning:", e);
+}
 
 const allowlist = [
   "@google/generative-ai",
@@ -33,7 +41,6 @@ const allowlist = [
   "xlsx",
   "zod",
   "zod-validation-error",
-  "@xenova/transformers",
 ];
 
 async function buildAll() {
