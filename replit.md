@@ -1,29 +1,161 @@
 # DocuAnnexure - Document Analysis Application
 
 ## Overview
-DocuAnnexure is a central hub for document inference and chat-driven access to internal knowledge. It accepts PDF, PowerPoint, and Word files, extracts rich content (tables, formulas, images) using AI vision, and provides an AI-powered chat interface for Q&A about document content.
+DocuAnnexure is a central hub for document inference and chat-driven access to internal knowledge. It accepts PDF, PowerPoint, Word, and Excel files, extracts rich content (tables, formulas, images) using AI vision, and provides an AI-powered chat interface for Q&A about document content. Uses RAG (Retrieval-Augmented Generation) with local vector embeddings for intelligent context retrieval.
+
+## Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph Client["Frontend (React + Vite)"]
+        Landing[Landing Page]
+        Home[Document Library]
+        DocView[Document Viewer + Chat]
+        MultiChat[Multi-Doc Chat]
+        Metrics[Analytics Dashboard]
+        HowTo[How to Use]
+        Privacy[Privacy Policy]
+        Changelog[What's New]
+        AdminUsers[User Management]
+    end
+
+    subgraph Server["Backend (Express.js)"]
+        Auth[Replit Auth<br/>OpenID Connect]
+        Routes[API Routes<br/>Protected Endpoints]
+        Upload[Upload Pipeline]
+        ChatEngine[Chat Engine<br/>Streaming SSE]
+        RAGModule[RAG Module]
+        Storage[Storage Layer<br/>Drizzle ORM]
+    end
+
+    subgraph RAG["RAG System"]
+        Chunker[Document Chunker<br/>Math-Aware Splitting]
+        Embedder[Embedding Model<br/>all-MiniLM-L6-v2]
+        VectorSearch[Vector Similarity<br/>pgvector + HNSW]
+    end
+
+    subgraph AI["AI Services"]
+        GPTVision[GPT-5.2 Vision<br/>PDF/DOCX Extraction]
+        GPTChat[GPT-5.2 Chat<br/>Professor Persona]
+        GPTConfidence[GPT-5.2<br/>Confidence Scorer]
+        GPTMeta[GPT-5.2<br/>Metadata Extractor]
+    end
+
+    subgraph Database["PostgreSQL + pgvector"]
+        Documents[(documents)]
+        Chunks[(document_chunks<br/>vector 384-dim)]
+        Conversations[(conversations)]
+        Messages[(messages)]
+        Users[(users)]
+        Sessions[(sessions)]
+        Ratings[(message_ratings)]
+        AllowedEmails[(allowed_emails)]
+    end
+
+    subgraph Processing["Document Processing"]
+        PDFProc[pdftoppm<br/>PDF → PNG pages]
+        LibreOffice[LibreOffice<br/>DOCX → PDF]
+        OfficeParser[officeParser<br/>PPTX text]
+        XLSX[xlsx<br/>Excel → Markdown]
+    end
+
+    Client -->|API Requests| Routes
+    Routes -->|Session Auth| Auth
+    Auth -->|Verify| Users
+
+    Upload -->|PDF| PDFProc
+    Upload -->|DOCX| LibreOffice
+    Upload -->|PPTX| OfficeParser
+    Upload -->|XLSX| XLSX
+    PDFProc -->|PNG images| GPTVision
+    LibreOffice -->|PDF| PDFProc
+    GPTVision -->|Markdown| Documents
+    Upload -->|Extract| GPTMeta
+
+    Upload -->|Background| RAGModule
+    RAGModule --> Chunker
+    Chunker -->|Text Chunks| Embedder
+    Embedder -->|384-dim vectors| Chunks
+
+    ChatEngine -->|User Query| Embedder
+    Embedder -->|Query Vector| VectorSearch
+    VectorSearch -->|Top-K Chunks| ChatEngine
+    ChatEngine -->|Context + Query| GPTChat
+    GPTChat -->|Streamed Response| Messages
+    ChatEngine -->|Evaluate| GPTConfidence
+    GPTConfidence -->|Score 0-100| Messages
+```
+
+## Data Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant API as Express API
+    participant DP as Doc Processing
+    participant RAG as RAG System
+    participant AI as GPT-5.2
+    participant DB as PostgreSQL
+
+    Note over U,DB: Document Upload Flow
+    U->>FE: Upload PDF/DOCX/PPTX/XLSX
+    FE->>API: POST /api/documents/upload
+    API->>DP: Convert to images/text
+    DP->>AI: Vision extraction (pages → markdown)
+    AI-->>API: Structured markdown content
+    API->>AI: Extract metadata (DOI, authors, etc.)
+    API->>DB: Save document + metadata
+    API-->>FE: Document created (SSE progress)
+    
+    Note over API,DB: Background RAG Indexing
+    API->>RAG: indexDocumentChunks()
+    RAG->>RAG: Split into ~4500 char chunks
+    RAG->>RAG: Generate embeddings (MiniLM-L6-v2)
+    RAG->>DB: Store chunks + 384-dim vectors
+
+    Note over U,DB: Chat with RAG Flow
+    U->>FE: Ask question about document
+    FE->>API: POST /api/conversations/:id/messages (SSE)
+    API->>RAG: findRelevantChunks(query, docIds)
+    RAG->>RAG: Embed query → 384-dim vector
+    RAG->>DB: pgvector cosine similarity search
+    DB-->>RAG: Top-K relevant chunks
+    RAG-->>API: Ranked context excerpts
+    API->>AI: System prompt + relevant chunks + question
+    AI-->>API: Streamed response (professor persona)
+    API-->>FE: SSE stream tokens
+    API->>AI: Evaluate confidence (0-100%)
+    AI-->>API: Confidence score
+    API->>DB: Save message + confidence
+```
 
 ## Architecture
-- **Frontend**: React + Vite, Tailwind CSS, shadcn/ui, wouter routing
+- **Frontend**: React + Vite, Tailwind CSS (Inter font), shadcn/ui, wouter routing
 - **Backend**: Express.js, PostgreSQL + Drizzle ORM
 - **Auth**: Replit Auth (OpenID Connect) via passport, session-based with PostgreSQL session store
 - **AI**: OpenAI GPT-5.2 via Replit AI Integrations (vision for PDF extraction, chat for Q&A)
+- **RAG**: all-MiniLM-L6-v2 local embedding model (384-dim), pgvector with HNSW index for cosine similarity search
 - **Document Processing**: 
   - PDF: pdftoppm (poppler-utils) converts pages to PNG images -> GPT vision extracts markdown
-  - DOCX/PPTX: officeparser extracts text -> GPT formats into structured markdown
+  - DOCX: LibreOffice converts to PDF -> vision pipeline (officeParser as fallback)
+  - PPTX: officeParser extracts text -> GPT formats into structured markdown
+  - XLSX: xlsx library parses spreadsheets -> formatted markdown tables
   - Output includes proper markdown tables, LaTeX math formulas, and image descriptions
 
 ## Key Files
 - `server/routes.ts` - API routes (all protected with isAuthenticated middleware)
 - `server/index.ts` - Server setup, auth wired before routes via setupAuth + registerAuthRoutes
+- `server/rag.ts` - RAG system: chunking, embedding (all-MiniLM-L6-v2 local model, 384-dim), pgvector similarity search
 - `server/replit_integrations/auth/` - Auth module (replitAuth.ts, storage.ts, routes.ts)
 - `shared/schema.ts` - Database schema (documents, conversations, messages, users, sessions)
 - `shared/models/auth.ts` - Auth schema (users, sessions tables)
 - `shared/models/chat.ts` - Chat schema with documentIds array for multi-doc conversations
+- `shared/models/document.ts` - Document and document_chunks schemas
 - `shared/routes.ts` - Shared API route definitions
-- `server/rag.ts` - RAG system: chunking, embedding (all-MiniLM-L6-v2 local model, 384-dim), pgvector similarity search
 - `server/storage.ts` - Database storage interface with metrics aggregation
 - `client/src/App.tsx` - Root app with auth guard: Landing for logged-out, AuthenticatedApp for logged-in
+- `client/src/lib/latex-utils.ts` - LaTeX preprocessing for math rendering (converts \[...\] to $$...$$)
 - `client/src/pages/Landing.tsx` - Landing page with hero, features, login CTA
 - `client/src/pages/Home.tsx` - Document library (authenticated)
 - `client/src/pages/DocumentView.tsx` - Document viewer with markdown rendering and chat panel
@@ -33,6 +165,14 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - `client/src/hooks/use-auth.ts` - React hook for authentication state
 - `client/src/components/ChatInterface.tsx` - AI chat with streaming responses
 - `client/src/components/UploadZone.tsx` - Drag-and-drop file upload
+
+## RAG System Details
+- **Chunking**: Math-aware splitting at ~4500 chars with 600-char overlap; detects open LaTeX blocks (`$$`) to avoid splitting mid-equation; falls back to paragraph-based splitting
+- **Embedding**: all-MiniLM-L6-v2 via @xenova/transformers (runs locally, no API key needed); produces 384-dimensional vectors
+- **Storage**: `document_chunks` table with `embedding vector(384)` column + HNSW index (`vector_cosine_ops`)
+- **Search**: Cosine similarity via pgvector `<=>` operator; retrieves top-K (default 15) most relevant chunks
+- **Initialization**: `initVectorSupport()` runs at startup to ensure pgvector extension, embedding column, and HNSW index exist
+- **Fallback**: If a document has no chunks (not yet indexed), chat falls back to sending full document content
 
 ## Recent Changes
 - 2026-02-09: Added Replit Auth with landing page, user profile/logout in header, protected API routes
@@ -70,12 +210,18 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-20: Replaced AI Quality card with Agent Evaluation section on Metrics page: confidence distribution (High/Medium/Low buckets), rating trend (6-week stacked bars), plus accuracy and confidence summaries
 - 2026-02-20: Added API routes: /api/confidence/distribution, /api/admin/confidence/distribution, /api/ratings/trend, /api/admin/ratings/trend
 - 2026-02-26: Implemented RAG (Retrieval-Augmented Generation) system using pgvector for semantic search
-- 2026-02-26: Added document_chunks table with vector(384) embeddings and HNSW index
+- 2026-02-26: Added document_chunks table with vector(384) embeddings and HNSW index (created at runtime via initVectorSupport)
+- 2026-02-26: Local embedding model (all-MiniLM-L6-v2) via @xenova/transformers — no external API needed
 - 2026-02-26: New documents auto-indexed during upload; chat uses RAG retrieval when chunks exist, falls back to full-context for non-indexed docs
 - 2026-02-26: Added reindex API (POST /api/documents/:id/reindex), chunk status API (GET /api/documents/:id/chunks)
 - 2026-02-26: Added "Build Index" button on DocumentView for older documents, shows "RAG Indexed" badge when done
 - 2026-02-26: Added Google Analytics (G-YTW4Q7BHN1) with SPA route-change tracking
+- 2026-02-26: Added LaTeX preprocessing (client/src/lib/latex-utils.ts) to convert \[...\] → $$...$$ and ensure display math newlines
+- 2026-02-26: Applied Inter font globally via CSS variables
+- 2026-02-26: Added KaTeX overflow scrolling for long formulas
+- 2026-02-26: Adjusted DocumentView panel sizes (40/60 split favoring chat)
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000
 - PostgreSQL via DATABASE_URL env var
+- Vector support (pgvector extension, embedding column, HNSW index) initialized automatically at startup
