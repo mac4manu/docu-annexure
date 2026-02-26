@@ -249,7 +249,7 @@ export default function DocumentView() {
         <ResizablePanelGroup direction="horizontal" data-testid="panel-group-doc-chat">
           {docPanelVisible && (
             <>
-              <ResizablePanel defaultSize={55} minSize={25} data-testid="panel-document">
+              <ResizablePanel defaultSize={40} minSize={20} data-testid="panel-document">
                 <div className="h-full overflow-y-auto overflow-x-hidden">
                   <MetadataPanel doc={doc} />
                   <div className="max-w-3xl mx-auto px-6 py-8">
@@ -267,7 +267,7 @@ export default function DocumentView() {
               <ResizableHandle withHandle data-testid="handle-resize" />
             </>
           )}
-          <ResizablePanel defaultSize={docPanelVisible ? 45 : 100} minSize={30} data-testid="panel-chat">
+          <ResizablePanel defaultSize={docPanelVisible ? 60 : 100} minSize={30} data-testid="panel-chat">
             <ChatInterface documentId={doc.id} />
           </ResizablePanel>
         </ResizablePanelGroup>
