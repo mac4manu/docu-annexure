@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { preprocessLaTeX } from "@/lib/latex-utils";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -532,7 +533,7 @@ export default function MultiDocChat() {
                   <div className={`rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-card border border-border/50 rounded-bl-none text-foreground"}`}>
                     {msg.role === "assistant" ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-[13px] prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1 prose-table:border-collapse prose-th:border prose-th:border-border prose-th:p-1 prose-th:bg-muted/50 prose-td:border prose-td:border-border prose-td:p-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{preprocessLaTeX(msg.content)}</ReactMarkdown>
                       </div>
                     ) : (
                       msg.content

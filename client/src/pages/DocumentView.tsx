@@ -16,6 +16,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 import "katex/dist/katex.min.css";
+import { preprocessLaTeX } from "@/lib/latex-utils";
 
 function MetadataPanel({ doc }: { doc: any }) {
   const [expanded, setExpanded] = useState(true);
@@ -257,7 +258,7 @@ export default function DocumentView() {
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
                       >
-                        {doc.content}
+                        {preprocessLaTeX(doc.content)}
                       </ReactMarkdown>
                     </article>
                   </div>

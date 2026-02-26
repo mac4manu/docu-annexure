@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { preprocessLaTeX } from "@/lib/latex-utils";
 
 interface ChatInterfaceProps {
   documentId: number;
@@ -257,7 +258,7 @@ export function ChatInterface({ documentId }: ChatInterfaceProps) {
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
-                      >{msg.content}</ReactMarkdown>
+                      >{preprocessLaTeX(msg.content)}</ReactMarkdown>
                     </div>
                   ) : (
                     msg.content
