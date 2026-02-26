@@ -6,11 +6,22 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
-const CHUNK_SIZE = 3000;
-const CHUNK_OVERLAP = 400;
+const CHUNK_SIZE = 4500;
+const CHUNK_OVERLAP = 600;
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_BATCH_SIZE = 20;
-const DEFAULT_TOP_K = 12;
+const DEFAULT_TOP_K = 15;
+
+function containsOpenMathBlock(text: string): boolean {
+  const openBlocks = (text.match(/\$\$/g) || []).length;
+  return openBlocks % 2 !== 0;
+}
+
+function isMathHeavy(text: string): boolean {
+  const mathPatterns = /\$\$[\s\S]*?\$\$|\$[^$]+\$|\\begin\{(equation|align|gather|multline|eqnarray)/g;
+  const matches = text.match(mathPatterns) || [];
+  return matches.length >= 3 || matches.join("").length > text.length * 0.15;
+}
 
 export function chunkDocument(content: string): { content: string; index: number }[] {
   const chunks: { content: string; index: number }[] = [];
@@ -19,9 +30,15 @@ export function chunkDocument(content: string): { content: string; index: number
 
   let buffer = "";
   let chunkIndex = 0;
+  const effectiveLimit = CHUNK_SIZE;
 
   for (const section of sections) {
-    if (buffer.length + section.length > CHUNK_SIZE && buffer.length > 0) {
+    const combinedLength = buffer.length + section.length;
+    const bufferHasOpenMath = containsOpenMathBlock(buffer);
+    const sectionHasMath = isMathHeavy(section);
+    const expandedLimit = (bufferHasOpenMath || sectionHasMath) ? effectiveLimit * 1.5 : effectiveLimit;
+
+    if (combinedLength > expandedLimit && buffer.length > 0 && !bufferHasOpenMath) {
       chunks.push({ content: buffer.trim(), index: chunkIndex++ });
 
       const overlapStart = Math.max(0, buffer.length - CHUNK_OVERLAP);
@@ -42,7 +59,12 @@ export function chunkDocument(content: string): { content: string; index: number
     chunkIndex = 0;
 
     for (const para of paragraphs) {
-      if (buffer.length + para.length > CHUNK_SIZE && buffer.length > 0) {
+      const combinedLength = buffer.length + para.length;
+      const bufferHasOpenMath = containsOpenMathBlock(buffer);
+      const paraHasMath = isMathHeavy(para);
+      const expandedLimit = (bufferHasOpenMath || paraHasMath) ? effectiveLimit * 1.5 : effectiveLimit;
+
+      if (combinedLength > expandedLimit && buffer.length > 0 && !bufferHasOpenMath) {
         chunks.push({ content: buffer.trim(), index: chunkIndex++ });
         const overlapStart = Math.max(0, buffer.length - CHUNK_OVERLAP);
         buffer = buffer.slice(overlapStart) + "\n\n" + para;

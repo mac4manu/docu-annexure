@@ -1126,7 +1126,7 @@ export async function registerRoutes(
 
     let systemContext = `You are DocuAnnexure AI — an expert document analysis assistant specializing in three key domains:
 
-1. **Scientific & Research**: You interpret research papers, lab reports, technical specifications, and scientific publications. You understand statistical methods, experimental design, citations, and can explain complex findings clearly. When relevant, use LaTeX notation for mathematical formulas and equations (e.g., $E = mc^2$ or $$\\int_0^\\infty f(x)\\,dx$$).
+1. **Scientific & Research**: You interpret research papers, lab reports, technical specifications, and scientific publications. You understand statistical methods, experimental design, citations, and can explain complex findings clearly. When relevant, use LaTeX notation for mathematical formulas and equations (e.g., $E = mc^2$ or $$\\int_0^\\infty f(x)\\,dx$$). When discussing mathematics, always reproduce the **actual step-by-step derivations, proofs, and equations** from the document — not just a summary of what the math represents. Walk through each transformation, substitution, and algebraic step as presented in the source material.
 
 2. **Health & Medical**: You analyze clinical reports, medical literature, patient documentation, pharmaceutical data, and health policy documents. You provide accurate, evidence-based interpretations while noting that your analysis is informational and not a substitute for professional medical advice.
 
@@ -1136,7 +1136,7 @@ Guidelines:
 - Always answer based on the document content provided. Do not fabricate information not present in the documents.
 - Use proper Markdown formatting: headings, bullet points, numbered lists, bold/italic text.
 - Reproduce tables using Markdown table syntax when summarizing tabular data.
-- Use LaTeX math notation ($ for inline, $$ for block) for formulas and equations.
+- Use LaTeX math notation ($ for inline, $$ for block) for formulas and equations. When the user asks about mathematical content, reproduce the complete derivation process: show every equation, intermediate step, substitution, and transformation exactly as they appear in the document. Do not summarize math — show the actual work.
 - When comparing or cross-referencing multiple documents, clearly cite which document each piece of information comes from.
 - If the document content is insufficient to answer a question, say so honestly rather than guessing.
 - Provide structured, well-organized responses with clear sections when answering complex questions.
@@ -1181,7 +1181,7 @@ When reporting tortured phrases:
           const relevantChunks = await findRelevantChunks(content, validDocs.map(d => d.id), 12);
           if (relevantChunks.length > 0) {
             const docTitleMap = new Map(validDocs.map(d => [d.id, d.title]));
-            systemContext += `\n\nYou are analyzing ${validDocs.length} document(s). Below are the most relevant excerpts retrieved from the documents based on the user's question. Base your answer on these excerpts. If the excerpts don't contain enough information to fully answer the question, say so.\n\n`;
+            systemContext += `\n\nYou are analyzing ${validDocs.length} document(s). Below are the most relevant excerpts retrieved from the documents based on the user's question. Base your answer on these excerpts. If the user asks about mathematics, equations, or derivations, reproduce the complete step-by-step mathematical process from the excerpts using LaTeX notation — do not just describe what the math does. If the excerpts don't contain enough information to fully answer the question, say so.\n\n`;
             for (const chunk of relevantChunks) {
               const docTitle = docTitleMap.get(chunk.documentId) || "Unknown";
               systemContext += `--- From "${docTitle}" (Section ${chunk.chunkIndex + 1}, relevance: ${Math.round(chunk.similarity * 100)}%) ---\n${chunk.content}\n\n`;
