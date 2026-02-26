@@ -8,7 +8,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const officeParser = require("officeparser");
 import mammoth from "mammoth";
-import * as XLSX from "xlsx";
+
 import { EventEmitter } from "events";
 
 import OpenAI from "openai";
@@ -39,7 +39,7 @@ const CHANGELOG_ENTRIES = [
     changes: [
       "Added admin User Management page for adding and removing authorized users without republishing",
       "Moved email allowlist from hardcoded values to database for dynamic access control",
-      "Fixed Excel file extraction — replaced broken parser with reliable XLSX library",
+      "Fixed Excel file extraction — replaced broken parser with reliable officeparser library",
       "Added auto-seed mechanism to ensure admin access on fresh deployments",
       "Added 'Built by' credit in app footer",
       "Privacy & Data Policy page now accessible without login",
@@ -692,19 +692,31 @@ export async function registerRoutes(
         emitProgress(userId, "extracting_text", "Reading spreadsheet data...");
         let rawText = "";
         try {
-          const workbook = XLSX.readFile(filePath);
-          pageCount = workbook.SheetNames.length;
+          const ast = await officeParser.OfficeParser.parseOffice(filePath);
+          const sheetNodes = (ast.content || []).filter((n: any) => n.type === "sheet");
+          pageCount = sheetNodes.length;
           const parts: string[] = [];
-          for (const sheetName of workbook.SheetNames) {
-            const sheet = workbook.Sheets[sheetName];
-            const csv = XLSX.utils.sheet_to_csv(sheet);
+          for (const sheetNode of sheetNodes) {
+            const rows: string[] = [];
+            for (const rowNode of (sheetNode.children || []).filter((n: any) => n.type === "row")) {
+              const cells = (rowNode.children || [])
+                .filter((n: any) => n.type === "cell")
+                .map((n: any) => {
+                  const val = String(n.text ?? "");
+                  return val.includes(",") || val.includes('"') || val.includes("\n")
+                    ? `"${val.replace(/"/g, '""')}"`
+                    : val;
+                });
+              rows.push(cells.join(","));
+            }
+            const csv = rows.join("\n");
             if (csv && csv.trim().length > 0) {
-              parts.push(`## ${sheetName}\n\n${csv}`);
+              parts.push(`## ${sheetNode.text ?? "Sheet"}\n\n${csv}`);
             }
           }
           rawText = parts.join("\n\n");
         } catch (e) {
-          console.error("Excel XLSX parse error:", e);
+          console.error("Excel parse error:", e);
           rawText = "";
         }
 

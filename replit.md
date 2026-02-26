@@ -56,7 +56,7 @@ graph TB
         PDFProc[pdftoppm<br/>PDF → PNG pages]
         LibreOffice[LibreOffice<br/>DOCX → PDF]
         OfficeParser[officeParser<br/>PPTX text]
-        XLSX[xlsx<br/>Excel → Markdown]
+        XLSX[officeparser<br/>Excel → Markdown]
     end
 
     Client -->|API Requests| Routes
@@ -140,7 +140,7 @@ sequenceDiagram
   - PDF: pdftoppm (poppler-utils) converts pages to PNG images -> GPT vision extracts markdown
   - DOCX: LibreOffice converts to PDF -> vision pipeline (officeParser as fallback)
   - PPTX: officeParser extracts text -> GPT formats into structured markdown
-  - XLSX: xlsx library parses spreadsheets -> formatted markdown tables
+  - XLSX: officeparser parses spreadsheets -> formatted markdown tables
   - Output includes proper markdown tables, LaTeX math formulas, and image descriptions
 
 ## Key Files
