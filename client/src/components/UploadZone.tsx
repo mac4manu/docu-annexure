@@ -224,7 +224,7 @@ export function UploadZone() {
                 Upload Document
               </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5" data-testid="text-upload-description">
-                Drag & drop or click to upload PDF, Word, PowerPoint, or Excel files (max 20 documents)
+                Drag & drop or click to upload PDF, Word, PowerPoint, or Excel files (max 5 documents)
               </p>
             </div>
 

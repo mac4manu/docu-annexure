@@ -40,6 +40,7 @@ const CHANGELOG_ENTRIES = [
       "Removed xlsx dependency with critical CVE — Excel processing now fully handled by officeparser",
       "Resolved npm override conflicts for minimatch and rollup to fix deployment builds",
       "Cleaned up build configuration to remove unused external dependencies",
+      "Reduced document upload limit from 20 to 5 per user",
     ],
   },
   {
@@ -624,9 +625,9 @@ export async function registerRoutes(
 
     const userId = getUserId(req);
     const existingDocs = await storage.getDocuments(userId);
-    if (existingDocs.length >= 20) {
+    if (existingDocs.length >= 5) {
       cleanupFiles([req.file.path]);
-      return res.status(400).json({ message: "Upload limit reached. This prototype allows a maximum of 20 documents." });
+      return res.status(400).json({ message: "Upload limit reached. This prototype allows a maximum of 5 documents." });
     }
 
     const filePath = req.file.path;
