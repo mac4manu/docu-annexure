@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
 
