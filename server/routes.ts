@@ -18,7 +18,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { isAuthenticated } from "./replit_integrations/auth";
 import crypto from "crypto";
-import { embedAndStoreChunks, findRelevantChunks, getChunkCount, deleteDocumentChunks } from "./rag";
+import { indexDocumentChunks, findRelevantChunks, getChunkCount, deleteDocumentChunks } from "./rag";
 
 const execFileAsync = promisify(execFile);
 
