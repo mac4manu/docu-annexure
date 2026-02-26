@@ -33,6 +33,7 @@ const allowlist = [
   "xlsx",
   "zod",
   "zod-validation-error",
+  "@xenova/transformers",
 ];
 
 async function buildAll() {
