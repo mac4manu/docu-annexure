@@ -2,7 +2,7 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,9 +40,14 @@ const FEATURES = [
     description: "Automatically extracts DOI, title, authors, journal, year, abstract, and keywords from uploaded documents.",
   },
   {
-    icon: FlaskConical,
-    title: "Domain Expertise",
-    description: "Specialized in scientific research, health & medical literature, and academic materials.",
+    icon: Search,
+    title: "RAG-Powered Smart Search",
+    description: "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions — faster and more accurate.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Professor-Level Expertise",
+    description: "AI acts as a research mentor across life sciences, biotechnology, medicine, physics, and more — walking you through derivations and reasoning step by step.",
   },
 ];
 
@@ -143,7 +148,7 @@ export default function Home() {
 
             {hasDocuments && (
               <div className="relative mb-3">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -168,7 +173,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <Search className="w-6 h-6 mx-auto mb-2 text-muted-foreground/30" />
+                    <SearchIcon className="w-6 h-6 mx-auto mb-2 text-muted-foreground/30" />
                     <p className="text-xs text-muted-foreground" data-testid="text-no-results">No documents match "{search}"</p>
                   </div>
                 )
