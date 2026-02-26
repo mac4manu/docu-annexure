@@ -627,7 +627,7 @@ export async function registerRoutes(
     const existingDocs = await storage.getDocuments(userId);
     if (existingDocs.length >= 5) {
       cleanupFiles([req.file.path]);
-      return res.status(400).json({ message: "Upload limit reached. This prototype allows a maximum of 5 documents." });
+      return res.status(400).json({ message: "Upload limit reached. This prototype allows a maximum of 5 documents. Please delete existing documents to upload new ones." });
     }
 
     const filePath = req.file.path;
