@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -42,10 +42,16 @@ const features = [
       "Automatically extracts DOI, title, authors, journal, publication year, abstract, and keywords from uploaded documents.",
   },
   {
-    icon: FlaskConical,
-    title: "Domain Expertise",
+    icon: Search,
+    title: "RAG-Powered Smart Search",
     description:
-      "Specialized in scientific research, health & medical literature, and academic materials.",
+      "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions — faster, more accurate, and cost-efficient.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Professor-Level Expertise",
+    description:
+      "AI acts as a seasoned research mentor across life sciences, biotechnology, medicine, physics, and more — walking you through derivations, methodologies, and reasoning step by step.",
   },
 ];
 
