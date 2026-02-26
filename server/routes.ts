@@ -33,6 +33,16 @@ const APP_VERSION = crypto.randomBytes(8).toString("hex");
 
 const CHANGELOG_ENTRIES = [
   {
+    version: "1.0.1",
+    date: "2026-02-26",
+    title: "Security & Dependency Updates",
+    changes: [
+      "Removed xlsx dependency with critical CVE — Excel processing now fully handled by officeparser",
+      "Resolved npm override conflicts for minimatch and rollup to fix deployment builds",
+      "Cleaned up build configuration to remove unused external dependencies",
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-02-19",
     title: "Admin User Management & Reliability Fixes",
