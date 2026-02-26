@@ -191,3 +191,18 @@
 .prose td {
   @apply border-b border-border/50 py-2;
 }
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 4px 0;
+}
+.katex-display > .katex {
+  white-space: nowrap;
+}
+.katex {
+  font-size: 1em;
+}
+.prose .katex-display {
+  margin: 0.75em 0;
+}
