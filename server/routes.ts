@@ -827,7 +827,7 @@ export async function registerRoutes(
         try {
           emitProgress(userId, "indexing", "Building search index (RAG)...");
           console.log(`Background RAG indexing for doc ${doc.id}...`);
-          const chunkCount = await embedAndStoreChunks(doc.id, finalContent);
+          const chunkCount = await indexDocumentChunks(doc.id, finalContent);
           console.log(`RAG indexing complete: ${chunkCount} chunks created for doc ${doc.id}`);
           emitProgress(userId, "indexed", `Search index ready (${chunkCount} chunks)`);
         } catch (e) {
@@ -858,7 +858,7 @@ export async function registerRoutes(
     if (!doc) return res.status(404).json({ message: "Document not found" });
 
     try {
-      const chunkCount = await embedAndStoreChunks(doc.id, doc.content);
+      const chunkCount = await indexDocumentChunks(doc.id, doc.content);
       res.json({ message: "Indexing complete", chunkCount });
     } catch (err) {
       console.error(`Reindex error for doc ${docId}:`, err);
