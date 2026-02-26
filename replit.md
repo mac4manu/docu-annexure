@@ -21,6 +21,7 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - `shared/models/auth.ts` - Auth schema (users, sessions tables)
 - `shared/models/chat.ts` - Chat schema with documentIds array for multi-doc conversations
 - `shared/routes.ts` - Shared API route definitions
+- `server/rag.ts` - RAG system: chunking, embedding (text-embedding-3-small), pgvector similarity search
 - `server/storage.ts` - Database storage interface with metrics aggregation
 - `client/src/App.tsx` - Root app with auth guard: Landing for logged-out, AuthenticatedApp for logged-in
 - `client/src/pages/Landing.tsx` - Landing page with hero, features, login CTA
@@ -68,6 +69,12 @@ DocuAnnexure is a central hub for document inference and chat-driven access to i
 - 2026-02-16: Added Privacy & Data Policy page at /privacy (accessible without login) with disclaimer section on landing page
 - 2026-02-20: Replaced AI Quality card with Agent Evaluation section on Metrics page: confidence distribution (High/Medium/Low buckets), rating trend (6-week stacked bars), plus accuracy and confidence summaries
 - 2026-02-20: Added API routes: /api/confidence/distribution, /api/admin/confidence/distribution, /api/ratings/trend, /api/admin/ratings/trend
+- 2026-02-26: Implemented RAG (Retrieval-Augmented Generation) system using pgvector for semantic search
+- 2026-02-26: Added document_chunks table with vector(1536) embeddings and HNSW index
+- 2026-02-26: New documents auto-indexed during upload; chat uses RAG retrieval when chunks exist, falls back to full-context for non-indexed docs
+- 2026-02-26: Added reindex API (POST /api/documents/:id/reindex), chunk status API (GET /api/documents/:id/chunks)
+- 2026-02-26: Added "Build Index" button on DocumentView for older documents, shows "RAG Indexed" badge when done
+- 2026-02-26: Added Google Analytics (G-YTW4Q7BHN1) with SPA route-change tracking
 
 ## Running
 - `npm run dev` starts Express backend + Vite frontend on port 5000

@@ -1,0 +1,149 @@
+import OpenAI from "openai";
+import { pool } from "./db";
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
+
+const CHUNK_SIZE = 3000;
+const CHUNK_OVERLAP = 400;
+const EMBEDDING_MODEL = "text-embedding-3-small";
+const EMBEDDING_BATCH_SIZE = 20;
+const DEFAULT_TOP_K = 12;
+
+export function chunkDocument(content: string): { content: string; index: number }[] {
+  const chunks: { content: string; index: number }[] = [];
+
+  const sections = content.split(/(?=^#{1,3}\s)/m);
+
+  let buffer = "";
+  let chunkIndex = 0;
+
+  for (const section of sections) {
+    if (buffer.length + section.length > CHUNK_SIZE && buffer.length > 0) {
+      chunks.push({ content: buffer.trim(), index: chunkIndex++ });
+
+      const overlapStart = Math.max(0, buffer.length - CHUNK_OVERLAP);
+      const overlapText = buffer.slice(overlapStart);
+      buffer = overlapText + section;
+    } else {
+      buffer += section;
+    }
+  }
+
+  if (buffer.trim().length > 0) {
+    chunks.push({ content: buffer.trim(), index: chunkIndex++ });
+  }
+
+  if (chunks.length === 0 && content.trim().length > 0) {
+    const paragraphs = content.split(/\n\n+/);
+    buffer = "";
+    chunkIndex = 0;
+
+    for (const para of paragraphs) {
+      if (buffer.length + para.length > CHUNK_SIZE && buffer.length > 0) {
+        chunks.push({ content: buffer.trim(), index: chunkIndex++ });
+        const overlapStart = Math.max(0, buffer.length - CHUNK_OVERLAP);
+        buffer = buffer.slice(overlapStart) + "\n\n" + para;
+      } else {
+        buffer += (buffer ? "\n\n" : "") + para;
+      }
+    }
+
+    if (buffer.trim().length > 0) {
+      chunks.push({ content: buffer.trim(), index: chunkIndex++ });
+    }
+  }
+
+  return chunks;
+}
+
+export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
+  const allEmbeddings: number[][] = [];
+
+  for (let i = 0; i < texts.length; i += EMBEDDING_BATCH_SIZE) {
+    const batch = texts.slice(i, i + EMBEDDING_BATCH_SIZE);
+    const response = await openai.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: batch,
+    });
+
+    for (const item of response.data) {
+      allEmbeddings.push(item.embedding);
+    }
+  }
+
+  return allEmbeddings;
+}
+
+export async function embedAndStoreChunks(documentId: number, content: string): Promise<number> {
+  const chunks = chunkDocument(content);
+  if (chunks.length === 0) return 0;
+
+  const texts = chunks.map(c => c.content);
+  const embeddings = await generateEmbeddings(texts);
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    await client.query("DELETE FROM document_chunks WHERE document_id = $1", [documentId]);
+
+    for (let i = 0; i < chunks.length; i++) {
+      const embeddingStr = `[${embeddings[i].join(",")}]`;
+      await client.query(
+        `INSERT INTO document_chunks (document_id, content, chunk_index, token_count, embedding)
+         VALUES ($1, $2, $3, $4, $5::vector)`,
+        [documentId, chunks[i].content, chunks[i].index, Math.ceil(chunks[i].content.length / 4), embeddingStr]
+      );
+    }
+
+    await client.query("COMMIT");
+    return chunks.length;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function findRelevantChunks(
+  query: string,
+  documentIds: number[],
+  topK: number = DEFAULT_TOP_K
+): Promise<{ content: string; documentId: number; chunkIndex: number; similarity: number }[]> {
+  const [queryEmbedding] = await generateEmbeddings([query]);
+  const embeddingStr = `[${queryEmbedding.join(",")}]`;
+
+  const placeholders = documentIds.map((_, i) => `$${i + 3}`).join(",");
+  const result = await pool.query(
+    `SELECT document_id, content, chunk_index,
+            1 - (embedding <=> $1::vector) as similarity
+     FROM document_chunks
+     WHERE document_id IN (${placeholders})
+     ORDER BY embedding <=> $1::vector
+     LIMIT $2`,
+    [embeddingStr, topK, ...documentIds]
+  );
+
+  return result.rows.map(row => ({
+    content: row.content,
+    documentId: row.document_id,
+    chunkIndex: row.chunk_index,
+    similarity: parseFloat(row.similarity),
+  }));
+}
+
+export async function getChunkCount(documentId: number): Promise<number> {
+  const result = await pool.query(
+    "SELECT COUNT(*) as count FROM document_chunks WHERE document_id = $1",
+    [documentId]
+  );
+  return parseInt(result.rows[0]?.count || "0", 10);
+}
+
+export async function deleteDocumentChunks(documentId: number): Promise<void> {
+  await pool.query("DELETE FROM document_chunks WHERE document_id = $1", [documentId]);
+}

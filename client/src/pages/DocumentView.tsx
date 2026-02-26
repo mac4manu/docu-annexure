@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, Download, PanelLeftClose, PanelLeftOpen, ExternalLink, BookOpen, Users, Calendar, Hash, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Download, PanelLeftClose, PanelLeftOpen, ExternalLink, BookOpen, Users, Calendar, Hash, FileText, ChevronDown, ChevronUp, Search, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 import "katex/dist/katex.min.css";
 
@@ -117,6 +120,31 @@ export default function DocumentView() {
   const id = parseInt(params?.id || "0");
   const { data: doc, isLoading, error } = useDocument(id);
   const [docPanelVisible, setDocPanelVisible] = useState(true);
+  const { toast } = useToast();
+
+  const { data: chunkInfo } = useQuery({
+    queryKey: ["/api/documents", id, "chunks"],
+    queryFn: async () => {
+      const res = await fetch(`/api/documents/${id}/chunks`, { credentials: "include" });
+      if (!res.ok) return { indexed: false, chunkCount: 0 };
+      return res.json();
+    },
+    enabled: !!doc,
+  });
+
+  const reindexMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/documents/${id}/reindex`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents", id, "chunks"] });
+      toast({ title: "Search index built", description: `${data.chunkCount} chunks created for smarter Q&A.` });
+    },
+    onError: () => {
+      toast({ title: "Indexing failed", description: "Could not build search index. Try again later.", variant: "destructive" });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -178,6 +206,28 @@ export default function DocumentView() {
         </div>
 
         <div className="flex items-center gap-1">
+          {chunkInfo?.indexed ? (
+            <Badge variant="secondary" className="text-[10px] shrink-0 gap-1 no-default-hover-elevate no-default-active-elevate" data-testid="badge-indexed">
+              <Search className="w-3 h-3" />
+              RAG Indexed
+            </Badge>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => reindexMutation.mutate()}
+              disabled={reindexMutation.isPending}
+              title="Build search index for smarter AI answers"
+              data-testid="button-reindex"
+            >
+              {reindexMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Search className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {reindexMutation.isPending ? "Indexing..." : "Build Index"}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"

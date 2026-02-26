@@ -18,6 +18,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { isAuthenticated } from "./replit_integrations/auth";
 import crypto from "crypto";
+import { embedAndStoreChunks, findRelevantChunks, getChunkCount, deleteDocumentChunks } from "./rag";
 
 const execFileAsync = promisify(execFile);
 
@@ -821,6 +822,18 @@ export async function registerRoutes(
           console.error(`Background metadata extraction failed for doc ${doc.id}:`, e);
         }
       })();
+
+      (async () => {
+        try {
+          emitProgress(userId, "indexing", "Building search index (RAG)...");
+          console.log(`Background RAG indexing for doc ${doc.id}...`);
+          const chunkCount = await embedAndStoreChunks(doc.id, finalContent);
+          console.log(`RAG indexing complete: ${chunkCount} chunks created for doc ${doc.id}`);
+          emitProgress(userId, "indexed", `Search index ready (${chunkCount} chunks)`);
+        } catch (e) {
+          console.error(`Background RAG indexing failed for doc ${doc.id}:`, e);
+        }
+      })();
     } catch (err) {
       console.error("Upload error:", err);
       cleanupFiles(cleanupList);
@@ -829,8 +842,38 @@ export async function registerRoutes(
   });
 
   app.delete(api.documents.delete.path, isAuthenticated, async (req, res) => {
-    await storage.deleteDocument(Number(req.params.id), getUserId(req));
+    const userId = getUserId(req);
+    const docId = Number(req.params.id);
+    const doc = await storage.getDocument(docId, userId);
+    if (!doc) return res.status(404).json({ message: "Document not found" });
+    await deleteDocumentChunks(docId);
+    await storage.deleteDocument(docId, userId);
     res.status(204).send();
+  });
+
+  app.post("/api/documents/:id/reindex", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    const docId = Number(req.params.id);
+    const doc = await storage.getDocument(docId, userId);
+    if (!doc) return res.status(404).json({ message: "Document not found" });
+
+    try {
+      const chunkCount = await embedAndStoreChunks(doc.id, doc.content);
+      res.json({ message: "Indexing complete", chunkCount });
+    } catch (err) {
+      console.error(`Reindex error for doc ${docId}:`, err);
+      res.status(500).json({ message: "Failed to index document" });
+    }
+  });
+
+  app.get("/api/documents/:id/chunks", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    const docId = Number(req.params.id);
+    const doc = await storage.getDocument(docId, userId);
+    if (!doc) return res.status(404).json({ message: "Document not found" });
+
+    const count = await getChunkCount(docId);
+    res.json({ documentId: docId, chunkCount: count, indexed: count > 0 });
   });
 
   // Metrics
@@ -1127,13 +1170,48 @@ When reporting tortured phrases:
       const docs = await Promise.all(docIds.map(id => storage.getDocument(id, userId)));
       const validDocs = docs.filter((d): d is NonNullable<typeof d> => !!d);
 
-      if (validDocs.length === 1) {
-        systemContext += `\n\nYou are analyzing a document titled "${validDocs[0].title}".\n\nDocument Content (in Markdown):\n${validDocs[0].content.slice(0, 100000)}`;
-      } else if (validDocs.length > 1) {
-        systemContext += `\n\nYou are analyzing ${validDocs.length} documents. When answering, reference which document the information comes from.\n\n`;
-        const maxPerDoc = Math.floor(100000 / validDocs.length);
-        for (const doc of validDocs) {
-          systemContext += `--- Document: "${doc.title}" ---\n${doc.content.slice(0, maxPerDoc)}\n\n`;
+      let useRag = false;
+      if (validDocs.length > 0) {
+        const chunkCounts = await Promise.all(validDocs.map(d => getChunkCount(d.id)));
+        useRag = chunkCounts.some(c => c > 0);
+      }
+
+      if (useRag) {
+        try {
+          const relevantChunks = await findRelevantChunks(content, validDocs.map(d => d.id), 12);
+          if (relevantChunks.length > 0) {
+            const docTitleMap = new Map(validDocs.map(d => [d.id, d.title]));
+            systemContext += `\n\nYou are analyzing ${validDocs.length} document(s). Below are the most relevant excerpts retrieved from the documents based on the user's question. Base your answer on these excerpts. If the excerpts don't contain enough information to fully answer the question, say so.\n\n`;
+            for (const chunk of relevantChunks) {
+              const docTitle = docTitleMap.get(chunk.documentId) || "Unknown";
+              systemContext += `--- From "${docTitle}" (Section ${chunk.chunkIndex + 1}, relevance: ${Math.round(chunk.similarity * 100)}%) ---\n${chunk.content}\n\n`;
+            }
+          } else {
+            for (const doc of validDocs) {
+              systemContext += `\n\nDocument: "${doc.title}"\n${doc.content.slice(0, Math.floor(100000 / validDocs.length))}\n\n`;
+            }
+          }
+        } catch (ragErr) {
+          console.error("RAG retrieval failed, falling back to full context:", ragErr);
+          if (validDocs.length === 1) {
+            systemContext += `\n\nYou are analyzing a document titled "${validDocs[0].title}".\n\nDocument Content (in Markdown):\n${validDocs[0].content.slice(0, 100000)}`;
+          } else {
+            systemContext += `\n\nYou are analyzing ${validDocs.length} documents.\n\n`;
+            const maxPerDoc = Math.floor(100000 / validDocs.length);
+            for (const doc of validDocs) {
+              systemContext += `--- Document: "${doc.title}" ---\n${doc.content.slice(0, maxPerDoc)}\n\n`;
+            }
+          }
+        }
+      } else {
+        if (validDocs.length === 1) {
+          systemContext += `\n\nYou are analyzing a document titled "${validDocs[0].title}".\n\nDocument Content (in Markdown):\n${validDocs[0].content.slice(0, 100000)}`;
+        } else if (validDocs.length > 1) {
+          systemContext += `\n\nYou are analyzing ${validDocs.length} documents. When answering, reference which document the information comes from.\n\n`;
+          const maxPerDoc = Math.floor(100000 / validDocs.length);
+          for (const doc of validDocs) {
+            systemContext += `--- Document: "${doc.title}" ---\n${doc.content.slice(0, maxPerDoc)}\n\n`;
+          }
         }
       }
     }
