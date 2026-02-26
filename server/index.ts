@@ -78,6 +78,8 @@ app.use((req, res, next) => {
 
 (async () => {
   await storage.seedAllowedEmails();
+  const { initVectorSupport } = await import("./rag");
+  await initVectorSupport();
   await setupAuth(app);
   registerAuthRoutes(app);
   await registerRoutes(httpServer, app);
