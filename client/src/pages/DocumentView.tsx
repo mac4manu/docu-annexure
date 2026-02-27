@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, Download, PanelLeftClose, PanelLeftOpen, ExternalLink, BookOpen, Users, Calendar, Hash, FileText, ChevronDown, ChevronUp, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, PanelLeftClose, PanelLeftOpen, ExternalLink, BookOpen, Users, Calendar, Hash, FileText, ChevronDown, ChevronUp, Search, Loader2, Building2, MapPin, DollarSign, Ruler, Home } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -20,9 +20,16 @@ import { preprocessLaTeX } from "@/lib/latex-utils";
 
 function MetadataPanel({ doc }: { doc: any }) {
   const [expanded, setExpanded] = useState(true);
-  const hasMetadata = doc.doi || doc.docTitle || doc.authors || doc.journal || doc.publishYear || doc.keywords;
+  const hasAcademicMetadata = doc.doi || doc.docTitle || doc.authors || doc.journal || doc.publishYear || doc.keywords;
+  const hasRealEstateMetadata = doc.propertyType || doc.realEstateDocType || doc.listingPrice || doc.squareFootage || doc.yearBuilt || doc.propertyCity || doc.propertyState || doc.propertyZip;
+  const hasMetadata = hasAcademicMetadata || hasRealEstateMetadata;
 
   if (!hasMetadata) return null;
+
+  const isRealEstate = doc.documentDomain === "real_estate" || hasRealEstateMetadata;
+
+  const locationParts = [doc.propertyCity, doc.propertyState, doc.propertyZip].filter(Boolean);
+  const locationString = locationParts.join(", ");
 
   return (
     <Card className="mx-6 mt-6 mb-2" data-testid="card-metadata">
@@ -32,10 +39,17 @@ function MetadataPanel({ doc }: { doc: any }) {
         data-testid="button-toggle-metadata"
       >
         <div className="flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-primary" />
+          {isRealEstate ? (
+            <Building2 className="w-4 h-4 text-primary" />
+          ) : (
+            <BookOpen className="w-4 h-4 text-primary" />
+          )}
           <span className="text-sm font-semibold">Document Metadata</span>
           {doc.doi && (
             <Badge variant="secondary" className="text-[10px] no-default-hover-elevate no-default-active-elevate">DOI</Badge>
+          )}
+          {isRealEstate && doc.realEstateDocType && (
+            <Badge variant="secondary" className="text-[10px] no-default-hover-elevate no-default-active-elevate">{doc.realEstateDocType}</Badge>
           )}
         </div>
         {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -89,6 +103,51 @@ function MetadataPanel({ doc }: { doc: any }) {
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
+          )}
+
+          {isRealEstate && (
+            <>
+              {doc.propertyType && (
+                <div className="flex items-center gap-2" data-testid="metadata-property-type">
+                  <Home className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <div>
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Property Type</span>
+                    <p className="text-sm leading-snug mt-0.5">{doc.propertyType}</p>
+                  </div>
+                </div>
+              )}
+
+              {locationString && (
+                <div className="flex items-center gap-2" data-testid="metadata-location">
+                  <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <div>
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Location</span>
+                    <p className="text-sm leading-snug mt-0.5">{locationString}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-4 flex-wrap">
+                {doc.listingPrice && (
+                  <div className="flex items-center gap-1.5" data-testid="metadata-listing-price">
+                    <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm">{doc.listingPrice}</span>
+                  </div>
+                )}
+                {doc.squareFootage && (
+                  <div className="flex items-center gap-1.5" data-testid="metadata-sqft">
+                    <Ruler className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm">{doc.squareFootage} sq ft</span>
+                  </div>
+                )}
+                {doc.yearBuilt && (
+                  <div className="flex items-center gap-1.5" data-testid="metadata-year-built">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm">Built {doc.yearBuilt}</span>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {doc.keywords && (

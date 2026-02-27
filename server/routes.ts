@@ -18,6 +18,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { isAuthenticated } from "./replit_integrations/auth";
 import crypto from "crypto";
+import { detectAndRedactPII, sanitizeMetadataField } from "./pii";
 import { indexDocumentChunks, findRelevantChunks, getChunkCount, deleteDocumentChunks } from "./rag";
 
 const execFileAsync = promisify(execFile);
@@ -32,6 +33,20 @@ function emitProgress(userId: string, step: string, detail?: string) {
 const APP_VERSION = crypto.randomBytes(8).toString("hex");
 
 const CHANGELOG_ENTRIES = [
+  {
+    version: "1.1.0",
+    date: "2026-02-27",
+    title: "Real Estate Support & PII Protection",
+    changes: [
+      "Added Real Estate & Property domain — analyze contracts, leases, disclosures, inspections, appraisals, and more",
+      "Automatic PII detection and redaction — SSNs, phone numbers, emails, addresses, and other personal data are stripped before storage",
+      "AI-powered PII scanning catches contextual personal information that regex patterns miss",
+      "Real estate metadata extraction — property type, location (city/state only), listing price, square footage, year built",
+      "New real estate prompt suggestions — summarize key terms, compare leases, flag unusual clauses, extract financials, identify contingencies",
+      "Compliance & red flag detection for non-standard contract clauses and missing disclosures",
+      "Updated Privacy & Data Policy with detailed PII handling documentation",
+    ],
+  },
   {
     version: "1.0.1",
     date: "2026-02-26",
@@ -390,6 +405,15 @@ interface DocumentMetadata {
   publishYear: number | null;
   abstract: string | null;
   keywords: string | null;
+  documentDomain: string | null;
+  propertyCity: string | null;
+  propertyState: string | null;
+  propertyZip: string | null;
+  propertyType: string | null;
+  realEstateDocType: string | null;
+  listingPrice: string | null;
+  squareFootage: string | null;
+  yearBuilt: number | null;
 }
 
 function extractDoiFromText(text: string): string | null {
@@ -418,17 +442,27 @@ async function extractDocumentMetadata(content: string): Promise<DocumentMetadat
       messages: [
         {
           role: "system",
-          content: `You are a metadata extraction expert. Extract bibliographic metadata from the document content. Return ONLY valid JSON with these fields:
+          content: `You are a metadata extraction expert. First determine if this is an academic/scientific document or a real estate document. Return ONLY valid JSON with these fields:
 {
+  "documentDomain": "academic" or "real_estate",
   "doi": "DOI string or null if not found",
   "docTitle": "The actual title of the paper/document (not the filename)",
-  "authors": "Comma-separated list of authors, e.g. 'John Smith, Jane Doe'",
+  "authors": "Comma-separated list of authors, e.g. 'John Smith, Jane Doe' — for real estate docs, use null to protect privacy",
   "journal": "Journal or conference name, or null",
   "publishYear": year as integer or null,
   "abstract": "The abstract text (first 500 chars max), or null",
-  "keywords": "Comma-separated keywords, or null"
+  "keywords": "Comma-separated keywords, or null",
+  "propertyCity": "City name only (no street address) or null — real estate only",
+  "propertyState": "State abbreviation or null — real estate only",
+  "propertyZip": "ZIP code or null — real estate only",
+  "propertyType": "residential, commercial, industrial, land, or multi-family — real estate only, or null",
+  "realEstateDocType": "One of: purchase_agreement, lease, disclosure, inspection_report, appraisal, title_report, hoa_document, closing_document, cma, zoning, other — real estate only, or null",
+  "listingPrice": "Price as string e.g. '$450,000' or null — real estate only",
+  "squareFootage": "Square footage as string e.g. '2,400 sq ft' or null — real estate only",
+  "yearBuilt": year as integer or null — real estate only
 }
-Be precise. If a field cannot be determined, use null. For DOI, look for patterns like 10.xxxx/xxxxx.`,
+Be precise. If a field cannot be determined, use null. For DOI, look for patterns like 10.xxxx/xxxxx.
+IMPORTANT: For real estate documents, do NOT include any personally identifiable information such as names, SSNs, phone numbers, email addresses, or full street addresses. Only include city, state, and ZIP for location.`,
         },
         {
           role: "user",
@@ -441,14 +475,24 @@ Be precise. If a field cannot be determined, use null. For DOI, look for pattern
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+      const domain = parsed.documentDomain || "academic";
       return {
         doi: regexDoi || parsed.doi || null,
         docTitle: parsed.docTitle || null,
-        authors: parsed.authors || null,
+        authors: domain === "real_estate" ? null : (parsed.authors || null),
         journal: parsed.journal || null,
         publishYear: typeof parsed.publishYear === "number" ? parsed.publishYear : null,
         abstract: parsed.abstract ? parsed.abstract.slice(0, 500) : null,
         keywords: parsed.keywords || null,
+        documentDomain: domain,
+        propertyCity: parsed.propertyCity || null,
+        propertyState: parsed.propertyState || null,
+        propertyZip: parsed.propertyZip || null,
+        propertyType: parsed.propertyType || null,
+        realEstateDocType: parsed.realEstateDocType || null,
+        listingPrice: parsed.listingPrice || null,
+        squareFootage: parsed.squareFootage || null,
+        yearBuilt: typeof parsed.yearBuilt === "number" ? parsed.yearBuilt : null,
       };
     }
   } catch (e) {
@@ -463,6 +507,15 @@ Be precise. If a field cannot be determined, use null. For DOI, look for pattern
     publishYear: null,
     abstract: null,
     keywords: null,
+    documentDomain: null,
+    propertyCity: null,
+    propertyState: null,
+    propertyZip: null,
+    propertyType: null,
+    realEstateDocType: null,
+    listingPrice: null,
+    squareFootage: null,
+    yearBuilt: null,
   };
 }
 
@@ -809,6 +862,14 @@ export async function registerRoutes(
       }
 
       cleanupFiles(cleanupList);
+      emitProgress(userId, "redacting", "Scanning for personal information...");
+
+      const piiResult = await detectAndRedactPII(content || "");
+      if (piiResult.piiFound) {
+        console.log(`PII detected and redacted in upload: ${piiResult.typesDetected.join(", ")}`);
+      }
+      content = piiResult.redactedText;
+
       emitProgress(userId, "saving", "Saving document...");
 
       const finalContent = content || "No content extracted.";
@@ -828,6 +889,15 @@ export async function registerRoutes(
         publishYear: null,
         abstract: null,
         keywords: null,
+        documentDomain: null,
+        propertyCity: null,
+        propertyState: null,
+        propertyZip: null,
+        propertyType: null,
+        realEstateDocType: null,
+        listingPrice: null,
+        squareFootage: null,
+        yearBuilt: null,
       });
 
       emitProgress(userId, "metadata", "Extracting metadata (title, authors, DOI)...");
@@ -837,6 +907,12 @@ export async function registerRoutes(
         try {
           console.log(`Background metadata extraction for doc ${doc.id}...`);
           const metadata = await extractDocumentMetadata(finalContent);
+          if (metadata.documentDomain === "real_estate") {
+            metadata.authors = null;
+            metadata.docTitle = sanitizeMetadataField(metadata.docTitle);
+            metadata.abstract = sanitizeMetadataField(metadata.abstract);
+            metadata.keywords = sanitizeMetadataField(metadata.keywords);
+          }
           if (metadata.doi) console.log(`DOI found: ${metadata.doi}`);
           if (metadata.docTitle) console.log(`Document title: ${metadata.docTitle}`);
           await storage.updateDocumentMetadata(doc.id, metadata);
@@ -1161,6 +1237,15 @@ Your areas of expertise:
 2. **Health & Medical**: You analyze clinical reports, medical literature, patient documentation, pharmaceutical data, public health policy, and epidemiological studies with the rigor of a medical faculty member. You understand clinical trial design, biostatistics, systematic reviews and meta-analyses, pharmacokinetics, disease surveillance, and global health policy. You explain study designs, statistical significance, confidence intervals, risk ratios, and clinical implications. You help researchers understand how conclusions were reached and what limitations exist. Your analysis is informational and not a substitute for professional medical advice.
 
 3. **Education & Academic**: You support students, teachers, and researchers the way a dedicated thesis advisor would — by breaking down complex concepts into digestible parts, connecting ideas to broader frameworks, asking guiding questions when appropriate, and ensuring deep comprehension rather than surface-level memorization. You can guide literature reviews, help identify research gaps, explain methodological choices, and support academic writing across all disciplines.
+
+4. **Real Estate & Property**: You analyze real estate documents with the expertise of a seasoned real estate attorney and licensed broker. Your expertise spans:
+   - **Contracts & Agreements**: Purchase agreements, lease contracts, listing agreements, option contracts, and addenda. You understand contingencies (inspection, financing, appraisal), earnest money, closing costs, prorations, and default remedies.
+   - **Disclosures & Inspections**: Seller disclosures, property condition reports, home inspection reports, environmental assessments, lead-based paint disclosures, and natural hazard reports. You identify what's disclosed, what may be missing, and what warrants further investigation.
+   - **Title & Closing**: Title reports, title insurance policies, settlement statements (HUD-1/CD), lien searches, easements, encumbrances, covenants, and deed restrictions. You explain chain of title, cloud on title, and recording requirements.
+   - **Financial Analysis**: Comparative market analyses (CMAs), appraisal reports, rent rolls, operating statements, cap rates, NOI, cash-on-cash returns, and investment property analysis. You walk through valuation methodologies and financial projections.
+   - **Regulatory & Zoning**: Zoning ordinances, land use permits, HOA documents (CC&Rs, bylaws, budgets), building codes, ADA compliance, and environmental regulations.
+   - **Compliance & Red Flags**: You identify unusual or non-standard contract clauses, missing required disclosures, potential liability issues, unfavorable terms, and clauses that deviate from standard industry practices. You flag these clearly with explanations of why they matter.
+   IMPORTANT: When analyzing real estate documents, never reveal or repeat any personally identifiable information (PII) such as names, Social Security numbers, phone numbers, email addresses, bank account numbers, or full street addresses. If PII appears in the document, refer to parties generically (e.g., "the buyer," "the seller," "the property") and note that PII has been redacted for privacy.
 
 Teaching approach:
 - **Show the work**: When explaining mathematical content, derivations, or proofs, reproduce every equation and intermediate step from the document exactly as written — including all LaTeX decorators (\\widehat, \\bar, \\tilde, \\mathrm, etc.), subscripts, and superscripts. Walk through the logic: "Starting from equation (1), we substitute X into Y, which gives us..." Do not summarize, simplify, or rewrite math — copy the exact notation and show the actual process.

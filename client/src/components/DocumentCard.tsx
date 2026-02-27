@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { FileText, Trash2, MessageSquare, FileType2, Presentation, ArrowRight, Hash, Users } from "lucide-react";
+import { FileText, Trash2, MessageSquare, FileType2, Presentation, ArrowRight, Hash, Users, Building2, MapPin, DollarSign } from "lucide-react";
 import { type Document } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,6 +96,12 @@ export function DocumentCard({ document }: DocumentCardProps) {
                 DOI
               </Badge>
             )}
+            {document.realEstateDocType && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium no-default-hover-elevate no-default-active-elevate" data-testid={`badge-re-doctype-${document.id}`}>
+                <Building2 className="w-3 h-3 mr-0.5" />
+                {document.realEstateDocType}
+              </Badge>
+            )}
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium no-default-hover-elevate no-default-active-elevate">
               {getFileLabel(document.fileType)}
             </Badge>
@@ -118,6 +124,28 @@ export function DocumentCard({ document }: DocumentCardProps) {
             <p className="text-[11px] text-muted-foreground/70 mt-1.5 truncate" data-testid={`text-card-journal-${document.id}`}>
               {[document.journal, document.publishYear].filter(Boolean).join(" · ")}
             </p>
+          )}
+          {(document.propertyType || document.realEstateDocType || document.listingPrice || document.propertyCity || document.propertyState) && (
+            <div className="flex items-center gap-2 flex-wrap mt-1.5" data-testid={`text-card-realestate-${document.id}`}>
+              {document.propertyType && (
+                <span className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  {document.propertyType}
+                </span>
+              )}
+              {(document.propertyCity || document.propertyState) && (
+                <span className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {[document.propertyCity, document.propertyState].filter(Boolean).join(", ")}
+                </span>
+              )}
+              {document.listingPrice && (
+                <span className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  {document.listingPrice}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </Link>

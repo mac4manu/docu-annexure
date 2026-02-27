@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -51,7 +51,19 @@ const features = [
     icon: GraduationCap,
     title: "Professor-Level Expertise",
     description:
-      "AI acts as a seasoned research mentor across life sciences, biotechnology, medicine, physics, and more — walking you through derivations, methodologies, and reasoning step by step.",
+      "AI acts as a seasoned expert across life sciences, medicine, physics, and real estate — walking you through derivations, contract terms, methodologies, and reasoning step by step.",
+  },
+  {
+    icon: Building2,
+    title: "Real Estate Analysis",
+    description:
+      "Analyze lease agreements, purchase contracts, property disclosures, and inspection reports. Flag unusual clauses, identify contingencies, and extract key financial terms.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "PII Protection",
+    description:
+      "Automatic detection and redaction of sensitive personal information — SSNs, phone numbers, addresses, and more — before document content is stored.",
   },
 ];
 
@@ -90,7 +102,7 @@ export default function Landing() {
                 <span className="text-primary">intelligently understood</span>
               </h1>
               <p className="text-base md:text-lg text-white/70 max-w-lg leading-relaxed">
-                Upload any document and let AI extract rich content — tables, formulas, and more — answer your questions, and help you discover insights
+                Upload research papers or real estate documents and let AI extract rich content — tables, formulas, and more — answer your questions, and help you discover insights
                 across your entire knowledge base.
               </p>
               <div className="flex items-center gap-3 flex-wrap">

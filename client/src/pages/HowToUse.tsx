@@ -66,6 +66,18 @@ const faqs = [
     q: "Can I delete a document?",
     a: "Yes. On the Documents page, each document card has a delete button. Deleting a document also removes its chat history.",
   },
+  {
+    q: "Can I use DocuAnnexure for real estate documents?",
+    a: "Yes. DocuAnnexure supports real estate documents such as lease agreements, purchase contracts, property disclosures, inspection reports, appraisals, and title reports. The AI can summarize key terms, flag unusual clauses, identify contingencies and deadlines, and extract financial details.",
+  },
+  {
+    q: "What happens to personal information in my documents?",
+    a: "DocuAnnexure automatically detects and redacts personally identifiable information (PII) such as Social Security numbers, phone numbers, email addresses, and full street addresses before storing document content. Only the redacted version is kept.",
+  },
+  {
+    q: "What real estate questions can I ask the AI?",
+    a: "You can ask the AI to summarize key lease or contract terms, compare clauses across multiple documents, flag non-standard or unusual provisions, extract financial terms like listing price or cap rate, and identify contingencies and deadlines.",
+  },
 ];
 
 export default function HowToUse() {

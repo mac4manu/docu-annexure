@@ -54,6 +54,31 @@ const PROMPT_SUGGESTIONS = [
     description: "Title, authors, journal, DOI link",
     prompt: "Extract the bibliographic metadata from the selected documents: DOI (Digital Object Identifier), full title, all authors, journal or conference name, publication year, abstract, and keywords. If a DOI is found, provide the full DOI link. Present the information in a structured format.",
   },
+  {
+    label: "Summarize key terms",
+    description: "Extract important terms and definitions",
+    prompt: "Summarize the key terms and definitions found in this real estate document, including any financial terms, legal clauses, and obligations for each party involved.",
+  },
+  {
+    label: "Compare lease terms",
+    description: "Side-by-side lease comparison",
+    prompt: "Compare the lease terms across the selected documents. Highlight differences in rent amounts, lease duration, renewal options, security deposits, maintenance responsibilities, and any special provisions.",
+  },
+  {
+    label: "Flag unusual clauses",
+    description: "Identify non-standard or risky clauses",
+    prompt: "Review this real estate document for unusual, non-standard, or potentially risky clauses. Flag any terms that deviate from standard practice, missing standard disclosures, one-sided provisions, or clauses that could be unfavorable. Present findings with severity levels.",
+  },
+  {
+    label: "Extract financial terms",
+    description: "Pull out pricing, fees, and costs",
+    prompt: "Extract all financial terms from this document including listing price, sale price, rent amounts, escrow details, closing costs, HOA fees, property taxes, insurance requirements, cap rate, NOI, and any other monetary figures or financial obligations.",
+  },
+  {
+    label: "Identify contingencies & deadlines",
+    description: "List all contingencies and key dates",
+    prompt: "Identify all contingencies, deadlines, and key dates in this real estate document. Include inspection periods, financing contingencies, appraisal contingencies, closing dates, option periods, and any other time-sensitive requirements. Present in chronological order.",
+  },
 ];
 
 export default function MultiDocChat() {

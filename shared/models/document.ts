@@ -20,6 +20,15 @@ export const documents = pgTable("documents", {
   publishYear: integer("publish_year"),
   abstract: text("abstract"),
   keywords: text("keywords"),
+  documentDomain: text("document_domain"),
+  propertyCity: text("property_city"),
+  propertyState: text("property_state"),
+  propertyZip: text("property_zip"),
+  propertyType: text("property_type"),
+  realEstateDocType: text("real_estate_doc_type"),
+  listingPrice: text("listing_price"),
+  squareFootage: text("square_footage"),
+  yearBuilt: integer("year_built"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

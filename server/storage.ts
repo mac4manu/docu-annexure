@@ -63,7 +63,7 @@ export interface IStorage {
   getDocument(id: number, userId: string): Promise<Document | undefined>;
   createDocument(doc: InsertDocument): Promise<Document>;
   deleteDocument(id: number, userId: string): Promise<void>;
-  updateDocumentMetadata(id: number, metadata: { doi: string | null; docTitle: string | null; authors: string | null; journal: string | null; publishYear: number | null; abstract: string | null; keywords: string | null }): Promise<void>;
+  updateDocumentMetadata(id: number, metadata: { doi: string | null; docTitle: string | null; authors: string | null; journal: string | null; publishYear: number | null; abstract: string | null; keywords: string | null; documentDomain: string | null; propertyCity: string | null; propertyState: string | null; propertyZip: string | null; propertyType: string | null; realEstateDocType: string | null; listingPrice: string | null; squareFootage: string | null; yearBuilt: number | null }): Promise<void>;
 
   getAllConversations(userId: string): Promise<Conversation[]>;
   getConversation(id: number, userId: string): Promise<(Conversation & { messages: Message[] }) | undefined>;
@@ -116,7 +116,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(documents).where(and(eq(documents.id, id), eq(documents.userId, userId)));
   }
 
-  async updateDocumentMetadata(id: number, metadata: { doi: string | null; docTitle: string | null; authors: string | null; journal: string | null; publishYear: number | null; abstract: string | null; keywords: string | null }): Promise<void> {
+  async updateDocumentMetadata(id: number, metadata: { doi: string | null; docTitle: string | null; authors: string | null; journal: string | null; publishYear: number | null; abstract: string | null; keywords: string | null; documentDomain: string | null; propertyCity: string | null; propertyState: string | null; propertyZip: string | null; propertyType: string | null; realEstateDocType: string | null; listingPrice: string | null; squareFootage: string | null; yearBuilt: number | null }): Promise<void> {
     await db.update(documents).set({
       doi: metadata.doi,
       docTitle: metadata.docTitle,
@@ -125,6 +125,15 @@ export class DatabaseStorage implements IStorage {
       publishYear: metadata.publishYear,
       abstract: metadata.abstract,
       keywords: metadata.keywords,
+      documentDomain: metadata.documentDomain,
+      propertyCity: metadata.propertyCity,
+      propertyState: metadata.propertyState,
+      propertyZip: metadata.propertyZip,
+      propertyType: metadata.propertyType,
+      realEstateDocType: metadata.realEstateDocType,
+      listingPrice: metadata.listingPrice,
+      squareFootage: metadata.squareFootage,
+      yearBuilt: metadata.yearBuilt,
     }).where(eq(documents.id, id));
   }
 
