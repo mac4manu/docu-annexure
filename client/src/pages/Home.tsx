@@ -1,7 +1,7 @@
 import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
-import { TestimonialDialog } from "@/components/TestimonialDialog";
+
 import { useState } from "react";
 import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -99,7 +99,6 @@ export default function Home() {
               Documents
             </h1>
             <div className="flex items-center gap-2">
-              <TestimonialDialog />
               <button
                 onClick={() => setShowFeatures(!showFeatures)}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-2 rounded-md"

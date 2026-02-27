@@ -19,6 +19,7 @@ import Changelog from "@/pages/Changelog";
 import Privacy from "@/pages/Privacy";
 import UserManagement from "@/pages/UserManagement";
 import VersionBanner from "@/components/VersionBanner";
+import { TestimonialDialog } from "@/components/TestimonialDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 
@@ -148,6 +149,7 @@ function AuthenticatedApp() {
       <main className="flex-1 overflow-hidden min-h-0">
         <Router />
       </main>
+      <TestimonialDialog />
       <footer className="flex-none border-t border-border py-3 px-4" data-testid="footer-app">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <span className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} DocuAnnexure</span>
