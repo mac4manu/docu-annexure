@@ -2,10 +2,9 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
 
 const HIGHLIGHTS = [
@@ -90,6 +89,101 @@ export default function Home() {
 
   const hasDocuments = documents && documents.length > 0;
 
+  if (hasDocuments) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="flex-none px-6 pt-4 pb-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-display font-semibold text-foreground tracking-tight" data-testid="text-page-heading">
+                Documents
+              </h1>
+              <span className="text-[11px] text-muted-foreground">
+                {filtered.length} of {documents.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFeatures(!showFeatures)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-2 rounded-md"
+                data-testid="button-toggle-features"
+              >
+                {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                <span>Capabilities</span>
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSortNewest((prev) => !prev)}
+                title={sortNewest ? "Newest first" : "Oldest first"}
+                data-testid="button-sort-documents"
+              >
+                {sortNewest ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
+              </Button>
+              <div className="relative">
+                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter documents..."
+                  className="pl-8 h-8 text-xs bg-muted/30 w-48"
+                  data-testid="input-search-documents"
+                />
+              </div>
+              <Link href="/chat">
+                <Button variant="default" size="sm" data-testid="button-chat-with-docs">
+                  <MessagesSquare className="w-3.5 h-3.5 mr-1.5" />
+                  Chat
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="mb-4">
+            <UploadZone />
+          </div>
+
+          {showFeatures && (
+            <div className="mb-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {[...HIGHLIGHTS, ...MORE_FEATURES].map((feat) => (
+                <div
+                  key={feat.title}
+                  className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
+                  data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <div className="p-3 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
+                        <feat.icon className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-semibold leading-tight">{feat.title}</span>
+                    </div>
+                    <p className="text-[11px] text-foreground/55 leading-relaxed">{feat.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filtered.length > 0 ? (
+              filtered.map((doc) => (
+                <DocumentCard key={doc.id} document={doc} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <SearchIcon className="w-6 h-6 mx-auto mb-2 text-muted-foreground/30" />
+                <p className="text-xs text-muted-foreground" data-testid="text-no-results">No documents match "{search}"</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex-none px-6 pt-4 pb-3">
@@ -103,164 +197,57 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden px-6 pb-6">
-        <div className="flex gap-6 h-full">
-          <div className="flex-1 min-w-0 flex flex-col overflow-y-auto">
-            <div className="shrink-0">
-              <UploadZone />
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <div className="max-w-4xl mx-auto">
+          <UploadZone />
+
+          {isLoading ? (
+            <div className="mt-8 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-
-            {!hasDocuments && !isLoading && (
-              <div className="mt-6 shrink-0">
-                <div className="grid md:grid-cols-3 gap-4 mb-5">
-                  {HIGHLIGHTS.map((feat) => (
-                    <div
-                      key={feat.title}
-                      className="rounded-lg border-2 border-primary/25 bg-card overflow-hidden"
-                      data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      <div className="p-4 space-y-2.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 rounded-lg bg-primary/15 text-primary shrink-0 border border-primary/25">
-                            <feat.icon className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-bold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
-                        </div>
-                        <p className="text-xs text-foreground/65 leading-relaxed">{feat.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {MORE_FEATURES.map((feat) => (
-                    <div
-                      key={feat.title}
-                      className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
-                      data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      <div className="p-3 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
-                            <feat.icon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="text-xs font-semibold leading-tight">{feat.title}</span>
-                        </div>
-                        <p className="text-[11px] text-foreground/55 leading-relaxed">{feat.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {hasDocuments && (
-              <div className="mt-4 shrink-0">
-                <button
-                  onClick={() => setShowFeatures(!showFeatures)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
-                  data-testid="button-toggle-features"
-                >
-                  {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  <span>{showFeatures ? "Hide" : "Show"} capabilities</span>
-                </button>
-
-                {showFeatures && (
-                  <div className="mt-2.5 grid grid-cols-2 lg:grid-cols-3 gap-2.5">
-                    {[...HIGHLIGHTS, ...MORE_FEATURES].map((feat) => (
-                      <div
-                        key={feat.title}
-                        className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
-                        data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
-                      >
-                        <div className="p-3 space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
-                              <feat.icon className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="text-xs font-semibold leading-tight">{feat.title}</span>
-                          </div>
-                          <p className="text-[11px] text-foreground/55 leading-relaxed">{feat.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="w-80 lg:w-96 shrink-0 flex flex-col min-h-0">
-            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-display font-semibold" data-testid="text-library-heading">Your Library</h2>
-                {hasDocuments && (
-                  <span className="text-[11px] text-muted-foreground">
-                    {filtered.length} of {documents.length}
-                  </span>
-                )}
-              </div>
-              {hasDocuments && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSortNewest((prev) => !prev)}
-                    title={sortNewest ? "Newest first" : "Oldest first"}
-                    data-testid="button-sort-documents"
+          ) : (
+            <div className="mt-8">
+              <div className="grid md:grid-cols-3 gap-4 mb-5">
+                {HIGHLIGHTS.map((feat) => (
+                  <div
+                    key={feat.title}
+                    className="rounded-lg border-2 border-primary/25 bg-card overflow-hidden"
+                    data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    {sortNewest ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
-                  </Button>
-                  <Link href="/chat">
-                    <Button variant="default" size="sm" data-testid="button-chat-with-docs">
-                      <MessagesSquare className="w-3.5 h-3.5 mr-1.5" />
-                      Chat
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {hasDocuments && (
-              <div className="relative mb-3">
-                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Filter documents..."
-                  className="pl-8 h-9 text-xs bg-muted/30"
-                  data-testid="input-search-documents"
-                />
-              </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-3 pr-1">
-              {isLoading ? (
-                <>
-                  {[1, 2, 3].map((n) => (
-                    <div key={n} className="h-28 bg-muted/50 rounded-md animate-pulse" />
-                  ))}
-                </>
-              ) : hasDocuments ? (
-                filtered.length > 0 ? (
-                  filtered.map((doc) => (
-                    <DocumentCard key={doc.id} document={doc} />
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <SearchIcon className="w-6 h-6 mx-auto mb-2 text-muted-foreground/30" />
-                    <p className="text-xs text-muted-foreground" data-testid="text-no-results">No documents match "{search}"</p>
+                    <div className="p-4 space-y-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-primary/15 text-primary shrink-0 border border-primary/25">
+                          <feat.icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-bold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                      </div>
+                      <p className="text-xs text-foreground/65 leading-relaxed">{feat.description}</p>
+                    </div>
                   </div>
-                )
-              ) : (
-                <div className="text-center py-10 border-2 border-dashed border-border/50 rounded-md bg-muted/10">
-                  <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                  <p className="text-muted-foreground text-xs" data-testid="text-empty-library">No documents yet</p>
-                  <p className="text-muted-foreground/60 text-[10px] mt-1">Upload a file to get started</p>
-                </div>
-              )}
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {MORE_FEATURES.map((feat) => (
+                  <div
+                    key={feat.title}
+                    className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
+                    data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <div className="p-3 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
+                          <feat.icon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-semibold leading-tight">{feat.title}</span>
+                      </div>
+                      <p className="text-[11px] text-foreground/55 leading-relaxed">{feat.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
