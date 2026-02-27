@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import logoImg from "@/assets/images/logo-transparent.png";
 import heroBg from "@/assets/images/hero-bg.png";
 
-const features = [
+const highlightedFeatures = [
   {
     icon: FileText,
     title: "AI-Powered Extraction",
@@ -17,6 +17,15 @@ const features = [
     description:
       "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers instantly.",
   },
+  {
+    icon: Search,
+    title: "RAG-Powered Smart Search",
+    description:
+      "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions — faster, more accurate, and cost-efficient.",
+  },
+];
+
+const secondaryFeatures = [
   {
     icon: ShieldAlert,
     title: "Tortured Phrase Detection",
@@ -40,12 +49,6 @@ const features = [
     title: "Metadata Extraction",
     description:
       "Automatically extracts DOI, title, authors, journal, publication year, abstract, and keywords from uploaded documents.",
-  },
-  {
-    icon: Search,
-    title: "RAG-Powered Smart Search",
-    description:
-      "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions — faster, more accurate, and cost-efficient.",
   },
   {
     icon: GraduationCap,
@@ -159,21 +162,42 @@ export default function Landing() {
               From extraction to analysis, DocuAnnexure handles your document workflow end-to-end.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((feature) => (
+
+          <div className="grid md:grid-cols-3 gap-6 mb-10">
+            {highlightedFeatures.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-md border border-border bg-card overflow-hidden hover:shadow-md transition-shadow duration-200"
+                className="rounded-lg border-2 border-primary/30 bg-card overflow-hidden hover-elevate"
                 data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}
               >
-                <div className="px-5 py-3.5 border-b border-border bg-muted/20 flex items-center gap-3">
-                  <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
-                    <feature.icon className="w-4 h-4" />
+                <div className="px-5 py-4 border-b border-primary/20 bg-primary/5 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/15 text-primary shrink-0 border border-primary/25">
+                    <feature.icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-semibold text-base">{feature.title}</h3>
+                  <h3 className="font-bold text-lg">{feature.title}</h3>
                 </div>
-                <div className="px-5 py-4">
+                <div className="px-5 py-5">
                   <p className="text-sm text-foreground/70 leading-relaxed">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {secondaryFeatures.map((feature) => (
+              <div
+                key={feature.title}
+                className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
+                data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <div className="p-4 space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
+                      <feature.icon className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-semibold text-sm">{feature.title}</h3>
+                  </div>
+                  <p className="text-xs text-foreground/60 leading-relaxed">{feature.description}</p>
                 </div>
               </div>
             ))}

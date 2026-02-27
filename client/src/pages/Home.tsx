@@ -2,13 +2,13 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
 
-const FEATURES = [
+const HIGHLIGHTS = [
   {
     icon: BrainCircuit,
     title: "AI-Powered Extraction",
@@ -20,9 +20,17 @@ const FEATURES = [
     description: "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers.",
   },
   {
+    icon: Search,
+    title: "RAG-Powered Smart Search",
+    description: "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions.",
+  },
+];
+
+const MORE_FEATURES = [
+  {
     icon: ShieldAlert,
     title: "Tortured Phrase Detection",
-    description: "Flags suspicious synonym substitutions that may indicate paper mill activity or automated paraphrasing to evade plagiarism.",
+    description: "Flags suspicious synonym substitutions that may indicate paper mill activity or automated paraphrasing.",
   },
   {
     icon: FileStack,
@@ -40,29 +48,24 @@ const FEATURES = [
     description: "Automatically extracts DOI, title, authors, journal, year, abstract, and keywords from uploaded documents.",
   },
   {
-    icon: Search,
-    title: "RAG-Powered Smart Search",
-    description: "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions — faster and more accurate.",
-  },
-  {
     icon: GraduationCap,
     title: "Professor-Level Expertise",
-    description: "AI acts as a research mentor across life sciences, biotechnology, medicine, physics, and real estate — walking you through derivations, contract terms, and reasoning step by step.",
+    description: "AI acts as a research mentor across life sciences, medicine, physics, and real estate — walking you through reasoning step by step.",
   },
   {
     icon: Sparkles,
     title: "Adaptive AI Persona",
-    description: "The AI automatically adapts to your document — acting as a research scientist for papers, a medical expert for clinical reports, a real estate attorney for contracts, or a thesis advisor for academic work.",
+    description: "The AI automatically adapts — research scientist for papers, medical expert for clinical reports, real estate attorney for contracts.",
   },
   {
     icon: Building2,
     title: "Real Estate Analysis",
-    description: "Analyze contracts, leases, disclosures, inspection reports, and appraisals. Flag unusual clauses, extract financial terms, and identify contingencies.",
+    description: "Analyze contracts, leases, disclosures, inspection reports, and appraisals. Flag unusual clauses and extract financial terms.",
   },
   {
     icon: ShieldCheck,
     title: "PII Protection",
-    description: "Automatic detection and redaction of personal information — SSNs, phone numbers, emails, addresses, and more — before any document content is stored.",
+    description: "Automatic detection and redaction of personal information — SSNs, phone numbers, emails, addresses — before storage.",
   },
 ];
 
@@ -70,6 +73,7 @@ export default function Home() {
   const { data: documents, isLoading } = useDocuments();
   const [search, setSearch] = useState("");
   const [sortNewest, setSortNewest] = useState(true);
+  const [showFeatures, setShowFeatures] = useState(false);
 
   const filtered = documents
     ? documents
@@ -106,28 +110,84 @@ export default function Home() {
               <UploadZone />
             </div>
 
-            <div className="mt-4 shrink-0">
-              <h2 className="text-sm font-semibold text-muted-foreground mb-2.5" data-testid="text-features-heading">Key Features</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {FEATURES.map((feat) => (
-                  <div
-                    key={feat.title}
-                    className="rounded-md border border-border bg-card overflow-hidden"
-                    data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
-                  >
-                    <div className="px-3 py-2 border-b border-border bg-muted/20 flex items-center gap-2">
-                      <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
-                        <feat.icon className="w-3.5 h-3.5" />
+            {!hasDocuments && !isLoading && (
+              <div className="mt-6 shrink-0">
+                <div className="grid md:grid-cols-3 gap-4 mb-5">
+                  {HIGHLIGHTS.map((feat) => (
+                    <div
+                      key={feat.title}
+                      className="rounded-lg border-2 border-primary/25 bg-card overflow-hidden"
+                      data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      <div className="p-4 space-y-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 rounded-lg bg-primary/15 text-primary shrink-0 border border-primary/25">
+                            <feat.icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-sm font-bold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
+                        </div>
+                        <p className="text-xs text-foreground/65 leading-relaxed">{feat.description}</p>
                       </div>
-                      <span className="text-base font-semibold leading-tight" data-testid={`text-feature-title-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}>{feat.title}</span>
                     </div>
-                    <div className="px-3 py-2.5">
-                      <p className="text-sm text-foreground/70 leading-relaxed">{feat.description}</p>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {MORE_FEATURES.map((feat) => (
+                    <div
+                      key={feat.title}
+                      className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
+                      data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      <div className="p-3 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
+                            <feat.icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-xs font-semibold leading-tight">{feat.title}</span>
+                        </div>
+                        <p className="text-[11px] text-foreground/55 leading-relaxed">{feat.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {hasDocuments && (
+              <div className="mt-4 shrink-0">
+                <button
+                  onClick={() => setShowFeatures(!showFeatures)}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                  data-testid="button-toggle-features"
+                >
+                  {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  <span>{showFeatures ? "Hide" : "Show"} capabilities</span>
+                </button>
+
+                {showFeatures && (
+                  <div className="mt-2.5 grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {[...HIGHLIGHTS, ...MORE_FEATURES].map((feat) => (
+                      <div
+                        key={feat.title}
+                        className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
+                        data-testid={`card-feature-${feat.title.toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        <div className="p-3 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 border border-primary/20">
+                              <feat.icon className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-xs font-semibold leading-tight">{feat.title}</span>
+                          </div>
+                          <p className="text-[11px] text-foreground/55 leading-relaxed">{feat.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="w-80 lg:w-96 shrink-0 flex flex-col min-h-0">
