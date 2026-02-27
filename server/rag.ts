@@ -17,22 +17,6 @@ export async function initVectorSupport(): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query("CREATE EXTENSION IF NOT EXISTS vector");
-    const colCheck = await client.query(`
-      SELECT column_name FROM information_schema.columns
-      WHERE table_name = 'document_chunks' AND column_name = 'embedding'
-    `);
-    if (colCheck.rows.length === 0) {
-      await client.query("ALTER TABLE document_chunks ADD COLUMN embedding vector(384)");
-      console.log("Added embedding column to document_chunks");
-    }
-    const idxCheck = await client.query(`
-      SELECT indexname FROM pg_indexes
-      WHERE tablename = 'document_chunks' AND indexname = 'idx_chunks_embedding'
-    `);
-    if (idxCheck.rows.length === 0) {
-      await client.query("CREATE INDEX idx_chunks_embedding ON document_chunks USING hnsw (embedding vector_cosine_ops)");
-      console.log("Created HNSW index on embedding column");
-    }
     vectorReady = true;
     console.log("Vector support initialized");
   } finally {

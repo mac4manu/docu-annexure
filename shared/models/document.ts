@@ -4,6 +4,21 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return "vector(384)";
+  },
+  toDriver(value: number[]): string {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value: string): number[] {
+    return value
+      .replace(/[\[\]]/g, "")
+      .split(",")
+      .map(Number);
+  },
+});
+
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -38,9 +53,11 @@ export const documentChunks = pgTable("document_chunks", {
   content: text("content").notNull(),
   chunkIndex: integer("chunk_index").notNull(),
   tokenCount: integer("token_count"),
+  embedding: vector("embedding"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
   index("idx_chunks_document_id").on(table.documentId),
+  index("idx_chunks_embedding").using("hnsw", sql`${table.embedding} vector_cosine_ops`),
 ]);
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({
@@ -50,6 +67,7 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 
 export const insertDocumentChunkSchema = createInsertSchema(documentChunks).omit({
   id: true,
+  embedding: true,
   createdAt: true,
 });
 
