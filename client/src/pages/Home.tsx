@@ -2,7 +2,7 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap, Building2, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,7 +47,17 @@ const FEATURES = [
   {
     icon: GraduationCap,
     title: "Professor-Level Expertise",
-    description: "AI acts as a research mentor across life sciences, biotechnology, medicine, physics, and more — walking you through derivations and reasoning step by step.",
+    description: "AI acts as a research mentor across life sciences, biotechnology, medicine, physics, and real estate — walking you through derivations, contract terms, and reasoning step by step.",
+  },
+  {
+    icon: Building2,
+    title: "Real Estate Analysis",
+    description: "Analyze contracts, leases, disclosures, inspection reports, and appraisals. Flag unusual clauses, extract financial terms, and identify contingencies.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "PII Protection",
+    description: "Automatic detection and redaction of personal information — SSNs, phone numbers, emails, addresses, and more — before any document content is stored.",
   },
 ];
 
