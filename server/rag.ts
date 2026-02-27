@@ -135,12 +135,22 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return Array.from(output.data as Float32Array);
 }
 
-async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  const embeddings: number[][] = [];
-  for (const text of texts) {
-    embeddings.push(await generateEmbedding(text));
+async function generateEmbeddingsBatch(texts: string[]): Promise<number[][]> {
+  const embed = await getEmbedder();
+  const truncated = texts.map(t => t.slice(0, 2000));
+  const results: number[][] = [];
+  const BATCH_SIZE = 8;
+  for (let i = 0; i < truncated.length; i += BATCH_SIZE) {
+    const batch = truncated.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (text) => {
+        const output = await embed(text, { pooling: "mean", normalize: true });
+        return Array.from(output.data as Float32Array);
+      })
+    );
+    results.push(...batchResults);
   }
-  return embeddings;
+  return results;
 }
 
 export async function indexDocumentChunks(documentId: number, content: string): Promise<number> {
@@ -148,7 +158,7 @@ export async function indexDocumentChunks(documentId: number, content: string): 
   if (chunks.length === 0) return 0;
 
   const texts = chunks.map(c => c.content);
-  const embeddings = await generateEmbeddings(texts);
+  const embeddings = await generateEmbeddingsBatch(texts);
 
   const client = await pool.connect();
   try {
@@ -156,12 +166,24 @@ export async function indexDocumentChunks(documentId: number, content: string): 
 
     await client.query("DELETE FROM document_chunks WHERE document_id = $1", [documentId]);
 
-    for (let i = 0; i < chunks.length; i++) {
-      const embeddingStr = `[${embeddings[i].join(",")}]`;
+    const INSERT_BATCH = 20;
+    for (let b = 0; b < chunks.length; b += INSERT_BATCH) {
+      const batchEnd = Math.min(b + INSERT_BATCH, chunks.length);
+      const values: string[] = [];
+      const params: any[] = [];
+      let paramIdx = 1;
+
+      for (let i = b; i < batchEnd; i++) {
+        const embeddingStr = `[${embeddings[i].join(",")}]`;
+        values.push(`($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, $${paramIdx + 3}, $${paramIdx + 4}::vector)`);
+        params.push(documentId, chunks[i].content, chunks[i].index, Math.ceil(chunks[i].content.length / 4), embeddingStr);
+        paramIdx += 5;
+      }
+
       await client.query(
         `INSERT INTO document_chunks (document_id, content, chunk_index, token_count, embedding)
-         VALUES ($1, $2, $3, $4, $5::vector)`,
-        [documentId, chunks[i].content, chunks[i].index, Math.ceil(chunks[i].content.length / 4), embeddingStr]
+         VALUES ${values.join(", ")}`,
+        params
       );
     }
 

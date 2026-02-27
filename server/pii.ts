@@ -119,18 +119,22 @@ After the redacted text, on a new line, output exactly: PII_TYPES_FOUND: followe
 }
 
 export async function detectAndRedactPII(text: string): Promise<PiiDetectionResult> {
-  const regexResult = redactWithRegex(text);
+  const [regexResult, aiResult] = await Promise.all([
+    Promise.resolve(redactWithRegex(text)),
+    redactWithAI(text).catch((e) => {
+      console.error("AI PII redaction failed, using regex-only results:", e);
+      return { text, additionalTypes: [] as string[] };
+    }),
+  ]);
 
-  let finalText = regexResult.text;
   const typeSet = new Set<string>();
   regexResult.typesDetected.forEach(t => typeSet.add(t));
+  aiResult.additionalTypes.forEach(t => typeSet.add(t));
 
-  try {
-    const aiResult = await redactWithAI(regexResult.text);
-    finalText = aiResult.text;
-    aiResult.additionalTypes.forEach(t => typeSet.add(t));
-  } catch (e) {
-    console.error("AI PII redaction failed, using regex-only results:", e);
+  let finalText = aiResult.text;
+  for (const { pattern, label } of PII_PATTERNS) {
+    const regex = new RegExp(pattern.source, pattern.flags);
+    finalText = finalText.replace(regex, label);
   }
 
   const allTypes = Array.from(typeSet);

@@ -26,10 +26,12 @@ Not specified.
 -   **Fallback**: If a document is not yet indexed, the chat system can fall back to using the full document content.
 
 **Document Processing**:
--   **PDF**: `pdftoppm` converts PDFs to PNG images, which are then processed by GPT-5.2 Vision for markdown extraction.
+-   **PDF**: `pdftoppm` converts PDFs to PNG images, which are then processed by GPT-5.2 Vision for markdown extraction (5 pages per batch).
 -   **DOCX**: LibreOffice converts DOCX to PDF, then follows the PDF vision pipeline.
 -   **PPTX**: `officeParser` extracts text, and GPT formats it into structured markdown.
 -   **XLSX**: `officeParser` parses spreadsheets and formats them into markdown tables.
+-   **PII Redaction**: Regex and AI redaction run in parallel; regex is re-applied on AI output for full coverage.
+-   **Performance**: Embeddings generated in parallel batches of 8; DB chunk inserts batched 20 rows per query.
 -   Output includes proper markdown tables, LaTeX math formulas (with client-side `KaTeX` rendering and LaTeX preprocessing), and image descriptions.
 
 **System Design**:

@@ -382,11 +382,11 @@ async function extractMarkdownFromImages(imagePaths: string[]): Promise<string> 
   const maxPages = 30;
   const pages = imagePaths.slice(0, maxPages);
 
-  if (pages.length <= 3) {
+  if (pages.length <= 5) {
     return await extractBatch(pages, 0);
   }
 
-  const batchSize = 3;
+  const batchSize = 5;
   const batches: { paths: string[]; startIndex: number }[] = [];
   for (let i = 0; i < pages.length; i += batchSize) {
     batches.push({ paths: pages.slice(i, i + batchSize), startIndex: i });
