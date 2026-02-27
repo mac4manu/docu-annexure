@@ -94,49 +94,17 @@ export default function Home() {
       <div className="h-full flex flex-col overflow-hidden">
         <div className="flex-none px-6 pt-4 pb-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-display font-semibold text-foreground tracking-tight" data-testid="text-page-heading">
-                Documents
-              </h1>
-              <span className="text-[11px] text-muted-foreground">
-                {filtered.length} of {documents.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFeatures(!showFeatures)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-2 rounded-md"
-                data-testid="button-toggle-features"
-              >
-                {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                <span>Capabilities</span>
-              </button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSortNewest((prev) => !prev)}
-                title={sortNewest ? "Newest first" : "Oldest first"}
-                data-testid="button-sort-documents"
-              >
-                {sortNewest ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
-              </Button>
-              <div className="relative">
-                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Filter documents..."
-                  className="pl-8 h-8 text-xs bg-muted/30 w-48"
-                  data-testid="input-search-documents"
-                />
-              </div>
-              <Link href="/chat">
-                <Button variant="default" size="sm" data-testid="button-chat-with-docs">
-                  <MessagesSquare className="w-3.5 h-3.5 mr-1.5" />
-                  Chat
-                </Button>
-              </Link>
-            </div>
+            <h1 className="text-lg font-display font-semibold text-foreground tracking-tight" data-testid="text-page-heading">
+              Documents
+            </h1>
+            <button
+              onClick={() => setShowFeatures(!showFeatures)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-2 rounded-md"
+              data-testid="button-toggle-features"
+            >
+              {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              <span>Capabilities</span>
+            </button>
           </div>
         </div>
 
@@ -166,6 +134,42 @@ export default function Home() {
               ))}
             </div>
           )}
+
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-display font-semibold" data-testid="text-library-heading">Your Library</h2>
+              <span className="text-[11px] text-muted-foreground">
+                {filtered.length} of {documents.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSortNewest((prev) => !prev)}
+                title={sortNewest ? "Newest first" : "Oldest first"}
+                data-testid="button-sort-documents"
+              >
+                {sortNewest ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
+              </Button>
+              <div className="relative">
+                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter documents..."
+                  className="pl-8 h-8 text-xs bg-muted/30 w-48"
+                  data-testid="input-search-documents"
+                />
+              </div>
+              <Link href="/chat">
+                <Button variant="default" size="sm" data-testid="button-chat-with-docs">
+                  <MessagesSquare className="w-3.5 h-3.5 mr-1.5" />
+                  Chat
+                </Button>
+              </Link>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.length > 0 ? (
