@@ -30,8 +30,18 @@ export async function initVectorSupport(): Promise<void> {
       WHERE tablename = 'document_chunks' AND indexname = 'idx_chunks_embedding'
     `);
     if (idxCheck.rows.length === 0) {
-      await client.query("CREATE INDEX idx_chunks_embedding ON document_chunks USING hnsw (embedding vector_cosine_ops)");
-      console.log("Created HNSW index on embedding column");
+      try {
+        await client.query("CREATE INDEX idx_chunks_embedding ON document_chunks USING hnsw (embedding vector_cosine_ops)");
+        console.log("Created HNSW index on embedding column");
+      } catch (hnswerr: any) {
+        console.log("HNSW index not available, falling back to IVFFlat:", hnswerr.message);
+        try {
+          await client.query("CREATE INDEX idx_chunks_embedding ON document_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)");
+          console.log("Created IVFFlat index on embedding column");
+        } catch (ivferr: any) {
+          console.log("IVFFlat index creation skipped (may need more rows):", ivferr.message);
+        }
+      }
     }
     vectorReady = true;
     console.log("Vector support initialized");
