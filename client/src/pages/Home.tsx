@@ -2,7 +2,7 @@ import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 import { useState } from "react";
-import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap, Building2, ShieldCheck } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -48,6 +48,11 @@ const FEATURES = [
     icon: GraduationCap,
     title: "Professor-Level Expertise",
     description: "AI acts as a research mentor across life sciences, biotechnology, medicine, physics, and real estate — walking you through derivations, contract terms, and reasoning step by step.",
+  },
+  {
+    icon: Sparkles,
+    title: "Adaptive AI Persona",
+    description: "The AI automatically adapts to your document — acting as a research scientist for papers, a medical expert for clinical reports, a real estate attorney for contracts, or a thesis advisor for academic work.",
   },
   {
     icon: Building2,

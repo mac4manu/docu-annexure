@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import logoImg from "@/assets/images/logo-transparent.png";
@@ -52,6 +52,12 @@ const features = [
     title: "Professor-Level Expertise",
     description:
       "AI acts as a seasoned expert across life sciences, medicine, physics, and real estate — walking you through derivations, contract terms, methodologies, and reasoning step by step.",
+  },
+  {
+    icon: Sparkles,
+    title: "Adaptive AI Persona",
+    description:
+      "The AI automatically adapts to your document — acting as a research scientist for papers, a medical expert for clinical reports, a real estate attorney for contracts, or a thesis advisor for academic work.",
   },
   {
     icon: Building2,
