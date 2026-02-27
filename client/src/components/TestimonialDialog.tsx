@@ -63,7 +63,7 @@ export function TestimonialDialog() {
       <DialogTrigger asChild>
         <Button
           size="icon"
-          className="fixed bottom-16 right-4 z-50 w-11 h-11 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          className="absolute bottom-16 right-4 z-50 w-11 h-11 rounded-full shadow-lg hover:shadow-xl transition-shadow"
           data-testid="button-leave-testimonial"
           title={alreadySubmitted ? "Testimonial Submitted" : "Leave Feedback"}
         >

@@ -128,7 +128,7 @@ function UserMenu() {
 
 function AuthenticatedApp() {
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
+    <div className="relative flex flex-col h-full w-full overflow-hidden">
       <VersionBanner />
       <div className="flex-none bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-1.5 flex items-center justify-center gap-2 text-xs text-amber-800 dark:text-amber-200" data-testid="banner-prototype">
         <FlaskConical className="w-3.5 h-3.5 shrink-0" />
