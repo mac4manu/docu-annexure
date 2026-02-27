@@ -128,7 +128,7 @@ function UserMenu() {
 
 function AuthenticatedApp() {
   return (
-    <div className="relative flex flex-col h-full w-full overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       <VersionBanner />
       <div className="flex-none bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-1.5 flex items-center justify-center gap-2 text-xs text-amber-800 dark:text-amber-200" data-testid="banner-prototype">
         <FlaskConical className="w-3.5 h-3.5 shrink-0" />
@@ -149,15 +149,15 @@ function AuthenticatedApp() {
       <main className="flex-1 overflow-hidden min-h-0">
         <Router />
       </main>
-      <TestimonialDialog />
-      <footer className="flex-none border-t border-border py-3 px-4" data-testid="footer-app">
+      <footer className="flex-none border-t border-border py-2.5 px-4" data-testid="footer-app">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <span className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} DocuAnnexure</span>
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
               Privacy & Data Policy
             </Link>
             <span className="text-xs text-muted-foreground" data-testid="text-footer-built-by">Built by Manu Balakrishnan</span>
+            <TestimonialDialog />
           </div>
         </div>
       </footer>

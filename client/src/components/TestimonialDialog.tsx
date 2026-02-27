@@ -62,12 +62,13 @@ export function TestimonialDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          size="icon"
-          className="absolute bottom-16 right-4 z-50 w-11 h-11 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           data-testid="button-leave-testimonial"
-          title={alreadySubmitted ? "Testimonial Submitted" : "Leave Feedback"}
         >
-          <MessageSquareHeart className="w-5 h-5" />
+          <MessageSquareHeart className="w-3.5 h-3.5" />
+          {alreadySubmitted ? "Feedback Sent" : "Leave Feedback"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
