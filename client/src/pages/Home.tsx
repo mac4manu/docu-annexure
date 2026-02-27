@@ -1,6 +1,7 @@
 import { useDocuments } from "@/hooks/use-documents";
 import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
+import { TestimonialDialog } from "@/components/TestimonialDialog";
 import { useState } from "react";
 import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -97,14 +98,17 @@ export default function Home() {
             <h1 className="text-lg font-display font-semibold text-foreground tracking-tight" data-testid="text-page-heading">
               Documents
             </h1>
-            <button
-              onClick={() => setShowFeatures(!showFeatures)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-2 rounded-md"
-              data-testid="button-toggle-features"
-            >
-              {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              <span>Capabilities</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <TestimonialDialog />
+              <button
+                onClick={() => setShowFeatures(!showFeatures)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-2 rounded-md"
+                data-testid="button-toggle-features"
+              >
+                {showFeatures ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                <span>Capabilities</span>
+              </button>
+            </div>
           </div>
         </div>
 

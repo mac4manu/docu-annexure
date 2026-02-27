@@ -19,6 +19,7 @@ import { promisify } from "util";
 import { isAuthenticated } from "./replit_integrations/auth";
 import crypto from "crypto";
 import { detectAndRedactPII, sanitizeMetadataField } from "./pii";
+import { submitTestimonialSchema } from "@shared/models/testimonial";
 import { indexDocumentChunks, findRelevantChunks, getChunkCount, deleteDocumentChunks } from "./rag";
 
 const execFileAsync = promisify(execFile);
@@ -1052,6 +1053,92 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Remove allowed email error:", error);
       res.status(500).json({ message: "Failed to remove email" });
+    }
+  });
+
+  app.get("/api/testimonials", async (_req, res) => {
+    try {
+      const testimonials = await storage.getApprovedTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.get("/api/testimonials/mine", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const testimonial = await storage.getUserTestimonial(userId);
+      res.json(testimonial || null);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch testimonial" });
+    }
+  });
+
+  app.post("/api/testimonials", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = req.user as any;
+
+      const existing = await storage.getUserTestimonial(userId);
+      if (existing) {
+        return res.status(400).json({ message: "You have already submitted a testimonial" });
+      }
+
+      const parsed = submitTestimonialSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+
+      const testimonial = await storage.createTestimonial({
+        userId,
+        userName: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Anonymous",
+        userImage: user?.profileImageUrl || null,
+        role: parsed.data.role || null,
+        content: parsed.data.content,
+        rating: parsed.data.rating,
+      });
+
+      res.status(201).json(testimonial);
+    } catch (error) {
+      console.error("Create testimonial error:", error);
+      res.status(500).json({ message: "Failed to submit testimonial" });
+    }
+  });
+
+  app.get("/api/admin/testimonials", isAuthenticated, async (req, res) => {
+    if (!ADMIN_USER_IDS.includes(getUserId(req))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      const testimonials = await storage.getAllTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.post("/api/admin/testimonials/:id/approve", isAuthenticated, async (req, res) => {
+    if (!ADMIN_USER_IDS.includes(getUserId(req))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      await storage.approveTestimonial(Number(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to approve testimonial" });
+    }
+  });
+
+  app.delete("/api/admin/testimonials/:id", isAuthenticated, async (req, res) => {
+    if (!ADMIN_USER_IDS.includes(getUserId(req))) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    try {
+      await storage.deleteTestimonial(Number(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete testimonial" });
     }
   });
 

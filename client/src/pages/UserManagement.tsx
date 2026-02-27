@@ -5,12 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Trash2, Mail, Users, ShieldCheck } from "lucide-react";
+import { Loader2, UserPlus, Trash2, Mail, Users, ShieldCheck, Star, Check, MessageSquareHeart } from "lucide-react";
 
 interface AllowedEmail {
   id: number;
   email: string;
   addedAt: string | null;
+}
+
+interface Testimonial {
+  id: number;
+  userName: string;
+  userImage: string | null;
+  role: string | null;
+  content: string;
+  rating: number;
+  approved: boolean;
+  createdAt: string;
 }
 
 export default function UserManagement() {
@@ -24,6 +35,11 @@ export default function UserManagement() {
 
   const { data: emails, isLoading: emailsLoading } = useQuery<AllowedEmail[]>({
     queryKey: ["/api/admin/allowed-emails"],
+    enabled: adminCheck?.isAdmin === true,
+  });
+
+  const { data: testimonials, isLoading: testimonialsLoading } = useQuery<Testimonial[]>({
+    queryKey: ["/api/admin/testimonials"],
     enabled: adminCheck?.isAdmin === true,
   });
 
@@ -61,6 +77,30 @@ export default function UserManagement() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to remove email", variant: "destructive" });
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/testimonials/${id}/approve`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to approve");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ title: "Approved", description: "Testimonial is now visible on the landing page." });
+    },
+  });
+
+  const deleteTestimonialMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ title: "Deleted", description: "Testimonial has been removed." });
     },
   });
 
@@ -190,6 +230,91 @@ export default function UserManagement() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">No users in the allowed list.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquareHeart className="w-4 h-4" />
+              Testimonials
+              {testimonials && (
+                <Badge variant="secondary" className="ml-auto" data-testid="badge-testimonial-count">
+                  {testimonials.length}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {testimonialsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : testimonials && testimonials.length > 0 ? (
+              <div className="space-y-3" data-testid="list-testimonials">
+                {testimonials.map((t) => (
+                  <div
+                    key={t.id}
+                    className="border border-border rounded-md p-4 space-y-3"
+                    data-testid={`row-testimonial-${t.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{t.userName}</span>
+                          {t.role && <span className="text-xs text-muted-foreground">({t.role})</span>}
+                          {t.approved ? (
+                            <Badge variant="default" className="text-xs bg-green-600" data-testid={`badge-approved-${t.id}`}>Approved</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs" data-testid={`badge-pending-${t.id}`}>Pending</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3 h-3 ${s <= t.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {new Date(t.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-foreground/80 leading-relaxed">"{t.content}"</p>
+                    <div className="flex items-center gap-2">
+                      {!t.approved && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => approveMutation.mutate(t.id)}
+                          disabled={approveMutation.isPending}
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                          data-testid={`button-approve-${t.id}`}
+                        >
+                          <Check className="w-3.5 h-3.5 mr-1" />
+                          Approve
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteTestimonialMutation.mutate(t.id)}
+                        disabled={deleteTestimonialMutation.isPending}
+                        className="text-destructive"
+                        data-testid={`button-delete-testimonial-${t.id}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8" data-testid="text-no-testimonials">No testimonials submitted yet.</p>
             )}
           </CardContent>
         </Card>

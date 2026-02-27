@@ -35,7 +35,7 @@ Not specified.
 -   Output includes proper markdown tables, LaTeX math formulas (with client-side `KaTeX` rendering and LaTeX preprocessing), and image descriptions.
 
 **System Design**:
--   **Data Model**: Includes schemas for documents, document chunks, conversations, messages, users, sessions, message ratings, and allowed emails.
+-   **Data Model**: Includes schemas for documents, document chunks, conversations, messages, users, sessions, message ratings, allowed emails, and testimonials.
 -   **Security**: All API routes are protected with authentication middleware. PII redaction is a critical security feature, removing sensitive data before storage.
 -   **UI/UX**: Features a clean, modern interface with a header-based navigation, a customizable document viewer, and a dynamic chat interface with streaming responses, confidence badges, and rating options. The `Inter` font is applied globally.
 -   **Analytics**: Provides an analytics dashboard with metrics on user activity, document uploads, chat performance (confidence distribution, rating trends), and most queried documents.

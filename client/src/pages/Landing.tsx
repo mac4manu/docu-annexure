@@ -1,8 +1,19 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, FlaskConical, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck, Sparkles } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck, Sparkles, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import logoImg from "@/assets/images/logo-transparent.png";
 import heroBg from "@/assets/images/hero-bg.png";
+
+interface Testimonial {
+  id: number;
+  userName: string;
+  userImage: string | null;
+  role: string | null;
+  content: string;
+  rating: number;
+  createdAt: string;
+}
 
 const highlightedFeatures = [
   {
@@ -81,7 +92,65 @@ const trustItems = [
   { icon: Zap, text: "Instant document processing" },
 ];
 
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-3.5 h-3.5 ${star <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
+  const initials = testimonial.userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div
+      className="rounded-lg border border-border bg-card p-5 space-y-4 hover-elevate"
+      data-testid={`card-testimonial-${testimonial.id}`}
+    >
+      <Quote className="w-5 h-5 text-primary/30" />
+      <p className="text-sm text-foreground/80 leading-relaxed">{testimonial.content}</p>
+      <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center gap-3">
+          {testimonial.userImage ? (
+            <img
+              src={testimonial.userImage}
+              alt={testimonial.userName}
+              className="w-8 h-8 rounded-full object-cover border border-border"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold border border-primary/20">
+              {initials}
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-medium leading-tight">{testimonial.userName}</p>
+            {testimonial.role && (
+              <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+            )}
+          </div>
+        </div>
+        <StarRating rating={testimonial.rating} />
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
+  const { data: testimonials = [] } = useQuery<Testimonial[]>({
+    queryKey: ["/api/testimonials"],
+  });
+
   return (
     <div className="flex flex-col h-full bg-background overflow-y-auto">
       <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
@@ -204,6 +273,29 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {testimonials.length > 0 && (
+        <section className="py-12 md:py-16 bg-background border-t border-border" data-testid="section-testimonials">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Quote className="w-5 h-5 text-primary" />
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight font-serif" data-testid="text-testimonials-heading">
+                  What our users say
+                </h2>
+              </div>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Real feedback from people using DocuAnnexure for their document workflows.
+              </p>
+            </div>
+            <div className={`grid gap-5 ${testimonials.length === 1 ? "max-w-md mx-auto" : testimonials.length === 2 ? "md:grid-cols-2 max-w-3xl mx-auto" : "md:grid-cols-2 lg:grid-cols-3"}`}>
+              {testimonials.slice(0, 6).map((t) => (
+                <TestimonialCard key={t.id} testimonial={t} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-12 md:py-16 bg-muted/20 border-t border-border">
         <div className="max-w-6xl mx-auto px-6">

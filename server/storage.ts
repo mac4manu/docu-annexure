@@ -1,10 +1,11 @@
 import { db } from "./db";
 import {
-  documents, conversations, messages, messageRatings,
+  documents, conversations, messages, messageRatings, testimonials,
   type Document, type InsertDocument,
   type Conversation, type InsertConversation,
   type Message, type InsertMessage,
-  type MessageRating, type InsertMessageRating
+  type MessageRating, type InsertMessageRating,
+  type Testimonial, type InsertTestimonial
 } from "@shared/schema";
 import { users, allowedEmails, type AllowedEmail } from "@shared/models/auth";
 import { eq, desc, sql, count, and, inArray } from "drizzle-orm";
@@ -92,6 +93,13 @@ export interface IStorage {
   isEmailAllowed(email: string): Promise<boolean>;
   addAllowedEmail(email: string): Promise<AllowedEmail>;
   removeAllowedEmail(id: number): Promise<void>;
+
+  createTestimonial(data: InsertTestimonial): Promise<Testimonial>;
+  getApprovedTestimonials(): Promise<Testimonial[]>;
+  getUserTestimonial(userId: string): Promise<Testimonial | undefined>;
+  getAllTestimonials(): Promise<Testimonial[]>;
+  approveTestimonial(id: number): Promise<void>;
+  deleteTestimonial(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -626,6 +634,40 @@ export class DatabaseStorage implements IStorage {
     const adminEmail = "mailbox4manu@gmail.com";
     await db.insert(allowedEmails).values({ email: adminEmail }).onConflictDoNothing();
     console.log(`Seeded admin email: ${adminEmail}`);
+  }
+
+  async createTestimonial(data: InsertTestimonial): Promise<Testimonial> {
+    const [t] = await db.insert(testimonials).values(data).returning();
+    return t;
+  }
+
+  async getApprovedTestimonials(): Promise<Testimonial[]> {
+    return db.select().from(testimonials)
+      .where(eq(testimonials.approved, true))
+      .orderBy(desc(testimonials.createdAt));
+  }
+
+  async getUserTestimonial(userId: string): Promise<Testimonial | undefined> {
+    const [t] = await db.select().from(testimonials)
+      .where(eq(testimonials.userId, userId))
+      .orderBy(desc(testimonials.createdAt))
+      .limit(1);
+    return t;
+  }
+
+  async getAllTestimonials(): Promise<Testimonial[]> {
+    return db.select().from(testimonials)
+      .orderBy(desc(testimonials.createdAt));
+  }
+
+  async approveTestimonial(id: number): Promise<void> {
+    await db.update(testimonials)
+      .set({ approved: true })
+      .where(eq(testimonials.id, id));
+  }
+
+  async deleteTestimonial(id: number): Promise<void> {
+    await db.delete(testimonials).where(eq(testimonials.id, id));
   }
 }
 
