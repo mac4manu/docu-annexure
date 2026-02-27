@@ -39,11 +39,13 @@ const CHANGELOG_ENTRIES = [
     title: "Real Estate Support & PII Protection",
     changes: [
       "Added Real Estate & Property domain — analyze contracts, leases, disclosures, inspections, appraisals, and more",
+      "Adaptive AI persona — automatically switches expertise based on document type: research scientist, medical expert, real estate attorney, or thesis advisor",
       "Automatic PII detection and redaction — SSNs, phone numbers, emails, addresses, and other personal data are stripped before storage",
       "AI-powered PII scanning catches contextual personal information that regex patterns miss",
       "Real estate metadata extraction — property type, location (city/state only), listing price, square footage, year built",
       "New real estate prompt suggestions — summarize key terms, compare leases, flag unusual clauses, extract financials, identify contingencies",
       "Compliance & red flag detection for non-standard contract clauses and missing disclosures",
+      "New feature cards on Documents and Landing pages — Adaptive AI Persona, Real Estate Analysis, and PII Protection",
       "Updated Privacy & Data Policy with detailed PII handling documentation",
     ],
   },
