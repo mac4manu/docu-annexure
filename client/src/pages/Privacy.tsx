@@ -12,12 +12,12 @@ const sections = [
       "The following PII types are detected and redacted: Social Security Numbers (SSNs), phone numbers, email addresses, credit card numbers, bank account numbers, driver\u2019s license numbers, dates of birth, and full street addresses",
       "Detected PII is replaced with redaction markers (e.g., [SSN REDACTED], [PHONE REDACTED]) so you can see where sensitive data was removed",
       "In addition to pattern-based detection, AI-powered analysis catches PII that regex alone may miss, such as names in the context of personal data and financial details",
-      "Only the redacted version of document content is stored in our database \u2014 the original unredacted text is never persisted",
+      "Only the redacted version of document content is stored in the database \u2014 the original unredacted text is never persisted",
     ],
   },
   {
     icon: Database,
-    title: "What We Store",
+    title: "What DocuAnnexure Stores",
     items: [
       "Redacted text content from your uploaded documents \u2014 all PII is stripped before storage",
       "Original uploaded files are deleted immediately after processing",
@@ -60,7 +60,7 @@ const sections = [
       "Document content is sent to OpenAI's API for text extraction and chat responses",
       "PII redaction occurs before content is stored, but original text may be temporarily processed by the AI during extraction",
       "AI confidence scoring also involves sending content to OpenAI for evaluation",
-      "We recommend not uploading highly sensitive or confidential documents beyond what PII redaction can handle",
+      "Avoid uploading highly sensitive or confidential documents beyond what PII redaction can handle",
     ],
   },
   {
@@ -74,13 +74,13 @@ const sections = [
   },
   {
     icon: Lock,
-    title: "What We Do NOT Do",
+    title: "What DocuAnnexure Does NOT Do",
     items: [
-      "We do not store unredacted PII \u2014 all personally identifiable information is stripped before storage",
-      "We do not sell, share, or distribute your data to third parties (beyond AI processing)",
-      "We do not store your original uploaded files \u2014 only the redacted extracted text content is retained",
-      "We do not use your documents to train AI models",
-      "We do not track your activity for advertising purposes",
+      "Unredacted PII is never stored \u2014 all personally identifiable information is stripped before storage",
+      "Your data is never sold, shared, or distributed to third parties (beyond AI processing)",
+      "Original uploaded files are never retained \u2014 only the redacted extracted text content is stored",
+      "Your documents are never used to train AI models",
+      "Your activity is never tracked for advertising purposes",
     ],
   },
   {
@@ -90,7 +90,7 @@ const sections = [
       "Original uploaded files are automatically deleted immediately after text extraction and PII redaction",
       "You can delete any document from your library at any time",
       "You can delete any chat conversation, which also removes all its messages",
-      "Deleted data is permanently removed from our database",
+      "Deleted data is permanently removed from the database",
     ],
   },
   {
@@ -124,7 +124,7 @@ export default function Privacy() {
             </h1>
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed" data-testid="text-privacy-subtitle">
-            We believe in transparency about how your data is handled. This page explains what information DocuAnnexure collects, how it is processed, and the control you have over your data. All documents undergo automatic PII redaction before storage.
+            DocuAnnexure is built with transparency in mind. This page explains what information is collected, how it is processed, and the control you have over your data. All documents undergo automatic PII redaction before storage.
           </p>
         </div>
 

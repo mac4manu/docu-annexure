@@ -281,7 +281,7 @@ export default function Landing() {
               <div className="inline-flex items-center gap-2 mb-3">
                 <Quote className="w-5 h-5 text-primary" />
                 <h2 className="text-xl md:text-2xl font-bold tracking-tight font-serif" data-testid="text-testimonials-heading">
-                  What our users say
+                  What users are saying
                 </h2>
               </div>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -307,7 +307,7 @@ export default function Landing() {
               </h2>
             </div>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              We are transparent about how your documents are handled.
+              Full transparency on how your documents are handled.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
