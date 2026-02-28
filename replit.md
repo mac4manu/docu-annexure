@@ -42,64 +42,67 @@ Not specified.
 
 ## High-Level Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT (React)                       │
-│  Landing · Documents · Viewer+Chat · Multi-Doc · Analytics  │
-│  wouter routing · TanStack Query · shadcn/ui · KaTeX        │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTP / SSE
-┌──────────────────────────▼──────────────────────────────────┐
-│                    SERVER (Express.js)                       │
-│  Auth (Replit OIDC + Passport) · REST API · SSE Streaming   │
-│  File Upload (Multer) · Admin Guards · Session Store (PG)   │
-├─────────────┬──────────────┬────────────────────────────────┤
-│  Doc Engine │  Chat Engine │  RAG Engine                    │
-│  ┌────────┐ │  ┌─────────┐ │  ┌───────────────────────┐    │
-│  │PDF→PNG │ │  │Professor│ │  │Chunk (4.5k/600 ovlp)  │    │
-│  │→Vision │ │  │Persona  │ │  │Embed (MiniLM-L6-v2)   │    │
-│  │DOCX→PDF│ │  │Grounding│ │  │Vector Search (HNSW)   │    │
-│  │PPTX/XLS│ │  │Rules    │ │  │Top-K Retrieval        │    │
-│  └────────┘ │  └─────────┘ │  └───────────────────────┘    │
-├─────────────┴──────────────┴────────────────────────────────┤
-│  PII Redaction (Regex ∥ AI → Regex re-pass)                 │
-│  Metadata Extraction · Confidence Scoring                   │
-└──────────────────────────┬──────────────────────────────────┘
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-   ┌────────────┐  ┌─────────────┐  ┌────────────┐
-   │ PostgreSQL │  │  pgvector   │  │ OpenAI API │
-   │ Users      │  │ 384-dim     │  │ GPT-5.2    │
-   │ Documents  │  │ embeddings  │  │ Vision     │
-   │ Messages   │  │ HNSW index  │  │ Chat       │
-   │ Sessions   │  │ Cosine sim  │  │ Confidence │
-   │ Ratings    │  │             │  │ Metadata   │
-   │ Testimon.  │  │             │  │            │
-   └────────────┘  └─────────────┘  └────────────┘
+```mermaid
+graph TB
+    subgraph Client ["Client (React + Vite)"]
+        UI[Landing · Documents · Viewer+Chat · Multi-Doc · Analytics]
+        Tech["wouter · TanStack Query · shadcn/ui · KaTeX"]
+    end
+
+    Client -->|HTTP / SSE| Server
+
+    subgraph Server ["Server (Express.js)"]
+        Auth["Auth (Replit OIDC + Passport)"]
+        API["REST API · SSE Streaming · Multer Upload"]
+
+        subgraph Engines
+            DocEngine["Doc Engine\nPDF→PNG→Vision\nDOCX→PDF→Vision\nPPTX/XLSX→Parser"]
+            ChatEngine["Chat Engine\nProfessor Persona\nGrounding Rules\nConfidence Scoring"]
+            RAGEngine["RAG Engine\nChunk (4.5k/600 overlap)\nEmbed (MiniLM-L6-v2)\nHNSW Vector Search"]
+        end
+
+        PII["PII Redaction (Regex ∥ AI → Regex re-pass)"]
+        Meta["Metadata Extraction"]
+    end
+
+    Server --> PG
+    Server --> PGV
+    Server --> OpenAI
+
+    subgraph Storage ["Data Stores"]
+        PG["PostgreSQL\nUsers · Documents · Messages\nSessions · Ratings · Testimonials"]
+        PGV["pgvector\n384-dim embeddings\nHNSW index · Cosine similarity"]
+        OpenAI["OpenAI API (GPT-5.2)\nVision · Chat\nConfidence · Metadata"]
+    end
 ```
 
 ## Data Flow
 
-```
-Upload → File Received (Multer)
-       → Convert to processable format
-           PDF: pdftoppm → PNG pages
-           DOCX: LibreOffice → PDF → PNG pages
-           PPTX/XLSX: officeParser → raw text
-       → AI Vision / GPT extraction → structured markdown
-       → PII Redaction (regex ∥ AI, then regex re-pass)
-       → Metadata Extraction (title, DOI, authors, domain-specific)
-       → Store redacted content in DB
-       → Chunk text (4500 chars, 600 overlap, math-aware)
-       → Generate embeddings (MiniLM-L6-v2, batches of 8)
-       → Store vectors in pgvector (batch insert 20/query)
+```mermaid
+flowchart LR
+    subgraph Upload Flow
+        U1[File Upload] --> U2[Convert Format]
+        U2 -->|PDF| U2a[pdftoppm → PNG]
+        U2 -->|DOCX| U2b[LibreOffice → PDF → PNG]
+        U2 -->|PPTX/XLSX| U2c[officeParser → Text]
+        U2a & U2b & U2c --> U3[AI Vision / GPT Extraction]
+        U3 --> U4["PII Redaction\n(regex ∥ AI → regex re-pass)"]
+        U4 --> U5[Metadata Extraction]
+        U5 --> U6[Store in PostgreSQL]
+        U6 --> U7["Chunk Text\n(4500 chars, 600 overlap)"]
+        U7 --> U8["Embed\n(MiniLM-L6-v2, batch 8)"]
+        U8 --> U9["Store Vectors\n(pgvector, batch 20)"]
+    end
 
-Chat   → User question
-       → Embed query → HNSW cosine search → Top-K chunks
-       → Inject chunks + grounding rules into prompt
-       → GPT-5.2 streams response (SSE)
-       → Confidence scoring (0-100%)
-       → User can rate response (thumbs up/down)
+    subgraph Chat Flow
+        C1[User Question] --> C2[Embed Query]
+        C2 --> C3[HNSW Cosine Search]
+        C3 --> C4[Top-K Chunks Retrieved]
+        C4 --> C5["Inject Context +\nGrounding Rules"]
+        C5 --> C6["GPT-5.2 Stream\n(SSE)"]
+        C6 --> C7[Confidence Score]
+        C7 --> C8["User Rating\n(thumbs up/down)"]
+    end
 ```
 
 ## External Dependencies
