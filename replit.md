@@ -4,7 +4,12 @@
 DocuAnnexure is a document analysis and chat application designed to be a central hub for internal knowledge access. It enables users to upload various document types (PDF, PowerPoint, Word, Excel), extract rich content using AI vision, and interact with the content through an AI-powered chat interface. The system leverages Retrieval-Augmented Generation (RAG) with local vector embeddings to provide intelligent and context-aware responses. Key capabilities include PII detection and redaction, advanced metadata extraction for various domains (academic, real estate), and comprehensive analytics. The project aims to streamline information retrieval, enhance document understanding, and offer a secure, intelligent knowledge management solution.
 
 ## User Preferences
-Not specified.
+-   Solo developer — DocuAnnexure is a personal product, not a company. All copy should reflect product voice, not corporate "we/our" language.
+-   Google Analytics should only run in production (`.replit.app` domain), not in development.
+-   The `embedding` column and HNSW index on `document_chunks` are managed at runtime by `rag.ts initVectorSupport()`, not by Drizzle schema — never confirm deletion of that column during `db:push`.
+-   New tables (e.g. `testimonials`) should be created via direct SQL, not `db:push`, to avoid the embedding column deletion prompt.
+-   Use the `hover-elevate` CSS utility for hover effects, not custom Tailwind hover classes.
+-   Admin access is controlled via `ADMIN_USER_IDS` environment variable.
 
 ## System Architecture
 **Frontend**: Built with React + Vite, styled using Tailwind CSS and shadcn/ui components, utilizing wouter for routing. Key pages include a Landing Page, Document Library, Document Viewer with an integrated chat panel, a Multi-Document Chat interface, an Analytics Dashboard, and administrative User Management.
