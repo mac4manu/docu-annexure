@@ -3,14 +3,6 @@
 ## Overview
 DocuAnnexure is a document analysis and chat application designed to be a central hub for internal knowledge access. It enables users to upload various document types (PDF, PowerPoint, Word, Excel), extract rich content using AI vision, and interact with the content through an AI-powered chat interface. The system leverages Retrieval-Augmented Generation (RAG) with local vector embeddings to provide intelligent and context-aware responses. Key capabilities include PII detection and redaction, advanced metadata extraction for various domains (academic, real estate), and comprehensive analytics. The project aims to streamline information retrieval, enhance document understanding, and offer a secure, intelligent knowledge management solution.
 
-## User Preferences
--   Solo developer — DocuAnnexure is a personal product, not a company. All copy should reflect product voice, not corporate "we/our" language.
--   Google Analytics should only run in production (`.replit.app` domain), not in development.
--   The `embedding` column and HNSW index on `document_chunks` are managed at runtime by `rag.ts initVectorSupport()`, not by Drizzle schema — never confirm deletion of that column during `db:push`.
--   New tables (e.g. `testimonials`) should be created via direct SQL, not `db:push`, to avoid the embedding column deletion prompt.
--   Use the `hover-elevate` CSS utility for hover effects, not custom Tailwind hover classes.
--   Admin access is controlled via `ADMIN_USER_IDS` environment variable.
-
 ## System Architecture
 **Frontend**: Built with React + Vite, styled using Tailwind CSS and shadcn/ui components, utilizing wouter for routing. Key pages include a Landing Page, Document Library, Document Viewer with an integrated chat panel, a Multi-Document Chat interface, an Analytics Dashboard, and administrative User Management.
 
@@ -107,6 +99,86 @@ flowchart LR
         C5 --> C6["GPT-5.2 Stream\n(SSE)"]
         C6 --> C7[Confidence Score]
         C7 --> C8["User Rating\n(thumbs up/down)"]
+    end
+```
+
+### Authentication & Access Flow
+
+```mermaid
+flowchart TD
+    V[Visitor] --> LP[Landing Page]
+    LP -->|Click Login| OIDC[Replit OIDC]
+    OIDC -->|Token| Passport[Passport.js]
+    Passport --> SessionStore[(Session in PostgreSQL)]
+    Passport --> AllowCheck{Email in Allowlist?}
+    AllowCheck -->|Yes| App[Authenticated App]
+    AllowCheck -->|No| Restricted[Access Restricted Page]
+    App --> AdminCheck{User ID in ADMIN_USER_IDS?}
+    AdminCheck -->|Yes| AdminRoutes[Admin API + User Management]
+    AdminCheck -->|No| UserRoutes[Standard API Routes]
+```
+
+### PII Redaction Pipeline
+
+```mermaid
+flowchart TD
+    Raw[Raw Extracted Text] --> Fork{Parallel Processing}
+    Fork --> Regex[Regex Detection\nSSN · Phone · Email\nCredit Card · DOB\nAddress · Bank Acct\nDriver License]
+    Fork --> AI[AI Detection\nNames in context\nFinancial details\nNon-pattern PII]
+    Regex --> RegexOut[Regex-Redacted Text]
+    AI --> AIOut[AI-Redacted Text]
+    AIOut --> RePass[Regex Re-Pass\non AI Output]
+    RegexOut --> Merge[Merge Results]
+    RePass --> Merge
+    Merge --> Redacted["Final Redacted Text\n[SSN REDACTED]\n[PHONE REDACTED]\n[EMAIL REDACTED]\netc."]
+    Redacted --> Store[(Store in DB)]
+```
+
+### RAG Pipeline Detail
+
+```mermaid
+flowchart TD
+    subgraph Indexing
+        Doc[Redacted Document] --> Split["Math-Aware Chunking\n4500 chars · 600 overlap\nPreserves LaTeX blocks"]
+        Split --> Chunks[Document Chunks]
+        Chunks --> Embed["Local Embedding\nall-MiniLM-L6-v2\n384 dimensions\nBatch size: 8"]
+        Embed --> Vectors["Vector Storage\npgvector · HNSW index\nBatch insert: 20/query"]
+    end
+
+    subgraph Retrieval
+        Query[User Question] --> QEmbed[Embed Query]
+        QEmbed --> Search["HNSW Cosine Search\nTop-K chunks"]
+        Search --> Context[Retrieved Chunks]
+    end
+
+    subgraph Generation
+        Context --> Prompt["System Prompt\nProfessor Persona\n5 Grounding Rules\nAnti-Hallucination"]
+        Prompt --> LLM["GPT-5.2\nSSE Streaming"]
+        LLM --> Confidence["Confidence Scorer\nPenalizes out-of-doc\n0-100%"]
+        Confidence --> Response[Final Response + Badge]
+    end
+
+    Vectors -.->|indexed| Search
+```
+
+### Document Processing by Type
+
+```mermaid
+flowchart LR
+    subgraph PDF
+        P1[PDF File] --> P2[pdftoppm] --> P3[PNG Pages\n5 per batch] --> P4[GPT-5.2 Vision] --> P5[Structured Markdown]
+    end
+
+    subgraph DOCX
+        D1[DOCX File] --> D2[LibreOffice] --> D3[PDF] --> D4[pdftoppm] --> D5[PNG Pages] --> D6[GPT-5.2 Vision] --> D7[Structured Markdown]
+    end
+
+    subgraph PPTX
+        X1[PPTX File] --> X2[officeParser] --> X3[Raw Text] --> X4[GPT Formatting] --> X5[Structured Markdown]
+    end
+
+    subgraph XLSX
+        E1[XLSX File] --> E2[officeParser] --> E3[Parsed Data] --> E4[GPT Formatting] --> E5[Markdown Tables]
     end
 ```
 
