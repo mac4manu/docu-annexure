@@ -40,6 +40,68 @@ Not specified.
 -   **UI/UX**: Features a clean, modern interface with a header-based navigation, a customizable document viewer, and a dynamic chat interface with streaming responses, confidence badges, and rating options. The `Inter` font is applied globally.
 -   **Analytics**: Provides an analytics dashboard with metrics on user activity, document uploads, chat performance (confidence distribution, rating trends), and most queried documents.
 
+## High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENT (React)                       │
+│  Landing · Documents · Viewer+Chat · Multi-Doc · Analytics  │
+│  wouter routing · TanStack Query · shadcn/ui · KaTeX        │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTP / SSE
+┌──────────────────────────▼──────────────────────────────────┐
+│                    SERVER (Express.js)                       │
+│  Auth (Replit OIDC + Passport) · REST API · SSE Streaming   │
+│  File Upload (Multer) · Admin Guards · Session Store (PG)   │
+├─────────────┬──────────────┬────────────────────────────────┤
+│  Doc Engine │  Chat Engine │  RAG Engine                    │
+│  ┌────────┐ │  ┌─────────┐ │  ┌───────────────────────┐    │
+│  │PDF→PNG │ │  │Professor│ │  │Chunk (4.5k/600 ovlp)  │    │
+│  │→Vision │ │  │Persona  │ │  │Embed (MiniLM-L6-v2)   │    │
+│  │DOCX→PDF│ │  │Grounding│ │  │Vector Search (HNSW)   │    │
+│  │PPTX/XLS│ │  │Rules    │ │  │Top-K Retrieval        │    │
+│  └────────┘ │  └─────────┘ │  └───────────────────────┘    │
+├─────────────┴──────────────┴────────────────────────────────┤
+│  PII Redaction (Regex ∥ AI → Regex re-pass)                 │
+│  Metadata Extraction · Confidence Scoring                   │
+└──────────────────────────┬──────────────────────────────────┘
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+   ┌────────────┐  ┌─────────────┐  ┌────────────┐
+   │ PostgreSQL │  │  pgvector   │  │ OpenAI API │
+   │ Users      │  │ 384-dim     │  │ GPT-5.2    │
+   │ Documents  │  │ embeddings  │  │ Vision     │
+   │ Messages   │  │ HNSW index  │  │ Chat       │
+   │ Sessions   │  │ Cosine sim  │  │ Confidence │
+   │ Ratings    │  │             │  │ Metadata   │
+   │ Testimon.  │  │             │  │            │
+   └────────────┘  └─────────────┘  └────────────┘
+```
+
+## Data Flow
+
+```
+Upload → File Received (Multer)
+       → Convert to processable format
+           PDF: pdftoppm → PNG pages
+           DOCX: LibreOffice → PDF → PNG pages
+           PPTX/XLSX: officeParser → raw text
+       → AI Vision / GPT extraction → structured markdown
+       → PII Redaction (regex ∥ AI, then regex re-pass)
+       → Metadata Extraction (title, DOI, authors, domain-specific)
+       → Store redacted content in DB
+       → Chunk text (4500 chars, 600 overlap, math-aware)
+       → Generate embeddings (MiniLM-L6-v2, batches of 8)
+       → Store vectors in pgvector (batch insert 20/query)
+
+Chat   → User question
+       → Embed query → HNSW cosine search → Top-K chunks
+       → Inject chunks + grounding rules into prompt
+       → GPT-5.2 streams response (SSE)
+       → Confidence scoring (0-100%)
+       → User can rate response (thumbs up/down)
+```
+
 ## External Dependencies
 -   **OpenAI GPT-5.2**: Accessed via Replit AI Integrations for vision, chat, confidence scoring, and metadata extraction.
 -   **PostgreSQL**: Primary database for all application data, including user information, document metadata, chat history, and vector embeddings.
