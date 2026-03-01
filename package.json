@@ -58,6 +58,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.453.0",
     "mammoth": "^1.11.0",
+    "marked": "^17.0.3",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
     "minimatch": "^10.2.1",
