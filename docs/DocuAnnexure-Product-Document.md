@@ -279,7 +279,7 @@ Clinical research documents — trial protocols, systematic reviews, pharmacokin
 
 **Impact**: Medical affairs teams and clinical reviewers gain an additional verification layer for documents where statistical errors could influence treatment decisions. The grounding rules ensure the AI never introduces clinical claims from its training data — only what the document states.
 
-### 4.4 Real Estate & Legal
+### 4.4 Real Estate Contract Auditing
 
 Real estate transactions generate volumes of complex documentation — purchase agreements, lease contracts, property disclosures, title reports, inspection summaries, and appraisals. Missing a clause or misunderstanding a contingency can have six- or seven-figure consequences.
 
@@ -293,49 +293,6 @@ Real estate transactions generate volumes of complex documentation — purchase 
 | **PII redaction** | Names, Social Security numbers, bank account details, and full addresses are redacted automatically. The AI refers to parties as "the buyer," "the seller," or "the tenant" |
 
 **Impact**: Real estate professionals can review and compare contracts in minutes rather than hours, with confidence that sensitive personal information is protected throughout the process.
-
-### 4.5 Financial Services & Compliance
-
-Financial institutions deal with dense regulatory filings, audit reports, risk models, and compliance documentation where accuracy is non-negotiable and regulatory penalties are severe.
-
-| Benefit | Description |
-|---|---|
-| **Risk model validation** | Verify that Value-at-Risk calculations, Monte Carlo parameters, and credit scoring models are mathematically sound |
-| **Regulatory document analysis** | Upload compliance documents and query specific requirements, deadlines, and reporting obligations |
-| **Audit report review** | Extract findings, management responses, and remediation timelines from audit reports across multiple periods |
-| **Financial formula verification** | Audit NPV calculations, IRR models, amortization schedules, and pricing formulas for algebraic correctness |
-| **Cross-regulation mapping** | Use cross-domain augmentation to understand how requirements from different regulatory frameworks (Basel III, SOX, GDPR) overlap or conflict |
-| **PII protection** | Account numbers, taxpayer IDs, and personal financial data are automatically redacted before any content is stored |
-
-**Impact**: Compliance teams gain an objective mathematical audit tool for the quantitative models that underpin risk assessments and regulatory submissions — errors in these models can trigger material misstatement findings.
-
-### 4.6 Education & Academic Institutions
-
-Universities, academic departments, and educational institutions process a wide range of documents — from student theses and dissertations to curriculum proposals and accreditation reports.
-
-| Benefit | Description |
-|---|---|
-| **Thesis and dissertation review** | Faculty advisors can audit the mathematical content of student work systematically, catching errors before defense |
-| **Concept explanation** | Students upload papers from unfamiliar fields and receive professor-level explanations with step-by-step derivation walkthroughs |
-| **Cross-disciplinary learning** | The cognitive augmentation feature helps students connect concepts between courses — linking thermodynamics to information theory, or game theory to evolutionary biology |
-| **Accreditation documentation** | Upload accreditation self-study reports and query specific standards, evidence requirements, and compliance gaps |
-| **Literature review assistance** | Graduate students can upload multiple papers and ask the AI to compare methodologies, identify consensus findings, and highlight open questions — all grounded in the actual documents |
-
-**Impact**: Faculty save time on mathematical verification of student work. Students gain a tool that teaches them to think across disciplines rather than simply summarizing content — aligning with the pedagogical goal of developing interdisciplinary fluency.
-
-### 4.7 Engineering & Manufacturing
-
-Engineering teams work with technical specifications, test reports, design documents, and quality assurance records where dimensional accuracy and formula correctness directly affect physical outcomes.
-
-| Benefit | Description |
-|---|---|
-| **Specification review** | Upload technical specs and query tolerances, material properties, load calculations, and performance requirements |
-| **Formula verification** | Audit stress calculations, thermal models, fluid dynamics equations, and control system transfer functions for correctness |
-| **Standards comparison** | Compare requirements across multiple engineering standards (ISO, ASME, IEEE) using multi-document analysis |
-| **Test report analysis** | Extract pass/fail results, measurement data, and statistical process control metrics from quality reports |
-| **Cross-discipline design** | Use cognitive augmentation to bridge electrical, mechanical, and software engineering concepts in multidisciplinary design reviews |
-
-**Impact**: Engineering teams catch formula errors in design documents before they become physical defects — shifting quality assurance left in the development cycle where corrections are orders of magnitude cheaper.
 
 ---
 
