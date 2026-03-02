@@ -45,6 +45,11 @@ const PROMPT_SUGGESTIONS = [
     prompt: "Explain the main concepts of this document in simple terms, suitable for an undergraduate student.",
   },
   {
+    label: "Verify equations",
+    description: "Audit math for correctness",
+    prompt: "Perform a rigorous mathematical equation verification of this document. For every equation, derivation, statistical formula, and model specification: (1) reproduce the equation exactly as written, (2) verify dimensional consistency, algebraic correctness, and proper notation, (3) check that derivation steps follow logically, (4) flag any errors with a clear explanation of what is wrong and what the correct form should be. Present findings in a table: Equation/Formula | Location | Status (Correct/Error/Suspicious) | Details. Conclude with an overall mathematical integrity assessment. Note: mathematical errors are objective — they are not attributable to language editing, automated tools, or stylistic choice. The responsibility for equation correctness rests with the authors.",
+  },
+  {
     label: "Cross-domain augmentation",
     description: "Bridge concepts across disciplines",
     prompt: "Analyze this document through a cross-domain cognitive augmentation lens. Identify key concepts and map them to analogous ideas in other disciplines. Translate domain-specific jargon into accessible language, surface cross-disciplinary connections, and suggest how insights from other fields could enrich understanding of this material. Present findings in organized sections: Key Concepts | Cross-Domain Analogies | Jargon Translation | Interdisciplinary Insights.",

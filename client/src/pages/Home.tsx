@@ -33,6 +33,11 @@ const MORE_FEATURES = [
     description: "Bridges knowledge across disciplines — translates jargon, surfaces analogies, and connects concepts between fields.",
   },
   {
+    icon: ShieldCheck,
+    title: "Mathematical Equation Verification",
+    description: "Audits equations, derivations, and statistical models for correctness — catching objective errors that authors cannot dispute.",
+  },
+  {
     icon: FileStack,
     title: "Multi-Document Analysis",
     description: "Compare findings, methodologies, and data across multiple documents in a single chat session.",

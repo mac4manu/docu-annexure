@@ -44,6 +44,12 @@ const secondaryFeatures = [
       "Bridges knowledge across disciplines — translates jargon, maps analogies, and connects concepts between fields for deeper understanding.",
   },
   {
+    icon: ShieldCheck,
+    title: "Mathematical Equation Verification",
+    description:
+      "Audits equations, derivations, and statistical models for objective correctness — mathematical errors are irrefutable and cannot be explained away.",
+  },
+  {
     icon: FileStack,
     title: "Multi-Document Analysis",
     description:
