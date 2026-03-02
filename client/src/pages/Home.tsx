@@ -3,26 +3,26 @@ import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 
 import { useState } from "react";
-import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, FileStack, TableProperties, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, FileStack, Search, Building2, ShieldCheck, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
 const HIGHLIGHTS = [
   {
-    icon: BrainCircuit,
+    icon: FileText,
     title: "AI-Powered Extraction",
-    description: "Extracts tables, formulas, images, and structured content from PDFs, Word, PowerPoint, and Excel files using AI vision.",
+    description: "Upload PDF, Word, PowerPoint, or Excel files. AI vision extracts tables, formulas, images, metadata, and text into structured markdown.",
   },
   {
     icon: MessagesSquare,
-    title: "Chat with Documents",
-    description: "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers.",
+    title: "Chat With Your Documents",
+    description: "Ask questions and get precise, context-aware answers. The AI adapts its expertise to your document — research scientist, medical expert, or real estate attorney.",
   },
   {
     icon: Search,
     title: "RAG-Powered Smart Search",
-    description: "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions.",
+    description: "Documents are semantically indexed so the AI retrieves only the most relevant sections to answer your questions — faster, more accurate, and cost-efficient.",
   },
 ];
 
@@ -30,47 +30,27 @@ const MORE_FEATURES = [
   {
     icon: BrainCircuit,
     title: "Cross-Domain Cognitive Augmentation",
-    description: "Bridges knowledge across disciplines — translates jargon, surfaces analogies, and connects concepts between fields.",
+    description: "Bridges knowledge across disciplines — translates jargon, maps analogies, and connects concepts between fields for deeper understanding.",
   },
   {
     icon: ShieldCheck,
     title: "Mathematical Equation Verification",
-    description: "Audits equations, derivations, and statistical models for correctness — catching objective errors that authors cannot dispute.",
+    description: "Audits equations, derivations, and statistical models for objective correctness — mathematical errors are irrefutable and cannot be explained away.",
   },
   {
     icon: FileStack,
     title: "Multi-Document Analysis",
-    description: "Compare findings, methodologies, and data across multiple documents in a single chat session.",
-  },
-  {
-    icon: TableProperties,
-    title: "Tables & Formulas",
-    description: "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results.",
-  },
-  {
-    icon: BookOpen,
-    title: "Metadata Extraction",
-    description: "Automatically extracts DOI, title, authors, journal, year, abstract, and keywords from uploaded documents.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Professor-Level Expertise",
-    description: "AI acts as a research mentor across life sciences, medicine, physics, and real estate — walking you through reasoning step by step.",
-  },
-  {
-    icon: Sparkles,
-    title: "Adaptive AI Persona",
-    description: "The AI automatically adapts — research scientist for papers, medical expert for clinical reports, real estate attorney for contracts.",
+    description: "Compare findings, methodologies, and data across multiple documents in a single chat session with cross-references.",
   },
   {
     icon: Building2,
-    title: "Real Estate Analysis",
-    description: "Analyze contracts, leases, disclosures, inspection reports, and appraisals. Flag unusual clauses and extract financial terms.",
+    title: "Real Estate Contract Auditing",
+    description: "Analyze lease agreements, purchase contracts, and disclosures. Flag unusual clauses, identify contingencies, and extract key financial terms.",
   },
   {
-    icon: ShieldCheck,
+    icon: Shield,
     title: "PII Protection",
-    description: "Automatic detection and redaction of personal information — SSNs, phone numbers, emails, addresses — before storage.",
+    description: "Automatic detection and redaction of sensitive personal information — SSNs, phone numbers, addresses, and more — before document content is stored.",
   },
 ];
 
@@ -123,7 +103,7 @@ export default function Home() {
 
           {showFeatures && (
             <div className="mb-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {[...HIGHLIGHTS, ...MORE_FEATURES].map((feat) => (
+              {[...HIGHLIGHTS, ...MORE_FEATURES].slice(0, 8).map((feat) => (
                 <div
                   key={feat.title}
                   className="rounded-md border border-border bg-card overflow-hidden hover-elevate"
@@ -239,7 +219,7 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {MORE_FEATURES.map((feat) => (
                   <div
                     key={feat.title}

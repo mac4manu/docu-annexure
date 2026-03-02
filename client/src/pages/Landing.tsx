@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, BrainCircuit, FileStack, TableProperties, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck, Sparkles, Star, Quote } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, BrainCircuit, FileStack, Database, Bot, Lock, ExternalLink, Search, Building2, ShieldCheck, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -20,13 +20,13 @@ const highlightedFeatures = [
     icon: FileText,
     title: "AI-Powered Extraction",
     description:
-      "Upload PDF, Word, PowerPoint, or Excel files. AI vision extracts tables, formulas, images, and text into structured markdown.",
+      "Upload PDF, Word, PowerPoint, or Excel files. AI vision extracts tables, formulas, images, metadata, and text into structured markdown.",
   },
   {
     icon: MessagesSquare,
     title: "Chat With Your Documents",
     description:
-      "Ask questions about one or multiple documents simultaneously and get precise, context-aware answers instantly.",
+      "Ask questions and get precise, context-aware answers. The AI adapts its expertise to your document — research scientist, medical expert, or real estate attorney.",
   },
   {
     icon: Search,
@@ -56,37 +56,13 @@ const secondaryFeatures = [
       "Compare findings, methodologies, and data across multiple documents in a single chat session with cross-references.",
   },
   {
-    icon: TableProperties,
-    title: "Tables & Formulas",
-    description:
-      "Faithfully preserves data tables, LaTeX math equations, chemical formulas, and statistical results from your files.",
-  },
-  {
-    icon: BookOpen,
-    title: "Metadata Extraction",
-    description:
-      "Automatically extracts DOI, title, authors, journal, publication year, abstract, and keywords from uploaded documents.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Professor-Level Expertise",
-    description:
-      "AI acts as a seasoned expert across life sciences, medicine, physics, and real estate — walking you through derivations, contract terms, methodologies, and reasoning step by step.",
-  },
-  {
-    icon: Sparkles,
-    title: "Adaptive AI Persona",
-    description:
-      "The AI automatically adapts to your document — acting as a research scientist for papers, a medical expert for clinical reports, a real estate attorney for contracts, or a thesis advisor for academic work.",
-  },
-  {
     icon: Building2,
-    title: "Real Estate Analysis",
+    title: "Real Estate Contract Auditing",
     description:
-      "Analyze lease agreements, purchase contracts, property disclosures, and inspection reports. Flag unusual clauses, identify contingencies, and extract key financial terms.",
+      "Analyze lease agreements, purchase contracts, and disclosures. Flag unusual clauses, identify contingencies, and extract key financial terms.",
   },
   {
-    icon: ShieldCheck,
+    icon: Shield,
     title: "PII Protection",
     description:
       "Automatic detection and redaction of sensitive personal information — SSNs, phone numbers, addresses, and more — before document content is stored.",
@@ -258,7 +234,7 @@ export default function Landing() {
             ))}
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {secondaryFeatures.map((feature) => (
               <div
                 key={feature.title}
