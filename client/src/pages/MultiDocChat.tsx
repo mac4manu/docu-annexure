@@ -45,9 +45,9 @@ const PROMPT_SUGGESTIONS = [
     prompt: "Explain the main concepts of this document in simple terms, suitable for an undergraduate student.",
   },
   {
-    label: "Detect tortured phrases",
-    description: "Flag suspicious synonym substitutions",
-    prompt: "Scan this document for tortured phrases — suspicious synonym substitutions where standard scientific terminology may have been mechanically replaced (e.g., 'deep learning' replaced with 'profound learning'). Present findings in a table with severity levels and an overall integrity assessment.",
+    label: "Cross-domain augmentation",
+    description: "Bridge concepts across disciplines",
+    prompt: "Analyze this document through a cross-domain cognitive augmentation lens. Identify key concepts and map them to analogous ideas in other disciplines. Translate domain-specific jargon into accessible language, surface cross-disciplinary connections, and suggest how insights from other fields could enrich understanding of this material. Present findings in organized sections: Key Concepts | Cross-Domain Analogies | Jargon Translation | Interdisciplinary Insights.",
   },
   {
     label: "Extract metadata & DOI",

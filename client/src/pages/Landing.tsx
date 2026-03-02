@@ -1,4 +1,4 @@
-import { FileText, MessagesSquare, ArrowRight, Shield, Zap, ShieldAlert, FileStack, TableProperties, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck, Sparkles, Star, Quote } from "lucide-react";
+import { FileText, MessagesSquare, ArrowRight, Shield, Zap, BrainCircuit, FileStack, TableProperties, BookOpen, Database, Bot, Lock, ExternalLink, Search, GraduationCap, Building2, ShieldCheck, Sparkles, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -38,10 +38,10 @@ const highlightedFeatures = [
 
 const secondaryFeatures = [
   {
-    icon: ShieldAlert,
-    title: "Tortured Phrase Detection",
+    icon: BrainCircuit,
+    title: "Cross-Domain Cognitive Augmentation",
     description:
-      "Detect suspicious synonym substitutions that may signal paper mill activity or automated paraphrasing to evade plagiarism.",
+      "Bridges knowledge across disciplines — translates jargon, maps analogies, and connects concepts between fields for deeper understanding.",
   },
   {
     icon: FileStack,

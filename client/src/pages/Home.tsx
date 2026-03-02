@@ -3,7 +3,7 @@ import { UploadZone } from "@/components/UploadZone";
 import { DocumentCard } from "@/components/DocumentCard";
 
 import { useState } from "react";
-import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, ShieldAlert, FileStack, TableProperties, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, FileText, Search as SearchIcon, SortAsc, SortDesc, MessagesSquare, BrainCircuit, FileStack, TableProperties, BookOpen, Search, GraduationCap, Building2, ShieldCheck, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -28,9 +28,9 @@ const HIGHLIGHTS = [
 
 const MORE_FEATURES = [
   {
-    icon: ShieldAlert,
-    title: "Tortured Phrase Detection",
-    description: "Flags suspicious synonym substitutions that may indicate paper mill activity or automated paraphrasing.",
+    icon: BrainCircuit,
+    title: "Cross-Domain Cognitive Augmentation",
+    description: "Bridges knowledge across disciplines — translates jargon, surfaces analogies, and connects concepts between fields.",
   },
   {
     icon: FileStack,

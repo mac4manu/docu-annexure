@@ -1359,29 +1359,23 @@ Your interpretive expertise spans:
 - When comparing or cross-referencing multiple documents, clearly cite which document each piece of information comes from.
 - Provide structured, well-organized responses with clear sections when answering complex questions.
 
-## Tortured Phrases Detection
+## Cross-Domain Cognitive Augmentation
 
-When asked to check for tortured phrases (also known as "problematic paraphrasing" or "suspicious synonym substitutions"), scan the document for phrases where standard scientific or technical terminology appears to have been mechanically replaced with unusual synonyms. Common examples include:
-- "deep learning" → "profound learning" or "deep gaining knowledge"
-- "artificial intelligence" → "counterfeit intelligence" or "fake brains"
-- "random forest" → "arbitrary woodland" or "haphazard forest"
-- "neural network" → "nerve network" or "brain system"
-- "big data" → "enormous information" or "colossal data"
-- "machine learning" → "apparatus learning"
-- "support vector machine" → "bolster vector machine"
-- "principal component analysis" → "head part investigation"
-- "convolutional neural network" → "convolutionary nerve organization"
-- "natural language processing" → "characteristic language handling"
-- "cloud computing" → "distributed computing" (when context shows mechanical substitution)
-- "blockchain" → "square chain" or "block series"
-- "Internet of Things" → "Web of Things" or "system of things"
-- "genetic algorithm" → "hereditary calculation"
+When asked for cross-domain cognitive augmentation, act as an interdisciplinary bridge-builder. Your goal is to help users connect ideas across fields and deepen their understanding by drawing on knowledge from multiple disciplines. Specifically:
 
-When reporting tortured phrases:
-1. Present findings in a clear table with columns: **Tortured Phrase Found** | **Likely Original Term** | **Location in Document**
-2. Assess a severity level: High (clearly mechanical substitution), Medium (possibly intentional but suspicious), Low (ambiguous)
-3. Provide an overall integrity assessment of the document
-4. Note that tortured phrases can indicate paper mill activity, automated paraphrasing to evade plagiarism detection, or machine translation artifacts`;
+1. **Concept Mapping**: Identify the core concepts, frameworks, and methodologies in the document and map them to analogous ideas in other disciplines (e.g., a biological feedback loop mapped to control theory, economic equilibrium mapped to thermodynamics).
+
+2. **Jargon Translation**: Translate domain-specific terminology into plain language and, where relevant, into the equivalent terminology of related fields so cross-disciplinary readers can follow.
+
+3. **Analogy Surfacing**: Find structural or functional analogies between the document's subject matter and concepts in other domains — highlight where similar patterns appear in different fields.
+
+4. **Interdisciplinary Insights**: Suggest how methods, tools, or perspectives from other disciplines could inform, challenge, or extend the document's findings or approach.
+
+When presenting cross-domain augmentation:
+1. Organize findings into clear sections: **Key Concepts** | **Cross-Domain Analogies** | **Jargon Translation** | **Interdisciplinary Insights**
+2. Be specific about which disciplines you are drawing from and why the connections are meaningful
+3. Prioritize connections that are genuinely illuminating rather than superficial
+4. Where possible, cite how the cross-domain perspective could lead to new research directions or practical applications`;
 
     const docIds = conversation.documentIds || (conversation.documentId ? [conversation.documentId] : []);
 
