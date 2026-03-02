@@ -23,66 +23,80 @@ interface ChatMessage {
   confidenceScore?: number | null;
 }
 
-const PROMPT_SUGGESTIONS = [
+type DocDomain = "all" | "academic" | "real_estate";
+
+const PROMPT_SUGGESTIONS: { label: string; description: string; prompt: string; domains: DocDomain[] }[] = [
   {
     label: "Summarize core findings",
     description: "Key conclusions in structured format",
     prompt: "Summarize the core findings and key conclusions of this document in a structured format.",
+    domains: ["all"],
   },
   {
     label: "Compare methodologies",
     description: "Similarities & differences across docs",
     prompt: "Compare the methodologies described across the selected documents. Highlight similarities and differences.",
+    domains: ["academic"],
   },
   {
     label: "Extract tables & formulas",
     description: "Pull out data tables and equations",
     prompt: "Extract and present all key data tables, mathematical formulas, and equations from this document.",
+    domains: ["academic"],
   },
   {
     label: "Explain for a student",
     description: "Simplified undergraduate-level summary",
     prompt: "Explain the main concepts of this document in simple terms, suitable for an undergraduate student.",
+    domains: ["academic"],
   },
   {
     label: "Verify equations",
     description: "Audit math for correctness",
     prompt: "Perform a rigorous mathematical equation verification of this document. For every equation, derivation, statistical formula, and model specification: (1) reproduce the equation exactly as written, (2) verify dimensional consistency, algebraic correctness, and proper notation, (3) check that derivation steps follow logically, (4) flag any errors with a clear explanation of what is wrong and what the correct form should be. Present findings in a table: Equation/Formula | Location | Status (Correct/Error/Suspicious) | Details. Conclude with an overall mathematical integrity assessment. Note: mathematical errors are objective — they are not attributable to language editing, automated tools, or stylistic choice. The responsibility for equation correctness rests with the authors.",
+    domains: ["academic"],
   },
   {
     label: "Cross-domain augmentation",
     description: "Bridge concepts across disciplines",
     prompt: "Analyze this document through a cross-domain cognitive augmentation lens. Identify key concepts and map them to analogous ideas in other disciplines. Translate domain-specific jargon into accessible language, surface cross-disciplinary connections, and suggest how insights from other fields could enrich understanding of this material. Present findings in organized sections: Key Concepts | Cross-Domain Analogies | Jargon Translation | Interdisciplinary Insights.",
+    domains: ["all"],
   },
   {
     label: "Extract metadata & DOI",
     description: "Title, authors, journal, DOI link",
     prompt: "Extract the bibliographic metadata from the selected documents: DOI (Digital Object Identifier), full title, all authors, journal or conference name, publication year, abstract, and keywords. If a DOI is found, provide the full DOI link. Present the information in a structured format.",
+    domains: ["academic"],
   },
   {
     label: "Summarize key terms",
     description: "Extract important terms and definitions",
     prompt: "Summarize the key terms and definitions found in this real estate document, including any financial terms, legal clauses, and obligations for each party involved.",
+    domains: ["real_estate"],
   },
   {
     label: "Compare lease terms",
     description: "Side-by-side lease comparison",
     prompt: "Compare the lease terms across the selected documents. Highlight differences in rent amounts, lease duration, renewal options, security deposits, maintenance responsibilities, and any special provisions.",
+    domains: ["real_estate"],
   },
   {
     label: "Flag unusual clauses",
     description: "Identify non-standard or risky clauses",
     prompt: "Review this real estate document for unusual, non-standard, or potentially risky clauses. Flag any terms that deviate from standard practice, missing standard disclosures, one-sided provisions, or clauses that could be unfavorable. Present findings with severity levels.",
+    domains: ["real_estate"],
   },
   {
     label: "Extract financial terms",
     description: "Pull out pricing, fees, and costs",
     prompt: "Extract all financial terms from this document including listing price, sale price, rent amounts, escrow details, closing costs, HOA fees, property taxes, insurance requirements, cap rate, NOI, and any other monetary figures or financial obligations.",
+    domains: ["real_estate"],
   },
   {
     label: "Identify contingencies & deadlines",
     description: "List all contingencies and key dates",
     prompt: "Identify all contingencies, deadlines, and key dates in this real estate document. Include inspection periods, financing contingencies, appraisal contingencies, closing dates, option periods, and any other time-sensitive requirements. Present in chronological order.",
+    domains: ["real_estate"],
   },
 ];
 
@@ -356,6 +370,22 @@ export default function MultiDocChat() {
   const docCount = documents?.length || 0;
   const selectedCount = selectedDocIds.length;
 
+  const selectedDomains = new Set(
+    (documents || [])
+      .filter(d => selectedDocIds.includes(d.id))
+      .map(d => d.documentDomain)
+      .filter(Boolean) as string[]
+  );
+  const hasRealEstate = selectedDomains.has("real_estate");
+  const hasAcademic = selectedDomains.has("academic") || selectedDomains.size === 0;
+
+  const filteredSuggestions = PROMPT_SUGGESTIONS.filter(s => {
+    if (s.domains.includes("all")) return true;
+    if (s.domains.includes("real_estate") && hasRealEstate) return true;
+    if (s.domains.includes("academic") && hasAcademic) return true;
+    return false;
+  });
+
   if (docsLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -531,7 +561,7 @@ export default function MultiDocChat() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-w-2xl w-full">
-              {PROMPT_SUGGESTIONS.map((suggestion) => (
+              {filteredSuggestions.map((suggestion) => (
                 <button
                   key={suggestion.label}
                   onClick={() => sendMessage(suggestion.prompt)}
